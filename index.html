@@ -1363,6 +1363,50 @@ function renderDashboard() {
     return `<div class="chart-bar-col"><div class="chart-bar" style="height:${Math.round((h/8)*100)}%;min-height:3px;background:${i===4?DASH_ACCENT:'var(--ink)'}"></div><div class="chart-bar-lbl">${days[i]}</div></div>`;
   }).join('');
 
+  const pending   = TICKETS.filter(t=>t.status==='pending').length;
+  const total     = TICKETS.length;
+  const slaWarn   = TICKETS.filter(t=>t.sla==='warn').length;
+  const slaBreach = TICKETS.filter(t=>t.sla==='breach').length;
+  const slaOkPct  = Math.round((slaOk/total)*100);
+  const csatPct   = Math.round((avgCSAT/5)*100);
+  const csatC     = avgCSAT>=4?'var(--green)':avgCSAT>=3?'var(--amber)':'var(--red)';
+  const circ      = 2*Math.PI*16;
+
+  // Ticket status donut segments
+  const statusData = [
+    {n:open,     c:'var(--blue)',   l:'Open'},
+    {n:pending,  c:'var(--amber)',  l:'Pending'},
+    {n:escalated,c:'var(--purple)', l:'Escalated'},
+    {n:gdpr,     c:'var(--red)',    l:'GDPR'},
+    {n:TICKETS.filter(t=>t.status==='resolved').length, c:'var(--green)', l:'Resolved'},
+  ];
+  const donutTotal = statusData.reduce((a,d)=>a+d.n,0)||1;
+  let donutOffset  = 0;
+  const donutR     = 28; const donutC = 2*Math.PI*donutR;
+  const donutSegs  = statusData.filter(d=>d.n>0).map(d=>{
+    const seg = (d.n/donutTotal)*donutC;
+    const el  = `<circle cx="36" cy="36" r="${donutR}" fill="none" stroke="${d.c}" stroke-width="10"
+      stroke-dasharray="${seg.toFixed(1)} ${(donutC-seg).toFixed(1)}"
+      stroke-dashoffset="${-donutOffset.toFixed(1)}"
+      transform="rotate(-90 36 36)"/>`;
+    donutOffset += seg;
+    return el;
+  }).join('');
+
+  // SLA sparkline path (fake 14-day compliance)
+  const slaDays = [92,88,95,91,97,93,89,96,94,90,92,95,${slaOkPct},${slaOkPct}];
+  const sparkW=120, sparkH=32;
+  const sparkPts = slaDays.map((v,i)=>`${Math.round((i/(slaDays.length-1))*sparkW)},${Math.round(sparkH-((v-80)/20)*sparkH)}`).join(' ');
+  const sparkFill = slaDays.map((v,i)=>`${Math.round((i/(slaDays.length-1))*sparkW)},${Math.round(sparkH-((v-80)/20)*sparkH)}`).join(' L ');
+
+  // CSAT half-ring
+  const csatHalfC = Math.PI*16;
+  const csatDash  = (csatPct/100)*csatHalfC;
+
+  // Response time trend (fake 7 values)
+  const respTimes = [2.8,3.1,2.4,1.9,2.2,1.7,1.5];
+  const respMax   = Math.max(...respTimes);
+
   const widgetHtml = {
     volume:`<div class="dash-widget" draggable="true" data-widget="volume" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropWidget(event)"><div class="dash-widget-header"><span class="dash-widget-title">Weekly volume</span></div><div class="dash-widget-body"><div class="chart-bar-wrap">${bars}</div></div></div>`,
     categories:`<div class="dash-widget" draggable="true" data-widget="categories" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropWidget(event)"><div class="dash-widget-header"><span class="dash-widget-title">By category</span></div><div class="dash-widget-body">${catRows}</div></div>`,
@@ -1379,15 +1423,109 @@ function renderDashboard() {
       <button class="btn btn-sm" onclick="showDashCustomise()">Customise</button>
       <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:.06em;text-transform:uppercase">${new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</span>
     </div>
-    <div class="kpi-bar" style="grid-template-columns:repeat(5,1fr)">
-      <div class="kpi"><div class="kpi-n c-blue">${open}</div><div class="kpi-l">Open</div></div>
-      <div class="kpi"><div class="kpi-n c-red">${escalated}</div><div class="kpi-l">Escalated</div></div>
-      <div class="kpi"><div class="kpi-n c-green">${avgCSAT.toFixed(1)}</div><div class="kpi-l">Avg CSAT</div></div>
-      <div class="kpi"><div class="kpi-n">${Math.round((slaOk/TICKETS.length)*100)}%</div><div class="kpi-l">SLA Compliance</div></div>
-      <div class="kpi"><div class="kpi-n c-amber">${gdpr}</div><div class="kpi-l">Pending GDPR</div></div>
+
+    <!-- Visual KPI strip -->
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--rule);flex-shrink:0">
+
+      <!-- 1. Ticket status donut -->
+      <div style="padding:14px 16px;border-right:1px solid var(--rule);display:flex;flex-direction:column;gap:0">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Ticket status</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <svg width="72" height="72" viewBox="0 0 72 72" style="flex-shrink:0">
+            ${donutSegs}
+            <text x="36" y="33" text-anchor="middle" font-family="'DM Mono',monospace" font-size="14" font-weight="300" fill="var(--ink)">${total}</text>
+            <text x="36" y="44" text-anchor="middle" font-family="'DM Mono',monospace" font-size="7" fill="var(--ink3)">TOTAL</text>
+          </svg>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            ${statusData.filter(d=>d.n>0).map(d=>`<div style="display:flex;align-items:center;gap:4px">
+              <div style="width:6px;height:6px;border-radius:50%;background:${d.c};flex-shrink:0"></div>
+              <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3)">${d.l}</span>
+              <span style="font-family:'DM Mono',monospace;font-size:9px;font-weight:500;color:var(--ink);margin-left:auto">${d.n}</span>
+            </div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. CSAT half-gauge -->
+      <div style="padding:14px 16px;border-right:1px solid var(--rule)">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Avg CSAT</div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+          <div style="position:relative;width:72px;height:38px;overflow:hidden">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              <path d="M8 36 A28 28 0 0 1 64 36" fill="none" stroke="var(--rule)" stroke-width="7" stroke-linecap="round"/>
+              <path d="M8 36 A28 28 0 0 1 64 36" fill="none" stroke="${csatC}" stroke-width="7" stroke-linecap="round"
+                stroke-dasharray="${((csatPct/100)*Math.PI*28).toFixed(1)} ${Math.PI*28}"
+              />
+              <text x="36" y="34" text-anchor="middle" font-family="'DM Mono',monospace" font-size="13" font-weight="400" fill="${csatC}">${avgCSAT.toFixed(1)}</text>
+            </svg>
+          </div>
+          <div style="display:flex;justify-content:space-between;width:72px">
+            <span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--ink3)">0</span>
+            <span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--ink3)">5</span>
+          </div>
+          <div style="display:flex;gap:2px;margin-top:2px">
+            ${Array.from({length:5},(_,i)=>`<span style="font-size:11px;color:${avgCSAT>i?'var(--amber)':'var(--rule2)'}">★</span>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. SLA sparkline -->
+      <div style="padding:14px 16px;border-right:1px solid var(--rule)">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">SLA compliance</div>
+        <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:6px">
+          <span style="font-family:'DM Mono',monospace;font-size:22px;font-weight:300;color:${slaOkPct>=90?'var(--green)':slaOkPct>=70?'var(--amber)':'var(--red)'}">${slaOkPct}%</span>
+          <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3)">14d avg</span>
+        </div>
+        <svg width="120" height="32" viewBox="0 0 120 32" style="display:block">
+          <polyline points="${sparkPts}" fill="none" stroke="${slaOkPct>=90?'var(--green)':'var(--amber)'}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+          <circle cx="${sparkW}" cy="${Math.round(sparkH-((slaOkPct-80)/20)*sparkH)}" r="2.5" fill="${slaOkPct>=90?'var(--green)':'var(--amber)'}"/>
+        </svg>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--amber)">${slaWarn} warn</span>
+          <span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--red)">${slaBreach} breach</span>
+        </div>
+      </div>
+
+      <!-- 4. Response time trend bars -->
+      <div style="padding:14px 16px;border-right:1px solid var(--rule)">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Avg response time</div>
+        <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:8px">
+          <span style="font-family:'DM Mono',monospace;font-size:22px;font-weight:300;color:var(--ink)">${respTimes[respTimes.length-1].toFixed(1)}</span>
+          <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3)">hrs</span>
+          <span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--green);margin-left:4px">↓${((respTimes[0]-respTimes[respTimes.length-1])/respTimes[0]*100).toFixed(0)}%</span>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:3px;height:28px">
+          ${respTimes.map((v,i)=>`<div style="flex:1;border-radius:1px 1px 0 0;background:${i===respTimes.length-1?DASH_ACCENT:'var(--rule)'};height:${Math.round((v/respMax)*100)}%;min-height:2px"></div>`).join('')}
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--ink3);margin-top:3px">7-day trend</div>
+      </div>
+
+      <!-- 5. GDPR + open escalations stacked -->
+      <div style="padding:14px 16px">
+        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Needs attention</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid rgba(204,34,0,.2);border-radius:var(--r);background:var(--red-lt);cursor:pointer" onclick="setStatusFilter('gdpr');nav('tickets',document.querySelector('.sb-item[onclick*=tickets]'))">
+            <div style="font-family:'DM Mono',monospace;font-size:20px;font-weight:300;color:var(--red);line-height:1">${gdpr}</div>
+            <div><div style="font-family:'DM Mono',monospace;font-size:9px;font-weight:500;color:var(--red)">GDPR</div><div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--red);opacity:.7">pending</div></div>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="margin-left:auto;opacity:.4"><path d="M3 2l4 3-4 3" stroke="var(--red)" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid rgba(102,0,204,.2);border-radius:var(--r);background:var(--purple-lt);cursor:pointer" onclick="setStatusFilter('escalated');nav('tickets',document.querySelector('.sb-item[onclick*=tickets]'))">
+            <div style="font-family:'DM Mono',monospace;font-size:20px;font-weight:300;color:var(--purple);line-height:1">${escalated}</div>
+            <div><div style="font-family:'DM Mono',monospace;font-size:9px;font-weight:500;color:var(--purple)">Escalated</div><div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--purple);opacity:.7">tickets</div></div>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="margin-left:auto;opacity:.4"><path d="M3 2l4 3-4 3" stroke="var(--purple)" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+      </div>
+
     </div>
     <div class="page-scroll">${grid}</div>
   </div>`;
+  const widgetHtml = {
+    volume:`<div class="dash-widget" draggable="true" data-widget="volume" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropWidget(event)"><div class="dash-widget-header"><span class="dash-widget-title">Weekly volume</span></div><div class="dash-widget-body"><div class="chart-bar-wrap">${bars}</div></div></div>`,
+    categories:`<div class="dash-widget" draggable="true" data-widget="categories" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropWidget(event)"><div class="dash-widget-header"><span class="dash-widget-title">By category</span></div><div class="dash-widget-body">${catRows}</div></div>`,
+    recent:`<div class="dash-widget" draggable="true" data-widget="recent" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropWidget(event)"><div class="dash-widget-header"><span class="dash-widget-title">Recent activity</span></div><div class="dash-widget-body">${TICKETS.slice(0,4).map(t=>`<div class="ts-row" style="cursor:pointer" onclick="openTicket('${t.id}')"><span style="font-size:11.5px;font-weight:500;color:var(--ink)">${t.id} — ${t.subject}</span><span class="tag tag-${t.status}">${t.status}</span></div>`).join('')}</div></div>`,
+    sla:`<div class="dash-widget" draggable="true" data-widget="sla" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropWidget(event)"><div class="dash-widget-header"><span class="dash-widget-title">SLA status</span></div><div class="dash-widget-body">${TICKETS.map(t=>`<div class="ts-row"><span class="ts-key" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.id}</span><span class="sla-${t.sla}" style="font-family:'DM Mono',monospace;font-size:9px;font-weight:500;text-transform:uppercase">${t.sla}</span></div>`).join('')}</div></div>`
+  };
 }
 
 function showDashCustomise() {
