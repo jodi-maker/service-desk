@@ -1032,7 +1032,8 @@ function initAI() {}
 
 async function sendAIPrompt(prompt) {
   const input = document.getElementById('ai-input');
-  const text = prompt || input?.value?.trim();
+  let text = prompt || input?.value?.trim();
+  if (text) text = text.replace(/&#39;/g, "'");
   if (!text) return;
   if (input) input.value = '';
   AI_MESSAGES.push({role:'user', text});
@@ -1212,7 +1213,7 @@ function renderDashboard() {
   }).join('');
 
   // SLA sparkline path (fake 14-day compliance)
-  const slaDays = [92,88,95,91,97,93,89,96,94,90,92,95,${slaOkPct},${slaOkPct}];
+  const slaDays = [92,88,95,91,97,93,89,96,94,90,92,95,slaOkPct,slaOkPct];
   const sparkW=120, sparkH=32;
   const sparkPts = slaDays.map((v,i)=>`${Math.round((i/(slaDays.length-1))*sparkW)},${Math.round(sparkH-((v-80)/20)*sparkH)}`).join(' ');
   const sparkFill = slaDays.map((v,i)=>`${Math.round((i/(slaDays.length-1))*sparkW)},${Math.round(sparkH-((v-80)/20)*sparkH)}`).join(' L ');
@@ -1338,12 +1339,6 @@ function renderDashboard() {
     </div>
     <div class="page-scroll">${grid}</div>
   </div>`;
-  const widgetHtml = {
-    volume:`<div class="dash-widget" draggable="true" data-widget="volume" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropWidget(event)"><div class="dash-widget-header"><span class="dash-widget-title">Weekly volume</span></div><div class="dash-widget-body"><div class="chart-bar-wrap">${bars}</div></div></div>`,
-    categories:`<div class="dash-widget" draggable="true" data-widget="categories" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropWidget(event)"><div class="dash-widget-header"><span class="dash-widget-title">By category</span></div><div class="dash-widget-body">${catRows}</div></div>`,
-    recent:`<div class="dash-widget" draggable="true" data-widget="recent" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropWidget(event)"><div class="dash-widget-header"><span class="dash-widget-title">Recent activity</span></div><div class="dash-widget-body">${TICKETS.slice(0,4).map(t=>`<div class="ts-row" style="cursor:pointer" onclick="openTicket('${t.id}')"><span style="font-size:11.5px;font-weight:500;color:var(--ink)">${t.id} — ${t.subject}</span><span class="tag tag-${t.status}">${t.status}</span></div>`).join('')}</div></div>`,
-    sla:`<div class="dash-widget" draggable="true" data-widget="sla" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropWidget(event)"><div class="dash-widget-header"><span class="dash-widget-title">SLA status</span></div><div class="dash-widget-body">${TICKETS.map(t=>`<div class="ts-row"><span class="ts-key" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.id}</span><span class="sla-${t.sla}" style="font-family:'DM Mono',monospace;font-size:9px;font-weight:500;text-transform:uppercase">${t.sla}</span></div>`).join('')}</div></div>`
-  };
 }
 
 function showDashCustomise() {
@@ -1792,46 +1787,65 @@ let AI_SOURCES = {tickets:true,customers:true,kpis:true,workflows:true};
 let AI_PINNED = [];
 
 function renderAI() {
-  const prompts = ['What are the most common ticket categories?','Summarise open escalations','Which agent has the most open tickets?','GDPR compliance status this month','Suggest workflow improvements'];
-  const sourceChips = Object.keys(AI_SOURCES).map(s=>`
-    <span class="source-chip ${AI_SOURCES[s]?'on':''}" onclick="toggleAISource('${s}')">${s}</span>`).join('');
+  const prompts = [
+    'What are the most common ticket categories?',
+    'Summarise open escalations',
+    'Which agent has the most open tickets?',
+    'GDPR compliance status this month',
+    'Suggest workflow improvements'
+  ];
 
-  return `<div class="page">
-    <div class="topbar">
-      <div class="tb-title">AI Intelligence</div>
-      <div style="display:flex;gap:6px;align-items:center">
-        <span class="filter-label">Context</span>${sourceChips}
-      </div>
-    </div>
-    ${AI_PINNED.length?`<div style="padding:10px 20px;border-bottom:1px solid var(--rule);flex-shrink:0;background:var(--amber-lt)">
-      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);margin-bottom:6px">Pinned responses</div>
-      ${AI_PINNED.map((p,i)=>`<div class="pinned-response">${p}<span style="cursor:pointer;float:right;color:var(--ink3)" onclick="AI_PINNED.splice(${i},1);renderPage('ai')">×</span></div>`).join('')}
-    </div>`:''}
-    <div class="ai-chat" id="ai-chat">
-      <div class="ai-msg ai-msg-ai">
-        <div class="ai-msg-from">AI · Service Desk</div>
-        Hello ${SESSION?.name?.split(' ')[0]}. I have context on ${AI_SOURCES.tickets?TICKETS.length+' tickets':'—'}, ${AI_SOURCES.customers?CUSTOMERS.length+' customers':'—'}${AI_SOURCES.kpis?', and current KPIs':''}.
-      </div>
-      ${AI_MESSAGES.map((m,i)=>`
-        <div class="ai-msg ${m.role==='user'?'ai-msg-user':'ai-msg-ai'}">
-          <div class="ai-msg-from" style="display:flex;align-items:center;justify-content:space-between">
-            <span>${m.role==='user'?SESSION?.name:'AI · Service Desk'}</span>
-            ${m.role==='ai'?`<span style="display:flex;gap:6px">
-              <span style="cursor:pointer;font-size:9px;color:var(--ink3);letter-spacing:.04em" onclick="AI_PINNED.push(AI_MESSAGES[${i}].text);renderPage('ai')" title="Pin">📌</span>
-              <span style="cursor:pointer;font-size:9px;color:var(--ink3);letter-spacing:.04em" onclick="exportAIResponse(${i})" title="Export">↓</span>
-            </span>`:''}
-          </div>
-          ${m.text}
-        </div>`).join('')}
-    </div>
-    <div class="prompt-cards">
-      ${prompts.map(p=>`<div class="prompt-card" onclick="sendAIPrompt('${p.replace(/'/g,"\\'")}')">${p}</div>`).join('')}
-    </div>
-    <div class="ai-input-row">
-      <input class="form-input" id="ai-input" placeholder="Ask about tickets, customers, performance…" style="flex:1" onkeydown="if(event.key==='Enter')sendAIPrompt()"/>
-      <button class="btn btn-solid" onclick="sendAIPrompt()">Send</button>
-    </div>
-  </div>`;
+  const sourceChipsHtml = Object.keys(AI_SOURCES).map(s => {
+    const on = AI_SOURCES[s] ? 'on' : '';
+    return '<span class="source-chip ' + on + '" onclick="toggleAISource(\'' + s + '\')">' + s + '</span>';
+  }).join('');
+
+  const pinnedHtml = AI_PINNED.length ? '<div style="padding:10px 20px;border-bottom:1px solid var(--rule);flex-shrink:0;background:var(--amber-lt)">' +
+    '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);margin-bottom:6px">Pinned responses</div>' +
+    AI_PINNED.map(function(p, i) {
+      return '<div class="pinned-response">' + p + '<span style="cursor:pointer;float:right;color:var(--ink3)" onclick="AI_PINNED.splice(' + i + ',1);renderPage(\'ai\')">×</span></div>';
+    }).join('') + '</div>' : '';
+
+  const msgsHtml = AI_MESSAGES.map(function(m, i) {
+    const fromName = m.role === 'user' ? (SESSION ? SESSION.name : 'You') : 'AI · Service Desk';
+    const actionBtns = m.role === 'ai' ? '<span style="display:flex;gap:6px">' +
+      '<span style="cursor:pointer;font-size:9px;color:var(--ink3)" onclick="AI_PINNED.push(AI_MESSAGES[' + i + '].text);renderPage(\'ai\')" title="Pin">📌</span>' +
+      '<span style="cursor:pointer;font-size:9px;color:var(--ink3)" onclick="exportAIResponse(' + i + ')" title="Export">↓</span>' +
+      '</span>' : '';
+    return '<div class="ai-msg ' + (m.role === 'user' ? 'ai-msg-user' : 'ai-msg-ai') + '">' +
+      '<div class="ai-msg-from" style="display:flex;align-items:center;justify-content:space-between">' +
+      '<span>' + fromName + '</span>' + actionBtns + '</div>' +
+      m.text + '</div>';
+  }).join('');
+
+  const promptCardsHtml = prompts.map(function(p) {
+    const safe = p.replace(/'/g, '&#39;');
+    return '<div class="prompt-card" onclick="sendAIPrompt(\'' + safe + '\')">' + p + '</div>';
+  }).join('');
+
+  const ctxSummary = 'Hello ' + (SESSION ? SESSION.name.split(' ')[0] : 'there') + '. I have context on ' +
+    (AI_SOURCES.tickets ? TICKETS.length + ' tickets' : '—') + ', ' +
+    (AI_SOURCES.customers ? CUSTOMERS.length + ' customers' : '—') +
+    (AI_SOURCES.kpis ? ', and current KPIs' : '') + '.';
+
+  return '<div class="page">' +
+    '<div class="topbar">' +
+      '<div class="tb-title">AI Intelligence</div>' +
+      '<div style="display:flex;gap:6px;align-items:center">' +
+        '<span class="filter-label">Context</span>' + sourceChipsHtml +
+      '</div>' +
+    '</div>' +
+    pinnedHtml +
+    '<div class="ai-chat" id="ai-chat">' +
+      '<div class="ai-msg ai-msg-ai"><div class="ai-msg-from">AI · Service Desk</div>' + ctxSummary + '</div>' +
+      msgsHtml +
+    '</div>' +
+    '<div class="prompt-cards">' + promptCardsHtml + '</div>' +
+    '<div class="ai-input-row">' +
+      '<input class="form-input" id="ai-input" placeholder="Ask about tickets, customers, performance…" style="flex:1" onkeydown="if(event.key===\'Enter\')sendAIPrompt()"/>' +
+      '<button class="btn btn-solid" onclick="sendAIPrompt()">Send</button>' +
+    '</div>' +
+  '</div>';
 }
 
 function toggleAISource(s) {
