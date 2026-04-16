@@ -3,431 +3,548 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Desk — Support</title>
+<title>Service Desk</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Archivo:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; overflow: hidden; }
 
 :root {
-  --paper:    #f7f4ef;
-  --paper2:   #f2ede6;
-  --paper3:   #ede7de;
-  --ink:      #1c1814;
-  --ink2:     #5a5248;
-  --ink3:     #9b9188;
-  --rule:     #e0d9d0;
-  --rule2:    #d0c9be;
-  --clay:     #c17f4a;
-  --clay-lt:  #f5ece1;
-  --clay-dk:  #8c5a2e;
-  --sage:     #4a7c59;
-  --sage-lt:  #e8f2eb;
-  --rose:     #b85450;
-  --rose-lt:  #f5e8e7;
-  --amber:    #b07d2a;
-  --amber-lt: #f5eddb;
-  --r:        8px;
-  --r-lg:     14px;
-  --shadow:   0 1px 3px rgba(28,24,20,0.07), 0 4px 12px rgba(28,24,20,0.05);
-  --shadow-sm: 0 1px 2px rgba(28,24,20,0.06);
+  --white:   #ffffff;
+  --off:     #fafafa;
+  --rule:    #e8e8e8;
+  --rule2:   #d0d0d0;
+  --ink:     #111111;
+  --ink2:    #555555;
+  --ink3:    #999999;
+  --ink4:    #cccccc;
+  --accent:  #111111;
+  --red:     #cc2200;
+  --green:   #007744;
+  --amber:   #996600;
+  --blue:    #0044cc;
+  --r:       2px;
 }
 
 body {
-  font-family: 'Instrument Sans', sans-serif;
-  background: var(--paper);
+  font-family: 'Archivo', sans-serif;
+  background: var(--white);
   color: var(--ink);
-  font-size: 13.5px;
-  line-height: 1.55;
+  font-size: 12.5px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* ── App shell ── */
+/* ── Grid ── */
 .app { display: flex; height: 100vh; }
 
 /* ── Sidebar ── */
 .sidebar {
-  width: 232px;
-  min-width: 232px;
-  background: var(--paper2);
+  width: 200px;
+  min-width: 200px;
   border-right: 1px solid var(--rule);
   display: flex;
   flex-direction: column;
+  background: var(--white);
 }
 
-.sidebar-logo {
-  padding: 20px 18px 16px;
+.logo {
+  padding: 20px 20px 18px;
   border-bottom: 1px solid var(--rule);
   display: flex;
-  align-items: center;
-  gap: 9px;
+  flex-direction: column;
+  gap: 1px;
 }
-.logo-bug {
-  width: 28px; height: 28px;
-  background: var(--ink);
-  border-radius: 7px;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.logo-bug svg { display: block; }
-.logo-text {
-  font-family: 'Lora', serif;
-  font-size: 17px;
+.logo-word {
+  font-family: 'Archivo', sans-serif;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: var(--ink);
 }
-
-.nav { padding: 10px 0; flex: 1; }
-.nav-label {
-  padding: 10px 18px 4px;
-  font-size: 10px;
-  font-weight: 600;
+.logo-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  font-weight: 300;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--ink3);
+  text-transform: uppercase;
+}
+
+.nav { flex: 1; padding: 16px 0 0; }
+.nav-group { margin-bottom: 20px; }
+.nav-heading {
+  padding: 0 20px 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink4);
 }
 .nav-item {
-  display: flex; align-items: center;
-  gap: 9px;
-  padding: 8px 18px;
-  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 20px;
+  font-size: 12px;
+  font-weight: 400;
   color: var(--ink2);
   cursor: pointer;
-  border-left: 2px solid transparent;
-  transition: all 0.13s;
+  transition: color 0.1s;
+  border-left: 1px solid transparent;
+  margin-left: -1px;
 }
-.nav-item:hover { background: var(--paper3); color: var(--ink); }
+.nav-item:hover { color: var(--ink); }
 .nav-item.active {
-  background: var(--clay-lt);
-  color: var(--clay-dk);
-  border-left-color: var(--clay);
+  color: var(--ink);
   font-weight: 500;
+  border-left-color: var(--ink);
+  background: var(--off);
 }
-.nav-count {
-  margin-left: auto;
-  font-size: 11px;
-  font-weight: 600;
+.nav-n {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 300;
   color: var(--ink3);
-  background: var(--paper3);
-  padding: 1px 7px;
-  border-radius: 20px;
-  border: 1px solid var(--rule);
 }
-.nav-item.active .nav-count {
-  background: var(--clay-lt);
-  border-color: rgba(193,127,74,0.2);
-  color: var(--clay-dk);
-}
+.nav-item.active .nav-n { color: var(--ink); font-weight: 500; }
 
-.sidebar-footer {
-  padding: 14px 18px;
+.sidebar-foot {
+  padding: 14px 20px;
   border-top: 1px solid var(--rule);
-  display: flex; align-items: center; gap: 9px;
 }
-.avatar {
-  width: 28px; height: 28px;
+.agent-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.agent-dot {
+  width: 6px; height: 6px;
   border-radius: 50%;
-  background: var(--clay);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 600; color: #fff;
+  background: var(--green);
   flex-shrink: 0;
 }
-.avatar-name { font-size: 12px; font-weight: 500; color: var(--ink); }
-.avatar-role { font-size: 11px; color: var(--ink3); }
-.status-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--sage);
-  margin-left: auto;
-  flex-shrink: 0;
+.agent-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.agent-role {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--ink3);
+  margin-top: 1px;
+  letter-spacing: 0.04em;
 }
 
 /* ── Main ── */
-.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
 /* ── Topbar ── */
 .topbar {
-  height: 54px;
-  background: var(--paper);
+  height: 48px;
   border-bottom: 1px solid var(--rule);
-  display: flex; align-items: center;
-  padding: 0 22px; gap: 10px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 12px;
   flex-shrink: 0;
+  background: var(--white);
 }
 .topbar-title {
-  font-family: 'Lora', serif;
-  font-size: 17px; font-weight: 600;
-  letter-spacing: -0.02em;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--ink);
   flex: 1;
 }
 .btn {
-  padding: 7px 14px;
-  font-size: 12px; font-weight: 500;
-  font-family: 'Instrument Sans', sans-serif;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: 'Archivo', sans-serif;
+  letter-spacing: 0.04em;
   border: 1px solid var(--rule2);
   border-radius: var(--r);
-  background: var(--paper);
+  background: var(--white);
   color: var(--ink2);
   cursor: pointer;
-  transition: all 0.13s;
-  display: flex; align-items: center; gap: 6px;
+  transition: all 0.1s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
   white-space: nowrap;
 }
-.btn:hover { border-color: var(--ink3); color: var(--ink); background: var(--paper2); }
-.btn-clay {
-  background: var(--clay);
-  border-color: var(--clay);
-  color: #fff;
+.btn:hover { border-color: var(--ink); color: var(--ink); }
+.btn-solid {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--white);
 }
-.btn-clay:hover { background: var(--clay-dk); border-color: var(--clay-dk); color: #fff; }
-.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-solid:hover { background: #333; border-color: #333; color: var(--white); }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
 /* ── Stats ── */
-.stats-row {
+.stats {
   display: grid;
-  grid-template-columns: repeat(4,1fr);
+  grid-template-columns: repeat(4, 1fr);
   border-bottom: 1px solid var(--rule);
   flex-shrink: 0;
-  background: var(--paper);
 }
 .stat {
-  padding: 14px 22px;
+  padding: 14px 20px;
   border-right: 1px solid var(--rule);
 }
 .stat:last-child { border-right: none; }
-.stat-val {
-  font-family: 'Lora', serif;
-  font-size: 24px; font-weight: 600;
-  letter-spacing: -0.03em;
+.stat-n {
+  font-family: 'DM Mono', monospace;
+  font-size: 22px;
+  font-weight: 300;
+  letter-spacing: -0.02em;
   color: var(--ink);
+  line-height: 1;
 }
-.stat-val.c-clay { color: var(--clay); }
-.stat-val.c-rose { color: var(--rose); }
-.stat-val.c-sage { color: var(--sage); }
-.stat-val.c-amber { color: var(--amber); }
-.stat-lbl { font-size: 11px; color: var(--ink3); margin-top: 1px; }
+.stat-n.is-red   { color: var(--red); }
+.stat-n.is-green { color: var(--green); }
+.stat-n.is-amber { color: var(--amber); }
+.stat-n.is-blue  { color: var(--blue); }
+.stat-l {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-top: 4px;
+}
 
 /* ── Content ── */
 .content { flex: 1; display: flex; overflow: hidden; }
 
-/* ── Ticket list ── */
-.ticket-list {
-  width: 310px; min-width: 310px;
-  background: var(--paper2);
+/* ── List ── */
+.list-col {
+  width: 280px;
+  min-width: 280px;
   border-right: 1px solid var(--rule);
-  display: flex; flex-direction: column;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 .list-filters {
-  padding: 10px 14px;
+  padding: 10px 16px;
   border-bottom: 1px solid var(--rule);
-  display: flex; gap: 4px;
+  display: flex;
+  gap: 2px;
   flex-wrap: wrap;
 }
-.filter-pill {
-  padding: 4px 10px;
-  font-size: 11px; font-weight: 500;
+.fpill {
+  padding: 3px 9px;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
   border: 1px solid transparent;
-  border-radius: 20px;
   cursor: pointer;
   background: transparent;
   color: var(--ink3);
-  font-family: 'Instrument Sans', sans-serif;
-  transition: all 0.13s;
+  font-family: 'Archivo', sans-serif;
+  transition: all 0.1s;
+  border-radius: var(--r);
 }
-.filter-pill:hover { color: var(--ink2); background: var(--paper3); }
-.filter-pill.active {
-  background: var(--clay-lt);
-  border-color: rgba(193,127,74,0.25);
-  color: var(--clay-dk);
-}
-.ticket-scroll { flex: 1; overflow-y: auto; }
-.ticket-scroll::-webkit-scrollbar { width: 4px; }
-.ticket-scroll::-webkit-scrollbar-thumb { background: var(--rule2); border-radius: 2px; }
+.fpill:hover { color: var(--ink); border-color: var(--rule2); }
+.fpill.on { border-color: var(--ink); color: var(--ink); background: var(--off); }
 
-.ticket-item {
-  padding: 13px 16px;
+.list-scroll { flex: 1; overflow-y: auto; }
+.list-scroll::-webkit-scrollbar { width: 3px; }
+.list-scroll::-webkit-scrollbar-thumb { background: var(--rule2); }
+
+.trow {
+  padding: 12px 16px;
   border-bottom: 1px solid var(--rule);
   cursor: pointer;
-  transition: background 0.1s;
-  border-left: 3px solid transparent;
+  transition: background 0.08s;
+  border-left: 2px solid transparent;
 }
-.ticket-item:hover { background: var(--paper3); }
-.ticket-item.active { background: var(--clay-lt); border-left-color: var(--clay); }
-.ticket-item.is-urgent { border-left-color: var(--rose); }
-.ticket-item.is-urgent.active { background: var(--rose-lt); }
+.trow:hover { background: var(--off); }
+.trow.on { background: var(--off); border-left-color: var(--ink); }
+.trow.urg { border-left-color: var(--red); }
+.trow.urg.on { border-left-color: var(--red); }
 
-.ticket-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-.ticket-subject {
-  font-size: 13px; font-weight: 500; color: var(--ink);
+.trow-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.trow-subj {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
   line-height: 1.4;
-  overflow: hidden; display: -webkit-box;
-  -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
-.ticket-age { font-size: 10.5px; color: var(--ink3); white-space: nowrap; padding-top: 1px; }
-.ticket-foot { margin-top: 6px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.trow-age {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  font-weight: 300;
+  color: var(--ink3);
+  white-space: nowrap;
+  padding-top: 2px;
+}
+.trow-foot {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
 
-.pill {
-  font-size: 10px; font-weight: 600;
-  padding: 2px 7px; border-radius: 20px;
-  letter-spacing: 0.02em;
+.tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 1px;
 }
-.pill-open   { background: rgba(74,124,89,0.12); color: var(--sage); border: 1px solid rgba(74,124,89,0.2); }
-.pill-urgent { background: var(--rose-lt); color: var(--rose); border: 1px solid rgba(184,84,80,0.2); }
-.pill-pending{ background: var(--amber-lt); color: var(--amber); border: 1px solid rgba(176,125,42,0.2); }
-.pill-resolved{ background: var(--sage-lt); color: var(--sage); border: 1px solid rgba(74,124,89,0.2); }
-.pill-channel {
-  background: var(--paper3); color: var(--ink3);
-  border: 1px solid var(--rule); font-weight: 400;
-}
+.tag-open     { border: 1px solid #0044cc44; color: var(--blue); background: #0044cc08; }
+.tag-urgent   { border: 1px solid #cc220044; color: var(--red);  background: #cc220008; }
+.tag-pending  { border: 1px solid #99660044; color: var(--amber);background: #99660008; }
+.tag-resolved { border: 1px solid #00774444; color: var(--green);background: #00774408; }
+.tag-ch       { border: 1px solid var(--rule); color: var(--ink3); background: transparent; }
 
 /* ── Detail ── */
-.detail { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--paper); }
+.detail-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 
-.detail-header {
-  padding: 18px 22px 14px;
+.detail-head {
+  padding: 16px 20px 12px;
   border-bottom: 1px solid var(--rule);
   flex-shrink: 0;
 }
-.detail-subject {
-  font-family: 'Lora', serif;
-  font-size: 18px; font-weight: 600;
-  letter-spacing: -0.02em; line-height: 1.3;
-  color: var(--ink); margin-bottom: 9px;
+.detail-subj {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.35;
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
 }
-.detail-meta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.detail-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.meta-sep {
+  width: 1px;
+  height: 10px;
+  background: var(--rule2);
+}
+.meta-txt {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
 
+/* ── Thread ── */
 .thread {
-  flex: 1; overflow-y: auto;
-  padding: 20px 22px;
-  display: flex; flex-direction: column; gap: 14px;
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
-.thread::-webkit-scrollbar { width: 4px; }
-.thread::-webkit-scrollbar-thumb { background: var(--rule2); border-radius: 2px; }
+.thread::-webkit-scrollbar { width: 3px; }
+.thread::-webkit-scrollbar-thumb { background: var(--rule2); }
 
 .msg {
-  max-width: 78%;
-  padding: 11px 15px;
-  border-radius: var(--r-lg);
-  font-size: 13px; line-height: 1.65;
+  padding: 12px 14px;
+  font-size: 12.5px;
+  line-height: 1.7;
   color: var(--ink2);
-  align-self: flex-start;
-  animation: rise 0.18s ease;
+  animation: up 0.15s ease;
+  border-left: 2px solid transparent;
 }
-@keyframes rise { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+@keyframes up { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+
 .msg-customer {
-  background: var(--paper2);
-  border: 1px solid var(--rule);
-  border-bottom-left-radius: 4px;
+  background: var(--off);
+  border-left-color: var(--rule2);
+  align-self: flex-start;
+  max-width: 76%;
+  border-radius: 0 var(--r) var(--r) 0;
 }
 .msg-agent {
-  background: var(--clay-lt);
-  border: 1px solid rgba(193,127,74,0.2);
   align-self: flex-end;
+  max-width: 76%;
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-left: 2px solid var(--ink);
+  border-radius: 0 var(--r) var(--r) 0;
   color: var(--ink);
-  border-bottom-right-radius: 4px;
 }
 .msg-ai {
-  background: var(--sage-lt);
-  border: 1px solid rgba(74,124,89,0.2);
   align-self: flex-end;
+  max-width: 76%;
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-left: 2px solid var(--green);
+  border-radius: 0 var(--r) var(--r) 0;
   color: var(--ink);
-  border-bottom-right-radius: 4px;
-}
-.msg-who {
-  font-size: 11px; font-weight: 600;
-  color: var(--ink3); margin-bottom: 4px;
-  display: flex; align-items: center; gap: 5px;
-}
-.msg-agent .msg-who { color: var(--clay-dk); }
-.msg-ai .msg-who { color: var(--sage); }
-.ai-tag {
-  font-size: 9px; font-weight: 700; letter-spacing: 0.05em;
-  padding: 1px 5px; border-radius: 3px;
-  background: rgba(74,124,89,0.15); color: var(--sage);
 }
 
-/* ── Reply Panel ── */
-.reply-panel {
+.msg-from {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.msg-agent .msg-from { color: var(--ink); }
+.msg-ai .msg-from    { color: var(--green); }
+
+.ai-mark {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  padding: 0 4px;
+  border: 1px solid var(--green);
+  color: var(--green);
+  border-radius: 1px;
+}
+
+/* ── Reply ── */
+.reply {
   border-top: 1px solid var(--rule);
-  background: var(--paper);
   flex-shrink: 0;
 }
 .reply-tabs {
   display: flex;
-  padding: 0 18px;
+  padding: 0 16px;
   border-bottom: 1px solid var(--rule);
 }
-.reply-tab {
-  padding: 9px 12px;
-  font-size: 12px; font-weight: 500;
+.rtab {
+  padding: 8px 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--ink3);
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.13s;
+  border-bottom: 1px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.1s;
 }
-.reply-tab:hover { color: var(--ink2); }
-.reply-tab.active { color: var(--clay-dk); border-bottom-color: var(--clay); }
+.rtab:hover { color: var(--ink2); }
+.rtab.on { color: var(--ink); border-bottom-color: var(--ink); }
 
-.reply-body { padding: 12px 18px 14px; }
+.reply-body { padding: 12px 16px 14px; }
 textarea.compose {
   width: 100%;
-  background: var(--paper2);
-  border: 1px solid var(--rule2);
-  border-radius: var(--r);
+  font-family: 'Archivo', sans-serif;
+  font-size: 12.5px;
+  line-height: 1.6;
   color: var(--ink);
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 13px; line-height: 1.6;
-  padding: 10px 13px;
-  resize: none; outline: none;
-  height: 78px;
-  transition: border-color 0.13s;
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  padding: 9px 12px;
+  resize: none;
+  outline: none;
+  height: 72px;
+  transition: border-color 0.1s;
 }
-textarea.compose:focus { border-color: var(--clay); }
-textarea.compose::placeholder { color: var(--ink3); }
-.reply-footer {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-top: 9px;
+textarea.compose:focus { border-color: var(--ink); }
+textarea.compose::placeholder {
+  color: var(--ink4);
+  font-weight: 300;
 }
-.reply-footer-left { display: flex; align-items: center; gap: 8px; }
-select.status-sel {
-  font-size: 12px;
-  padding: 6px 10px;
-  background: var(--paper2);
-  border: 1px solid var(--rule2);
+
+.reply-foot {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.reply-foot-l { display: flex; align-items: center; gap: 8px; }
+
+select.ssel {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 5px 8px;
+  background: var(--white);
+  border: 1px solid var(--rule);
   border-radius: var(--r);
   color: var(--ink2);
-  font-family: 'Instrument Sans', sans-serif;
-  cursor: pointer; outline: none;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.1s;
 }
-select.status-sel:focus { border-color: var(--clay); }
+select.ssel:focus { border-color: var(--ink); }
 
 .thinking {
-  font-size: 11px; color: var(--sage);
-  display: none; align-items: center; gap: 5px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--green);
+  display: none;
+  align-items: center;
+  gap: 5px;
 }
 .thinking.show { display: flex; }
 .dot { display: inline-block; animation: blink 1.2s infinite; }
 .dot:nth-child(2) { animation-delay: .2s; }
 .dot:nth-child(3) { animation-delay: .4s; }
-@keyframes blink { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
+@keyframes blink { 0%,80%,100%{opacity:.15} 40%{opacity:1} }
 
-/* ── Empty state ── */
+/* ── Empty ── */
 .empty {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 12px; color: var(--ink3);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
-.empty-box {
-  width: 52px; height: 52px;
-  background: var(--paper2);
-  border: 1px solid var(--rule);
-  border-radius: var(--r-lg);
-  display: flex; align-items: center; justify-content: center;
+.empty-rule {
+  width: 32px;
+  height: 1px;
+  background: var(--rule2);
 }
-.empty p { font-size: 13px; font-family: 'Lora', serif; font-style: italic; }
+.empty-txt {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink4);
+}
 </style>
 </head>
 <body>
@@ -435,104 +552,98 @@ select.status-sel:focus { border-color: var(--clay); }
 
   <!-- Sidebar -->
   <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="logo-bug">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <rect x="2" y="3" width="12" height="2" rx="1" fill="#f7f4ef"/>
-          <rect x="2" y="7" width="8" height="1.5" rx="0.75" fill="#f7f4ef" opacity=".7"/>
-          <rect x="2" y="11" width="5" height="1.5" rx="0.75" fill="#f7f4ef" opacity=".4"/>
-        </svg>
-      </div>
-      <div class="logo-text">Desk</div>
+    <div class="logo">
+      <div class="logo-word">Service Desk</div>
+      <div class="logo-sub">AI — Assisted</div>
     </div>
 
     <nav class="nav">
-      <div class="nav-label">Queue</div>
-      <div class="nav-item active" data-view="all" onclick="setView('all',this)">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="2.5" rx="1.25" fill="currentColor"/><rect x="1" y="6.5" width="8" height="1.8" rx=".9" fill="currentColor" opacity=".5"/><rect x="1" y="10.5" width="5" height="1.8" rx=".9" fill="currentColor" opacity=".3"/></svg>
-        All tickets
-        <span class="nav-count" id="nc-all">6</span>
+      <div class="nav-group">
+        <div class="nav-heading">Queue</div>
+        <div class="nav-item active" onclick="setView('all',this)">
+          All tickets <span class="nav-n" id="nc-all">6</span>
+        </div>
+        <div class="nav-item" onclick="setView('open',this)">
+          Open <span class="nav-n" id="nc-open">2</span>
+        </div>
+        <div class="nav-item" onclick="setView('urgent',this)">
+          Urgent <span class="nav-n" id="nc-urgent">1</span>
+        </div>
+        <div class="nav-item" onclick="setView('resolved',this)">
+          Resolved <span class="nav-n" id="nc-resolved">2</span>
+        </div>
       </div>
-      <div class="nav-item" data-view="open" onclick="setView('open',this)">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.2" stroke="currentColor" stroke-width="1.2"/><path d="M7 4.5v3l1.5 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-        Open
-        <span class="nav-count" id="nc-open">2</span>
-      </div>
-      <div class="nav-item" data-view="urgent" onclick="setView('urgent',this)">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5L1.2 12.5h11.6L7 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><line x1="7" y1="5.5" x2="7" y2="9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="7" cy="10.5" r=".6" fill="currentColor"/></svg>
-        Urgent
-        <span class="nav-count" id="nc-urgent">1</span>
-      </div>
-      <div class="nav-item" data-view="resolved" onclick="setView('resolved',this)">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7.5l3.5 3.5 6.5-6.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Resolved
-        <span class="nav-count" id="nc-resolved">2</span>
-      </div>
-
-      <div class="nav-label" style="margin-top:8px">Assist</div>
-      <div class="nav-item" onclick="aiTriage()">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="2.2" fill="currentColor" opacity=".8"/><circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1" opacity=".3"/><circle cx="7" cy="7" r="6.2" stroke="currentColor" stroke-width=".5" stroke-dasharray="1.5 1.5" opacity=".2"/></svg>
-        Auto-triage
-      </div>
-      <div class="nav-item" onclick="bulkReply()">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1.5 7h11M8 3l4.5 4L8 11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Bulk AI reply
+      <div class="nav-group">
+        <div class="nav-heading">Assist</div>
+        <div class="nav-item" onclick="aiTriage()">Auto-triage</div>
+        <div class="nav-item" onclick="bulkReply()">Bulk AI reply</div>
       </div>
     </nav>
 
-    <div class="sidebar-footer">
-      <div class="avatar" id="agent-av">SA</div>
-      <div>
-        <div class="avatar-name">Support Agent</div>
-        <div class="avatar-role">Agent · Online</div>
+    <div class="sidebar-foot">
+      <div class="agent-line">
+        <div class="agent-dot"></div>
+        <div>
+          <div class="agent-name">Support Agent</div>
+          <div class="agent-role">Online · Agent</div>
+        </div>
       </div>
-      <div class="status-dot"></div>
     </div>
   </aside>
 
   <!-- Main -->
   <div class="main">
+
     <div class="topbar">
       <div class="topbar-title" id="page-title">All tickets</div>
-      <div style="display:flex;gap:8px">
-        <button class="btn" onclick="addTicket()">
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          New ticket
-        </button>
-        <button class="btn btn-clay" id="triage-btn" onclick="aiTriage()">
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="2" fill="currentColor"/><circle cx="5.5" cy="5.5" r="4.5" stroke="currentColor" stroke-width="1" opacity=".5"/></svg>
-          AI triage
-        </button>
+      <div style="display:flex;gap:6px">
+        <button class="btn" onclick="addTicket()">+ New</button>
+        <button class="btn btn-solid" id="triage-btn" onclick="aiTriage()">AI Triage</button>
       </div>
     </div>
 
-    <div class="stats-row">
-      <div class="stat"><div class="stat-val c-clay" id="sv-open">2</div><div class="stat-lbl">Open</div></div>
-      <div class="stat"><div class="stat-val c-rose" id="sv-urgent">1</div><div class="stat-lbl">Urgent</div></div>
-      <div class="stat"><div class="stat-val c-sage" id="sv-resolved">2</div><div class="stat-lbl">Resolved</div></div>
-      <div class="stat"><div class="stat-val c-amber" id="sv-ai">5</div><div class="stat-lbl">AI replies</div></div>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-n is-blue" id="sv-open">2</div>
+        <div class="stat-l">Open</div>
+      </div>
+      <div class="stat">
+        <div class="stat-n is-red" id="sv-urgent">1</div>
+        <div class="stat-l">Urgent</div>
+      </div>
+      <div class="stat">
+        <div class="stat-n is-green" id="sv-resolved">2</div>
+        <div class="stat-l">Resolved</div>
+      </div>
+      <div class="stat">
+        <div class="stat-n is-amber" id="sv-ai">5</div>
+        <div class="stat-l">AI replies</div>
+      </div>
     </div>
 
     <div class="content">
-      <div class="ticket-list">
+
+      <!-- List -->
+      <div class="list-col">
         <div class="list-filters">
-          <button class="filter-pill active" onclick="filter('all',this)">All</button>
-          <button class="filter-pill" onclick="filter('open',this)">Open</button>
-          <button class="filter-pill" onclick="filter('urgent',this)">Urgent</button>
-          <button class="filter-pill" onclick="filter('pending',this)">Pending</button>
-          <button class="filter-pill" onclick="filter('resolved',this)">Resolved</button>
+          <button class="fpill on" onclick="filter('all',this)">All</button>
+          <button class="fpill" onclick="filter('open',this)">Open</button>
+          <button class="fpill" onclick="filter('urgent',this)">Urgent</button>
+          <button class="fpill" onclick="filter('pending',this)">Pending</button>
+          <button class="fpill" onclick="filter('resolved',this)">Resolved</button>
         </div>
-        <div class="ticket-scroll" id="tlist"></div>
+        <div class="list-scroll" id="tlist"></div>
       </div>
 
-      <div class="detail" id="detail">
+      <!-- Detail -->
+      <div class="detail-col" id="detail">
         <div class="empty">
-          <div class="empty-box">
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="3" y="3" width="16" height="16" rx="4" stroke="currentColor" stroke-width="1.4"/><path d="M7 8h8M7 12h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".4"/></svg>
-          </div>
-          <p>Select a ticket to read the thread</p>
+          <div class="empty-rule"></div>
+          <div class="empty-txt">Select a ticket</div>
+          <div class="empty-rule"></div>
         </div>
       </div>
+
     </div>
   </div>
 </div>
@@ -540,38 +651,38 @@ select.status-sel:focus { border-color: var(--clay); }
 <script>
 const DATA = [
   { id:1, subject:"Payment not processing at checkout", customer:"Sarah Mitchell", initials:"SM",
-    status:"urgent", channel:"Email", age:"2m ago",
+    status:"urgent", channel:"Email", age:"2m",
     msgs:[
       {from:"Sarah Mitchell",r:"customer",t:"Hi, I've been trying to checkout for the past hour but my payment keeps failing. I've tried two different cards. This is really frustrating as I need this order urgently."},
       {from:"AI Agent",r:"ai",t:"Hi Sarah, I can see a temporary fraud-protection hold on transactions over £200 on your account. I've escalated this to our payments team for immediate review. In the meantime, could you try PayPal as an alternative? You should hear back within 30 minutes."}
     ]},
   { id:2, subject:"How do I export transaction history to CSV?", customer:"James Reed", initials:"JR",
-    status:"open", channel:"Live Chat", age:"14m ago",
+    status:"open", channel:"Live Chat", age:"14m",
     msgs:[
       {from:"James Reed",r:"customer",t:"I need to export all my transaction history to CSV for my accountant. I've looked through all the dashboard settings but can't find the export option anywhere."}
     ]},
   { id:3, subject:"Account locked after password reset", customer:"Nina Kowalski", initials:"NK",
-    status:"open", channel:"Email", age:"1h ago",
+    status:"open", channel:"Email", age:"1h",
     msgs:[
       {from:"Nina Kowalski",r:"customer",t:"I reset my password using the link you sent, but now the system says my account is locked. I have a client presentation in 2 hours and really need access."},
-      {from:"Support Agent",r:"agent",t:"Hi Nina, I can see your account. The lockout triggers automatically after 3 failed attempts during the reset flow — I'm unlocking it now. Please try logging in again in 2 minutes."}
+      {from:"Support Agent",r:"agent",t:"Hi Nina, the lockout triggers automatically after 3 failed attempts during the reset flow — I'm unlocking it now. Please try logging in again in 2 minutes."}
     ]},
-  { id:4, subject:"Resend March 2025 invoice please", customer:"Tom Brewer", initials:"TB",
-    status:"pending", channel:"Email", age:"3h ago",
+  { id:4, subject:"Resend March 2025 invoice", customer:"Tom Brewer", initials:"TB",
+    status:"pending", channel:"Email", age:"3h",
     msgs:[
       {from:"Tom Brewer",r:"customer",t:"Hi there, could you resend the invoice for March 2025? I've accidentally deleted the email and need it for our quarterly accounts."}
     ]},
   { id:5, subject:"Feature request: bulk user import via CSV", customer:"Priya Sharma", initials:"PS",
-    status:"resolved", channel:"Portal", age:"1d ago",
+    status:"resolved", channel:"Portal", age:"1d",
     msgs:[
       {from:"Priya Sharma",r:"customer",t:"It would be really helpful to import users in bulk via CSV rather than one by one. We have 200+ users to migrate from our old system."},
-      {from:"AI Agent",r:"ai",t:"Thanks for this Priya — logged as a high-priority feature request. It's already on the Q3 roadmap and you'll be notified when it ships. In the meantime, our team can do a one-off bulk import for you — shall I arrange that?"}
+      {from:"AI Agent",r:"ai",t:"Thanks Priya — logged as high-priority. It's on the Q3 roadmap and you'll be notified when it ships. In the meantime, our team can do a one-off bulk import for you — shall I arrange that?"}
     ]},
   { id:6, subject:"iOS app very slow on iPhone 14", customer:"Carlos Diaz", initials:"CD",
-    status:"resolved", channel:"App", age:"2d ago",
+    status:"resolved", channel:"App", age:"2d",
     msgs:[
       {from:"Carlos Diaz",r:"customer",t:"The mobile app is unusably slow on my iPhone 14. The main dashboard takes 8+ seconds to load every time."},
-      {from:"AI Agent",r:"ai",t:"Hi Carlos, we patched a performance regression affecting iOS 17 devices earlier today — it's in v4.2.1. Could you update the app and let us know if load times improve? Expecting sub-2 seconds after the fix."}
+      {from:"AI Agent",r:"ai",t:"Hi Carlos, we patched a performance regression affecting iOS 17 devices earlier today — it's in v4.2.1. Could you update the app and let us know if load times improve?"}
     ]}
 ];
 
@@ -584,74 +695,76 @@ const filtered = () => filterVal === 'all' ? DATA : DATA.filter(t => t.status ==
 function renderList() {
   const el = document.getElementById('tlist');
   const list = filtered();
-  if (!list.length) { el.innerHTML = '<div style="padding:22px 16px;color:var(--ink3);font-size:13px;font-style:italic">No tickets here</div>'; return; }
+  if (!list.length) {
+    el.innerHTML = '<div style="padding:20px 16px;font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink4)">No tickets</div>';
+    return;
+  }
   el.innerHTML = list.map(t => `
-    <div class="ticket-item ${t.status==='urgent'?'is-urgent':''} ${t.id===activeId?'active':''}" onclick="open_t(${t.id})">
-      <div class="ticket-top">
-        <div class="ticket-subject">${t.subject}</div>
-        <div class="ticket-age">${t.age}</div>
+    <div class="trow ${t.status==='urgent'?'urg':''} ${t.id===activeId?'on':''}" onclick="open_t(${t.id})">
+      <div class="trow-top">
+        <div class="trow-subj">${t.subject}</div>
+        <div class="trow-age">${t.age}</div>
       </div>
-      <div class="ticket-foot">
-        <span class="pill pill-${t.status}">${t.status}</span>
-        <span class="pill pill-channel">${t.channel}</span>
-        <span style="font-size:11px;color:var(--ink3)">${t.customer}</span>
+      <div class="trow-foot">
+        <span class="tag tag-${t.status}">${t.status}</span>
+        <span class="tag tag-ch">${t.channel}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:.04em">${t.customer}</span>
       </div>
     </div>`).join('');
 }
 
 function updateStats() {
-  document.getElementById('sv-open').textContent    = DATA.filter(t=>t.status==='open').length;
-  document.getElementById('sv-urgent').textContent  = DATA.filter(t=>t.status==='urgent').length;
-  document.getElementById('sv-resolved').textContent= DATA.filter(t=>t.status==='resolved').length;
-  document.getElementById('sv-ai').textContent      = aiCount;
-  document.getElementById('nc-all').textContent     = DATA.length;
-  document.getElementById('nc-open').textContent    = DATA.filter(t=>t.status==='open').length;
-  document.getElementById('nc-urgent').textContent  = DATA.filter(t=>t.status==='urgent').length;
-  document.getElementById('nc-resolved').textContent= DATA.filter(t=>t.status==='resolved').length;
+  document.getElementById('sv-open').textContent     = DATA.filter(t=>t.status==='open').length;
+  document.getElementById('sv-urgent').textContent   = DATA.filter(t=>t.status==='urgent').length;
+  document.getElementById('sv-resolved').textContent = DATA.filter(t=>t.status==='resolved').length;
+  document.getElementById('sv-ai').textContent       = aiCount;
+  document.getElementById('nc-all').textContent      = DATA.length;
+  document.getElementById('nc-open').textContent     = DATA.filter(t=>t.status==='open').length;
+  document.getElementById('nc-urgent').textContent   = DATA.filter(t=>t.status==='urgent').length;
+  document.getElementById('nc-resolved').textContent = DATA.filter(t=>t.status==='resolved').length;
 }
 
 function open_t(id) {
   activeId = id;
   renderList();
-  const t = DATA.find(x=>x.id===id);
+  const t = DATA.find(x => x.id === id);
   document.getElementById('detail').innerHTML = `
-    <div class="detail-header">
-      <div class="detail-subject">${t.subject}</div>
+    <div class="detail-head">
+      <div class="detail-subj">${t.subject}</div>
       <div class="detail-meta">
-        <span class="pill pill-${t.status}" id="dbadge-${id}">${t.status}</span>
-        <span class="pill pill-channel">${t.channel}</span>
-        <span style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--ink3)">
-          <div class="avatar" style="width:20px;height:20px;font-size:8px;background:var(--clay)">${t.initials}</div>
-          ${t.customer}
-        </span>
-        <span style="font-size:11px;color:var(--ink3)">${t.age}</span>
+        <span class="tag tag-${t.status}" id="dbadge-${id}">${t.status}</span>
+        <div class="meta-sep"></div>
+        <span class="meta-txt">${t.channel}</span>
+        <div class="meta-sep"></div>
+        <span class="meta-txt">${t.customer}</span>
+        <div class="meta-sep"></div>
+        <span class="meta-txt">${t.age} ago</span>
       </div>
     </div>
     <div class="thread" id="thread-${id}">${renderMsgs(t.msgs)}</div>
-    <div class="reply-panel">
+    <div class="reply">
       <div class="reply-tabs">
-        <div class="reply-tab active">Reply</div>
-        <div class="reply-tab" style="opacity:.4">Internal note</div>
-        <div class="reply-tab" style="opacity:.4">Forward</div>
+        <div class="rtab on">Reply</div>
+        <div class="rtab" style="opacity:.35">Note</div>
+        <div class="rtab" style="opacity:.35">Forward</div>
       </div>
       <div class="reply-body">
-        <textarea class="compose" id="compose-${id}" placeholder="Write your reply here, or let AI draft one for you…"></textarea>
-        <div class="reply-footer">
-          <div class="reply-footer-left">
-            <select class="status-sel" onchange="changeStatus(${id},this.value)">
+        <textarea class="compose" id="compose-${id}" placeholder="Write a reply, or use AI draft…"></textarea>
+        <div class="reply-foot">
+          <div class="reply-foot-l">
+            <select class="ssel" onchange="changeStatus(${id},this.value)">
               <option value="open"     ${t.status==='open'    ?'selected':''}>Open</option>
               <option value="pending"  ${t.status==='pending' ?'selected':''}>Pending</option>
               <option value="urgent"   ${t.status==='urgent'  ?'selected':''}>Urgent</option>
               <option value="resolved" ${t.status==='resolved'?'selected':''}>Resolved</option>
             </select>
             <div class="thinking" id="thinking-${id}">
-              <span class="dot">·</span><span class="dot">·</span><span class="dot">·</span>
-              drafting
+              <span class="dot">·</span><span class="dot">·</span><span class="dot">·</span>&nbsp;drafting
             </div>
           </div>
-          <div style="display:flex;gap:8px">
-            <button class="btn" onclick="aiDraft(${id})">AI draft</button>
-            <button class="btn btn-clay" onclick="send(${id})">Send reply</button>
+          <div style="display:flex;gap:6px">
+            <button class="btn" onclick="aiDraft(${id})">AI Draft</button>
+            <button class="btn btn-solid" onclick="send(${id})">Send</button>
           </div>
         </div>
       </div>
@@ -661,32 +774,35 @@ function open_t(id) {
 function renderMsgs(msgs) {
   return msgs.map(m => `
     <div class="msg msg-${m.r==='ai'?'ai':m.r==='agent'?'agent':'customer'}">
-      <div class="msg-who">${m.from}${m.r==='ai'?'<span class="ai-tag">AI</span>':''}</div>
+      <div class="msg-from">
+        ${m.from}
+        ${m.r==='ai'?'<span class="ai-mark">AI</span>':''}
+      </div>
       ${m.t}
     </div>`).join('');
 }
 
 async function aiDraft(id) {
-  const t = DATA.find(x=>x.id===id);
+  const t = DATA.find(x => x.id === id);
   const el = document.getElementById(`compose-${id}`);
   const th = document.getElementById(`thinking-${id}`);
   th.classList.add('show');
-  el.placeholder = 'Drafting…';
   el.value = '';
-  const hist = t.msgs.map(m=>`${m.from}: ${m.t}`).join('\n\n');
+  el.placeholder = 'Drafting…';
+  const hist = t.msgs.map(m => `${m.from}: ${m.t}`).join('\n\n');
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514', max_tokens:300,
-        system:'You are a warm, professional customer support agent. Draft a concise, helpful reply. Output ONLY the reply text — no labels, no preamble.',
-        messages:[{role:'user',content:`Ticket: ${t.subject}\n\n${hist}\n\nDraft a reply:`}]
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514', max_tokens: 300,
+        system: 'You are a professional customer support agent. Draft a concise, helpful reply. Output ONLY the reply — no labels, no preamble.',
+        messages: [{ role: 'user', content: `Ticket: ${t.subject}\n\n${hist}\n\nDraft a reply:` }]
       })
     });
     const d = await res.json();
-    el.value = d.content?.find(c=>c.type==='text')?.text || 'Could not generate a draft — please type your reply.';
+    el.value = d.content?.find(c => c.type === 'text')?.text || 'Could not generate a draft.';
   } catch { el.value = 'AI unavailable. Please type your reply.'; }
-  el.placeholder = 'Write your reply here, or let AI draft one for you…';
+  el.placeholder = 'Write a reply, or use AI draft…';
   th.classList.remove('show');
 }
 
@@ -694,14 +810,14 @@ function send(id) {
   const el = document.getElementById(`compose-${id}`);
   const txt = el.value.trim();
   if (!txt) return;
-  const t = DATA.find(x=>x.id===id);
-  t.msgs.push({from:'Support Agent',r:'agent',t:txt});
+  const t = DATA.find(x => x.id === id);
+  t.msgs.push({ from: 'Support Agent', r: 'agent', t: txt });
   el.value = '';
   const thread = document.getElementById(`thread-${id}`);
   if (thread) {
     const d = document.createElement('div');
     d.className = 'msg msg-agent';
-    d.innerHTML = `<div class="msg-who">Support Agent</div>${txt}`;
+    d.innerHTML = `<div class="msg-from">Support Agent</div>${txt}`;
     thread.appendChild(d);
     thread.scrollTop = thread.scrollHeight;
   }
@@ -709,10 +825,10 @@ function send(id) {
 }
 
 function changeStatus(id, val) {
-  const t = DATA.find(x=>x.id===id);
+  const t = DATA.find(x => x.id === id);
   t.status = val;
   const b = document.getElementById(`dbadge-${id}`);
-  if (b) { b.className=`pill pill-${val}`; b.textContent=val; }
+  if (b) { b.className = `tag tag-${val}`; b.textContent = val; }
   renderList(); updateStats();
 }
 
@@ -720,44 +836,43 @@ async function aiTriage() {
   const btn = document.getElementById('triage-btn');
   btn.textContent = 'Triaging…'; btn.disabled = true;
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514', max_tokens:400,
-        system:'You are a support triage AI. Assign each ticket a priority. Reply ONLY with valid JSON array like [{"id":1,"priority":"urgent"}]. Priorities: urgent, open, pending. Never change resolved tickets.',
-        messages:[{role:'user',content:'Triage:\n'+DATA.map(t=>`${t.id}: ${t.subject} (${t.status})`).join('\n')}]
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514', max_tokens: 400,
+        system: 'Triage support tickets. Reply ONLY with valid JSON: [{"id":1,"priority":"urgent"}]. Priorities: urgent, open, pending. Never change resolved tickets.',
+        messages: [{ role: 'user', content: 'Triage:\n' + DATA.map(t => `${t.id}: ${t.subject} (${t.status})`).join('\n') }]
       })
     });
     const d = await res.json();
-    const raw = d.content?.find(c=>c.type==='text')?.text||'[]';
-    JSON.parse(raw.replace(/```json|```/g,'').trim()).forEach(r=>{
-      const t = DATA.find(x=>x.id===r.id);
-      if (t && t.status!=='resolved') t.status = r.priority;
+    const raw = d.content?.find(c => c.type === 'text')?.text || '[]';
+    JSON.parse(raw.replace(/```json|```/g, '').trim()).forEach(r => {
+      const t = DATA.find(x => x.id === r.id);
+      if (t && t.status !== 'resolved') t.status = r.priority;
     });
     renderList(); updateStats();
     if (activeId) open_t(activeId);
   } catch {}
-  btn.innerHTML = `<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="2" fill="currentColor"/><circle cx="5.5" cy="5.5" r="4.5" stroke="currentColor" stroke-width="1" opacity=".5"/></svg> AI triage`;
-  btn.disabled = false;
+  btn.textContent = 'AI Triage'; btn.disabled = false;
 }
 
 async function bulkReply() {
-  const pending = DATA.filter(t=>t.status!=='resolved'&&t.msgs[t.msgs.length-1]?.r==='customer');
-  if (!pending.length) { alert('No unanswered customer messages right now.'); return; }
+  const pending = DATA.filter(t => t.status !== 'resolved' && t.msgs[t.msgs.length - 1]?.r === 'customer');
+  if (!pending.length) { alert('No unanswered tickets.'); return; }
   for (const t of pending) {
-    const hist = t.msgs.map(m=>`${m.from}: ${m.t}`).join('\n\n');
+    const hist = t.msgs.map(m => `${m.from}: ${m.t}`).join('\n\n');
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          model:'claude-sonnet-4-20250514', max_tokens:250,
-          system:'You are a warm, professional customer support agent. Write a helpful reply. Output ONLY the reply text.',
-          messages:[{role:'user',content:`Ticket: ${t.subject}\n\n${hist}\n\nWrite a reply:`}]
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 250,
+          system: 'Professional support agent. Write a concise helpful reply. Output ONLY the reply text.',
+          messages: [{ role: 'user', content: `Ticket: ${t.subject}\n\n${hist}\n\nWrite a reply:` }]
         })
       });
       const d = await res.json();
-      const txt = d.content?.find(c=>c.type==='text')?.text;
-      if (txt) { t.msgs.push({from:'AI Agent',r:'ai',t:txt}); aiCount++; }
+      const txt = d.content?.find(c => c.type === 'text')?.text;
+      if (txt) { t.msgs.push({ from: 'AI Agent', r: 'ai', t: txt }); aiCount++; }
     } catch {}
   }
   updateStats(); renderList();
@@ -766,25 +881,25 @@ async function bulkReply() {
 
 function filter(val, btn) {
   filterVal = val;
-  document.querySelectorAll('.filter-pill').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
+  document.querySelectorAll('.fpill').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
   renderList();
 }
 
 function setView(view, el) {
-  filterVal = view==='all'?'all':view;
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  filterVal = view === 'all' ? 'all' : view;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   el.classList.add('active');
-  const titles = {all:'All tickets',open:'Open tickets',urgent:'Urgent tickets',resolved:'Resolved tickets'};
-  document.getElementById('page-title').textContent = titles[view]||'Tickets';
+  const titles = { all: 'All tickets', open: 'Open', urgent: 'Urgent', resolved: 'Resolved' };
+  document.getElementById('page-title').textContent = titles[view] || 'Tickets';
   renderList();
 }
 
 function addTicket() {
-  const subj = prompt('Ticket subject:'); if (!subj) return;
-  const cust = prompt('Customer name:')||'New Customer';
-  const init = cust.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-  DATA.unshift({id:Date.now(),subject:subj,customer:cust,initials:init,status:'open',channel:'Manual',age:'just now',msgs:[]});
+  const subj = prompt('Subject:'); if (!subj) return;
+  const cust = prompt('Customer name:') || 'New Customer';
+  const init = cust.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  DATA.unshift({ id: Date.now(), subject: subj, customer: cust, initials: init, status: 'open', channel: 'Manual', age: '0m', msgs: [] });
   renderList(); updateStats();
 }
 
