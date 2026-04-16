@@ -240,6 +240,45 @@ textarea.form-input{resize:vertical;min-height:72px}
 .sla-ok{color:var(--green)}.sla-warn{color:var(--amber)}.sla-breach{color:var(--red)}
 .link{color:var(--blue);cursor:pointer;text-decoration:underline}
 .link:hover{color:var(--ink)}
+/* ── Drag & drop dashboard ── */
+.dash-widget{border:1px solid var(--rule);border-radius:var(--r2);background:var(--w);overflow:hidden;cursor:grab;transition:box-shadow .15s}
+.dash-widget.dragging{opacity:.5;cursor:grabbing}
+.dash-widget.drag-over{border-color:var(--ink);box-shadow:0 0 0 2px var(--ink)}
+.dash-widget-header{padding:10px 14px;border-bottom:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between}
+.dash-widget-title{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
+.dash-widget-body{padding:12px 14px}
+/* ── Colour picker ── */
+.accent-swatches{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .1s}
+.swatch.active{border-color:var(--ink);transform:scale(1.15)}
+/* ── Macros ── */
+.macro-item{padding:7px 10px;border:1px solid var(--rule);border-radius:var(--r);cursor:pointer;margin-bottom:5px;font-size:12px;color:var(--ink2);transition:all .1s;display:flex;align-items:center;gap:8px}
+.macro-item:hover{border-color:var(--ink);color:var(--ink);background:var(--off)}
+/* ── Toggle switch ── */
+.toggle{position:relative;display:inline-block;width:32px;height:18px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--rule2);border-radius:18px;cursor:pointer;transition:.2s}
+.toggle-slider:before{content:'';position:absolute;width:12px;height:12px;left:3px;top:3px;background:var(--w);border-radius:50%;transition:.2s}
+.toggle input:checked+.toggle-slider{background:var(--green)}
+.toggle input:checked+.toggle-slider:before{transform:translateX(14px)}
+/* ── Context source chips ── */
+.source-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--rule);border-radius:var(--r);font-size:11px;color:var(--ink2);background:var(--off)}
+.source-chip.on{border-color:var(--green);background:var(--green-lt);color:var(--green)}
+/* ── Auth flows ── */
+.auth-link{font-size:11px;color:var(--blue);cursor:pointer;text-align:center;margin-top:10px}
+.auth-link:hover{text-decoration:underline}
+.auth-back{font-size:11px;color:var(--ink3);cursor:pointer;margin-bottom:16px;display:flex;align-items:center;gap:4px}
+.auth-back:hover{color:var(--ink)}
+/* ── Attach zone ── */
+.attach-zone{border:1px dashed var(--rule2);border-radius:var(--r);padding:10px;text-align:center;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);cursor:pointer;transition:all .1s;margin-top:6px}
+.attach-zone:hover{border-color:var(--ink);color:var(--ink)}
+/* ── GDPR modal ── */
+.gdpr-action{padding:14px;border:1px solid var(--rule);border-radius:var(--r2);margin-bottom:8px}
+.gdpr-action-title{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.gdpr-action-desc{font-size:11px;color:var(--ink3);margin-bottom:10px}
+/* ── Pinned AI responses ── */
+.pinned-response{padding:10px 12px;border:1px solid var(--amber);border-radius:var(--r);background:var(--amber-lt);margin-bottom:8px}
+.pinned-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -247,22 +286,54 @@ textarea.form-input{resize:vertical;min-height:72px}
 <!-- Auth Screen -->
 <div id="auth-screen">
   <div class="auth-box">
-    <div class="auth-logo"><div class="sb-word">Service Desk</div><div class="sb-sub">AI — Assisted · B2B Support Platform</div></div>
-    <div class="auth-title">Sign in</div>
-    <div class="auth-sub">Select a demo account to continue</div>
-    <div class="auth-accounts">
-      <div class="auth-account" onclick="login('Admin','Emma Clarke','EC')">
-        <div class="auth-account-av">EC</div>
-        <div><div class="auth-account-name">Emma Clarke</div><div class="auth-account-role">Admin · Full access</div></div>
+    <!-- Login panel -->
+    <div id="auth-login">
+      <div class="auth-logo"><div class="sb-word">Service Desk</div><div class="sb-sub">AI — Assisted · B2B Support Platform</div></div>
+      <div class="auth-title">Sign in</div>
+      <div class="auth-sub">Select a demo account to continue</div>
+      <div class="auth-accounts">
+        <div class="auth-account" onclick="login('Admin','Emma Clarke','EC')">
+          <div class="auth-account-av">EC</div>
+          <div><div class="auth-account-name">Emma Clarke</div><div class="auth-account-role">Admin · Full access</div></div>
+        </div>
+        <div class="auth-account" onclick="login('Senior Agent','James Webb','JW')">
+          <div class="auth-account-av">JW</div>
+          <div><div class="auth-account-name">James Webb</div><div class="auth-account-role">Senior Agent · Tickets + Customers</div></div>
+        </div>
+        <div class="auth-account" onclick="login('Read Only','Sofia Reyes','SR')">
+          <div class="auth-account-av">SR</div>
+          <div><div class="auth-account-name">Sofia Reyes</div><div class="auth-account-role">Read Only · View only</div></div>
+        </div>
       </div>
-      <div class="auth-account" onclick="login('Senior Agent','James Webb','JW')">
-        <div class="auth-account-av">JW</div>
-        <div><div class="auth-account-name">James Webb</div><div class="auth-account-role">Senior Agent · Tickets + Customers</div></div>
+      <div class="auth-link" onclick="showAuthPanel('forgot')">Forgot password?</div>
+      <div class="auth-link" onclick="showAuthPanel('create')" style="margin-top:6px">Create an account</div>
+    </div>
+    <!-- Forgot password panel -->
+    <div id="auth-forgot" style="display:none">
+      <div class="auth-logo"><div class="sb-word">Service Desk</div></div>
+      <div class="auth-back" onclick="showAuthPanel('login')">← Back to sign in</div>
+      <div class="auth-title">Reset password</div>
+      <div class="auth-sub" style="margin-bottom:18px">Enter your work email and we'll send a reset link.</div>
+      <div class="form-row"><label class="form-label">Work email</label><input class="form-input" id="forgot-email" type="email" placeholder="you@company.com"/></div>
+      <button class="btn btn-solid" style="width:100%;justify-content:center;margin-top:4px" onclick="submitForgot()">Send reset link</button>
+      <div id="forgot-confirm" style="display:none;margin-top:12px;font-size:12px;color:var(--green);text-align:center;font-family:'DM Mono',monospace;letter-spacing:.04em">Reset link sent — check your inbox.</div>
+    </div>
+    <!-- Create account panel -->
+    <div id="auth-create" style="display:none">
+      <div class="auth-logo"><div class="sb-word">Service Desk</div></div>
+      <div class="auth-back" onclick="showAuthPanel('login')">← Back to sign in</div>
+      <div class="auth-title">Create account</div>
+      <div class="auth-sub" style="margin-bottom:18px">Request access to Service Desk.</div>
+      <div class="form-grid">
+        <div class="form-row"><label class="form-label">First name</label><input class="form-input" id="ca-first" placeholder="Jane"/></div>
+        <div class="form-row"><label class="form-label">Last name</label><input class="form-input" id="ca-last" placeholder="Doe"/></div>
       </div>
-      <div class="auth-account" onclick="login('Read Only','Sofia Reyes','SR')">
-        <div class="auth-account-av">SR</div>
-        <div><div class="auth-account-name">Sofia Reyes</div><div class="auth-account-role">Read Only · View only</div></div>
+      <div class="form-row"><label class="form-label">Work email</label><input class="form-input" id="ca-email" type="email" placeholder="you@company.com"/></div>
+      <div class="form-row"><label class="form-label">Role requested</label>
+        <select class="form-input" id="ca-role"><option>Senior Agent</option><option>Read Only</option></select>
       </div>
+      <button class="btn btn-solid" style="width:100%;justify-content:center;margin-top:4px" onclick="submitCreate()">Request access</button>
+      <div id="create-confirm" style="display:none;margin-top:12px;font-size:12px;color:var(--green);text-align:center;font-family:'DM Mono',monospace;letter-spacing:.04em">Request submitted — an admin will approve your account.</div>
     </div>
   </div>
 </div>
@@ -1249,7 +1320,410 @@ function renderRoles() {
     </div>`;
 }
 
-// ─── Modal helpers ────────────────────────────────────────────────────────────
+// ─── Auth flows ───────────────────────────────────────────────────────────────
+function showAuthPanel(panel) {
+  ['login','forgot','create'].forEach(p => {
+    const el = document.getElementById('auth-'+p);
+    if(el) el.style.display = p===panel?'block':'none';
+  });
+}
+function submitForgot() {
+  const email = document.getElementById('forgot-email').value.trim();
+  if(!email) return;
+  document.getElementById('forgot-confirm').style.display='block';
+}
+function submitCreate() {
+  const first = document.getElementById('ca-first').value.trim();
+  if(!first) return;
+  document.getElementById('create-confirm').style.display='block';
+}
+
+// ─── Dashboard enhancements ────────────────────────────────────────────────────
+let DASH_ACCENT = '#111111';
+let DASH_WIDGETS = ['volume','categories','recent','sla'];
+let DASH_LAYOUT = '2col';
+
+function renderDashboard() {
+  const open = TICKETS.filter(t => t.status === 'open').length;
+  const escalated = TICKETS.filter(t => t.status === 'escalated').length;
+  const resolved = TICKETS.filter(t => t.status === 'resolved');
+  const avgCSAT = resolved.filter(t=>t.csat).reduce((a,t)=>a+t.csat,0) / (resolved.filter(t=>t.csat).length||1);
+  const slaOk = TICKETS.filter(t=>t.sla==='ok').length;
+  const gdpr = TICKETS.filter(t=>t.status==='gdpr').length;
+  const cats = {};
+  TICKETS.forEach(t=>{ cats[t.category]=(cats[t.category]||0)+1; });
+  const catRows = Object.entries(cats).map(([k,v])=>`<div class="ts-row"><span class="ts-key">${k}</span><span class="ts-val">${v}</span></div>`).join('');
+  const bars = [3,5,4,7,6,8,5].map((h,i)=>{
+    const days=['M','T','W','T','F','S','S'];
+    return `<div class="chart-bar-col"><div class="chart-bar" style="height:${Math.round((h/8)*100)}%;min-height:3px;background:${i===4?DASH_ACCENT:'var(--ink)'}"></div><div class="chart-bar-lbl">${days[i]}</div></div>`;
+  }).join('');
+
+  const widgetHtml = {
+    volume:`<div class="dash-widget" draggable="true" data-widget="volume" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropWidget(event)"><div class="dash-widget-header"><span class="dash-widget-title">Weekly volume</span></div><div class="dash-widget-body"><div class="chart-bar-wrap">${bars}</div></div></div>`,
+    categories:`<div class="dash-widget" draggable="true" data-widget="categories" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropWidget(event)"><div class="dash-widget-header"><span class="dash-widget-title">By category</span></div><div class="dash-widget-body">${catRows}</div></div>`,
+    recent:`<div class="dash-widget" draggable="true" data-widget="recent" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropWidget(event)"><div class="dash-widget-header"><span class="dash-widget-title">Recent activity</span></div><div class="dash-widget-body">${TICKETS.slice(0,4).map(t=>`<div class="ts-row" style="cursor:pointer" onclick="openTicket('${t.id}')"><span style="font-size:11.5px;font-weight:500;color:var(--ink)">${t.id} — ${t.subject}</span><span class="tag tag-${t.status}">${t.status}</span></div>`).join('')}</div></div>`,
+    sla:`<div class="dash-widget" draggable="true" data-widget="sla" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropWidget(event)"><div class="dash-widget-header"><span class="dash-widget-title">SLA status</span></div><div class="dash-widget-body">${TICKETS.map(t=>`<div class="ts-row"><span class="ts-key" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.id}</span><span class="sla-${t.sla}" style="font-family:'DM Mono',monospace;font-size:9px;font-weight:500;text-transform:uppercase">${t.sla}</span></div>`).join('')}</div></div>`
+  };
+
+  const grid = DASH_LAYOUT==='2col'
+    ? `<div style="display:grid;grid-template-columns:2fr 1fr;gap:12px" id="dash-grid">${DASH_WIDGETS.filter(w=>widgetHtml[w]).map(w=>widgetHtml[w]).join('')}</div>`
+    : `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px" id="dash-grid">${DASH_WIDGETS.filter(w=>widgetHtml[w]).map(w=>widgetHtml[w]).join('')}</div>`;
+
+  return `<div class="page">
+    <div class="topbar"><div class="tb-title">Dashboard</div>
+      <button class="btn btn-sm" onclick="showDashCustomise()">Customise</button>
+      <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:.06em;text-transform:uppercase">${new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</span>
+    </div>
+    <div class="kpi-bar" style="grid-template-columns:repeat(5,1fr)">
+      <div class="kpi"><div class="kpi-n c-blue">${open}</div><div class="kpi-l">Open</div></div>
+      <div class="kpi"><div class="kpi-n c-red">${escalated}</div><div class="kpi-l">Escalated</div></div>
+      <div class="kpi"><div class="kpi-n c-green">${avgCSAT.toFixed(1)}</div><div class="kpi-l">Avg CSAT</div></div>
+      <div class="kpi"><div class="kpi-n">${Math.round((slaOk/TICKETS.length)*100)}%</div><div class="kpi-l">SLA Compliance</div></div>
+      <div class="kpi"><div class="kpi-n c-amber">${gdpr}</div><div class="kpi-l">Pending GDPR</div></div>
+    </div>
+    <div class="page-scroll">${grid}</div>
+  </div>`;
+}
+
+function showDashCustomise() {
+  const accents = ['#111111','#0044cc','#007744','#cc2200','#996600','#6600cc','#cc6600'];
+  showModal('Customise dashboard', `
+    <div class="form-row"><label class="form-label">Layout</label>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-sm ${DASH_LAYOUT==='2col'?'btn-solid':''}" onclick="DASH_LAYOUT='2col';this.closest('.modal-bg').querySelector('.btn-sm:last-of-type')&&renderPage('dashboard')">2 columns</button>
+        <button class="btn btn-sm ${DASH_LAYOUT==='3col'?'btn-solid':''}" onclick="DASH_LAYOUT='3col';renderPage('dashboard');closeModal()">3 columns</button>
+      </div>
+    </div>
+    <div class="form-row" style="margin-top:12px"><label class="form-label">Accent colour</label>
+      <div class="accent-swatches">${accents.map(a=>`<div class="swatch ${DASH_ACCENT===a?'active':''}" style="background:${a}" onclick="DASH_ACCENT='${a}';document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active'));this.classList.add('active')"></div>`).join('')}</div>
+    </div>
+    <div class="form-row" style="margin-top:12px"><label class="form-label">Visible widgets</label>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">
+        ${['volume','categories','recent','sla'].map(w=>`
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:12px;text-transform:capitalize">${w}</span>
+            <label class="toggle"><input type="checkbox" ${DASH_WIDGETS.includes(w)?'checked':''} onchange="toggleDashWidget('${w}',this.checked)"><span class="toggle-slider"></span></label>
+          </div>`).join('')}
+      </div>
+    </div>
+  `, ()=>{ renderPage('dashboard'); closeModal(); }, 'Apply');
+}
+
+function toggleDashWidget(w, on) {
+  if(on && !DASH_WIDGETS.includes(w)) DASH_WIDGETS.push(w);
+  else if(!on) DASH_WIDGETS = DASH_WIDGETS.filter(x=>x!==w);
+}
+
+let _dragSrc = null;
+function dragStart(e) { _dragSrc = e.currentTarget.dataset.widget; e.currentTarget.classList.add('dragging'); }
+function dragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function dropWidget(e) {
+  e.preventDefault();
+  const target = e.currentTarget.dataset.widget;
+  e.currentTarget.classList.remove('drag-over');
+  document.querySelectorAll('.dash-widget').forEach(w=>{ w.classList.remove('dragging'); w.classList.remove('drag-over'); });
+  if(_dragSrc && target && _dragSrc!==target) {
+    const si = DASH_WIDGETS.indexOf(_dragSrc), ti = DASH_WIDGETS.indexOf(target);
+    if(si>-1&&ti>-1){ [DASH_WIDGETS[si],DASH_WIDGETS[ti]]=[DASH_WIDGETS[ti],DASH_WIDGETS[si]]; renderPage('dashboard'); }
+  }
+  _dragSrc=null;
+}
+
+// ─── Macros ────────────────────────────────────────────────────────────────────
+const MACROS = [
+  {id:'m1',name:'Acknowledge & investigate',text:'Thank you for reaching out. I\'ve logged your issue and our team is investigating — we\'ll update you within 2 hours.'},
+  {id:'m2',name:'Request more information',text:'To help resolve this quickly, could you please provide your account ID, the date of the issue, and any relevant screenshots?'},
+  {id:'m3',name:'Escalation confirmation',text:'I\'ve escalated this to our senior team. You\'ll receive a direct response within 4 business hours.'},
+  {id:'m4',name:'Resolution & close',text:'This issue has been resolved. Please don\'t hesitate to contact us if you experience any further problems. Closing this ticket now.'},
+];
+
+function showMacroPanel(ticketId) {
+  showModal('Macros', `
+    <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-bottom:10px">Click a macro to insert into reply</div>
+    ${MACROS.map(m=>`<div class="macro-item" onclick="insertMacro('${ticketId}','${m.id}')">
+      <div style="flex:1"><div style="font-weight:500;font-size:12px;color:var(--ink);margin-bottom:2px">${m.name}</div><div style="font-size:11px;color:var(--ink3);overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${m.text.slice(0,60)}…</div></div>
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    </div>`).join('')}
+  `, null, null);
+}
+
+function insertMacro(ticketId, macroId) {
+  const m = MACROS.find(x=>x.id===macroId);
+  const el = document.getElementById(`compose-${ticketId}`);
+  if(el && m) el.value = m.text;
+  closeModal();
+}
+
+// ─── Redact data ───────────────────────────────────────────────────────────────
+function redactTicketData(ticketId) {
+  const t = TICKETS.find(x=>x.id===ticketId);
+  if(!t) return;
+  t.msgs = t.msgs.map(m=>({...m, t: m.t.replace(/\b[\w.+-]+@[\w-]+\.[\w.]+\b/g,'[redacted]').replace(/\b\+?[\d\s\-()]{10,}\b/g,'[redacted]')}));
+  openTicket(ticketId);
+}
+
+// ─── Attach files ──────────────────────────────────────────────────────────────
+let ATTACHMENTS = {};
+function showAttachPanel(ticketId) {
+  showModal('Attach file', `
+    <div class="attach-zone" onclick="document.getElementById('attach-file-input').click()">
+      Drop file here or click to browse
+      <input type="file" id="attach-file-input" style="display:none" onchange="handleAttach('${ticketId}',this)"/>
+    </div>
+    <div id="attach-list" style="margin-top:10px">
+      ${(ATTACHMENTS[ticketId]||[]).map(f=>`<div style="font-size:11px;padding:5px 0;border-bottom:1px solid var(--rule);color:var(--ink2);display:flex;justify-content:space-between"><span>${f.name}</span><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3)">${f.size}</span></div>`).join('')}
+    </div>
+  `, null, null);
+}
+
+function handleAttach(ticketId, input) {
+  const file = input.files[0]; if(!file) return;
+  if(!ATTACHMENTS[ticketId]) ATTACHMENTS[ticketId]=[];
+  const size = file.size < 1024 ? file.size+'B' : file.size<1048576 ? Math.round(file.size/1024)+'KB' : (file.size/1048576).toFixed(1)+'MB';
+  ATTACHMENTS[ticketId].push({name:file.name,size});
+  const list = document.getElementById('attach-list');
+  if(list) list.innerHTML = ATTACHMENTS[ticketId].map(f=>`<div style="font-size:11px;padding:5px 0;border-bottom:1px solid var(--rule);color:var(--ink2);display:flex;justify-content:space-between"><span>${f.name}</span><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3)">${f.size}</span></div>`).join('');
+}
+
+// ─── GDPR full modal ───────────────────────────────────────────────────────────
+function showGDPRModal(ticketId) {
+  const t = TICKETS.find(x=>x.id===ticketId);
+  const cust = CUSTOMERS.find(c=>c.id===t?.customerId);
+  showModal('GDPR Actions', `
+    <div style="font-size:12px;color:var(--ink2);margin-bottom:14px">Customer: <strong>${cust?cust.first+' '+cust.last:'Unknown'}</strong> · ${cust?.id||''}</div>
+    <div class="gdpr-action">
+      <div class="gdpr-action-title">Right to Erasure (Art. 17)</div>
+      <div class="gdpr-action-desc">Permanently delete all personal data held for this customer. This action cannot be undone. Confirmation email will be sent.</div>
+      <button class="btn btn-sm btn-danger" onclick="gdprAction('erasure','${ticketId}')">Request erasure</button>
+    </div>
+    <div class="gdpr-action">
+      <div class="gdpr-action-title">Redact ticket data</div>
+      <div class="gdpr-action-desc">Remove personal identifiers (email addresses, phone numbers) from all messages in this ticket thread.</div>
+      <button class="btn btn-sm btn-danger" onclick="gdprAction('redact','${ticketId}')">Redact data</button>
+    </div>
+    <div class="gdpr-action">
+      <div class="gdpr-action-title">Subject Access Request (SAR) export</div>
+      <div class="gdpr-action-desc">Generate a full data export of all information held for this customer in JSON format. Must be delivered within 30 days.</div>
+      <button class="btn btn-sm" onclick="gdprAction('sar','${ticketId}')">Generate SAR export</button>
+    </div>
+    <div id="gdpr-status" style="display:none;margin-top:12px;font-size:11px;color:var(--green);font-family:'DM Mono',monospace;letter-spacing:.04em"></div>
+  `, null, null);
+}
+
+function gdprAction(action, ticketId) {
+  const msgs = {erasure:'Erasure request submitted. Customer will receive confirmation within 72 hours.',redact:'Personal data redacted from ticket thread.',sar:'SAR export generated and queued for delivery.'};
+  if(action==='redact') redactTicketData(ticketId);
+  const el = document.getElementById('gdpr-status');
+  if(el){ el.style.display='block'; el.textContent='✓ '+msgs[action]; }
+}
+
+// ─── Enhanced reports ──────────────────────────────────────────────────────────
+let REPORT_SECTIONS = {volume:true,csat:true,categories:true,agents:true,sla:true};
+let REPORT_CHART_STYLE = 'bar';
+let REPORT_TAG_FILTER = 'all';
+
+function renderReports() {
+  const tfs = [['7d','7d'],['30d','30d'],['90d','90d'],['year','Year'],['custom','Custom']];
+  const fiscals = ['Q1','Q2','Q3','Q4','H1','H2','Full Year'];
+  const resolved = TICKETS.filter(t=>t.status==='resolved');
+  const avgCSAT = resolved.filter(t=>t.csat).reduce((a,t)=>a+t.csat,0)/(resolved.filter(t=>t.csat).length||1);
+  const allTags = [...new Set(TICKETS.flatMap(t=>t.tags))];
+  const filteredTickets = REPORT_TAG_FILTER==='all' ? TICKETS : TICKETS.filter(t=>t.tags.includes(REPORT_TAG_FILTER));
+
+  return `<div class="page">
+    <div class="topbar">
+      <div class="tb-title">Reports & Analytics</div>
+      <div style="display:flex;gap:5px;align-items:center">
+        ${tfs.map(([v,l])=>`<button class="btn btn-sm ${REPORT_TF===v?'btn-solid':''}" onclick="REPORT_TF='${v}';renderPage('reports')">${l}</button>`).join('')}
+        <button class="btn btn-sm" onclick="showReportCustomise()">Customise</button>
+      </div>
+    </div>
+    <div class="kpi-bar">
+      <div class="kpi"><div class="kpi-n">${filteredTickets.length}</div><div class="kpi-l">Total tickets</div></div>
+      <div class="kpi"><div class="kpi-n c-green">${avgCSAT.toFixed(1)}</div><div class="kpi-l">Avg CSAT</div></div>
+      <div class="kpi"><div class="kpi-n">&lt;4h</div><div class="kpi-l">Avg resolution</div></div>
+      <div class="kpi"><div class="kpi-n c-blue">${Math.round((filteredTickets.filter(t=>t.sla==='ok').length/(filteredTickets.length||1))*100)}%</div><div class="kpi-l">SLA compliance</div></div>
+    </div>
+    <div class="page-scroll">
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+        <span class="filter-label">Fiscal</span>
+        ${fiscals.map(f=>`<button class="btn btn-sm" onclick="alert('Fiscal period: ${f} (Apr–Mar)')">${f}</button>`).join('')}
+        ${REPORT_TF==='custom'?`<input type="date" class="filter-select"/><span style="font-size:11px;color:var(--ink3)">to</span><input type="date" class="filter-select"/>`:''}
+        <span class="filter-label" style="margin-left:8px">Tag</span>
+        <select class="filter-select" onchange="REPORT_TAG_FILTER=this.value;renderPage('reports')">
+          <option value="all">All tags</option>
+          ${allTags.map(t=>`<option value="${t}" ${REPORT_TAG_FILTER===t?'selected':''}>${t}</option>`).join('')}
+        </select>
+        <span class="filter-label" style="margin-left:8px">Chart style</span>
+        <select class="filter-select" onchange="REPORT_CHART_STYLE=this.value;renderPage('reports')">
+          <option value="bar" ${REPORT_CHART_STYLE==='bar'?'selected':''}>Bar</option>
+          <option value="line" ${REPORT_CHART_STYLE==='line'?'selected':''}>Line</option>
+          <option value="filled" ${REPORT_CHART_STYLE==='filled'?'selected':''}>Filled</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        ${REPORT_SECTIONS.volume?`<div class="card"><div class="card-title">Ticket volume</div><div id="vol-chart" class="report-chart"></div></div>`:''}
+        ${REPORT_SECTIONS.csat?`<div class="card"><div class="card-title">CSAT breakdown</div><div id="csat-chart"></div></div>`:''}
+        ${REPORT_SECTIONS.categories?`<div class="card"><div class="card-title">By category</div>${[...new Set(filteredTickets.map(t=>t.category))].map(cat=>{const n=filteredTickets.filter(t=>t.category===cat).length;const pct=Math.round((n/(filteredTickets.length||1))*100);return `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span>${cat}</span><span style="font-family:'DM Mono',monospace;font-weight:500">${n}</span></div><div style="height:4px;background:var(--rule);border-radius:2px"><div style="height:4px;background:var(--ink);border-radius:2px;width:${pct}%"></div></div></div>`;}).join('')}</div>`:''}
+        ${REPORT_SECTIONS.agents?`<div class="card"><div class="card-title">Agent performance</div>${AGENTS.map(a=>{const n=filteredTickets.filter(t=>t.agent===a).length;return `<div class="ts-row"><span class="ts-key">${a}</span><span class="ts-val">${n} tickets</span></div>`;}).join('')}</div>`:''}
+        ${REPORT_SECTIONS.sla?`<div class="card"><div class="card-title">SLA compliance</div>${['ok','warn','breach'].map(s=>{const n=filteredTickets.filter(t=>t.sla===s).length;const pct=Math.round((n/(filteredTickets.length||1))*100);return `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span class="sla-${s}" style="text-transform:uppercase;font-family:'DM Mono',monospace;font-size:9px;font-weight:500">${s}</span><span style="font-family:'DM Mono',monospace;font-weight:500">${n}</span></div><div style="height:4px;background:var(--rule);border-radius:2px"><div style="height:4px;background:${s==='ok'?'var(--green)':s==='warn'?'var(--amber)':'var(--red)'};border-radius:2px;width:${pct}%"></div></div></div>`;}).join('')}</div>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function showReportCustomise() {
+  showModal('Customise report', `
+    <div class="form-label" style="margin-bottom:8px">Chart sections</div>
+    ${Object.keys(REPORT_SECTIONS).map(s=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:12px;text-transform:capitalize">${s}</span>
+        <label class="toggle"><input type="checkbox" ${REPORT_SECTIONS[s]?'checked':''} onchange="REPORT_SECTIONS['${s}']=this.checked"><span class="toggle-slider"></span></label>
+      </div>`).join('')}
+  `, ()=>{ renderPage('reports'); closeModal(); }, 'Apply');
+}
+
+// ─── AI Intelligence enhancements ─────────────────────────────────────────────
+let AI_SOURCES = {tickets:true,customers:true,kpis:true,workflows:true};
+let AI_PINNED = [];
+
+function renderAI() {
+  const prompts = ['What are the most common ticket categories?','Summarise open escalations','Which agent has the most open tickets?','GDPR compliance status this month','Suggest workflow improvements'];
+  const sourceChips = Object.keys(AI_SOURCES).map(s=>`
+    <span class="source-chip ${AI_SOURCES[s]?'on':''}" onclick="toggleAISource('${s}')">${s}</span>`).join('');
+
+  return `<div class="page">
+    <div class="topbar">
+      <div class="tb-title">AI Intelligence</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span class="filter-label">Context</span>${sourceChips}
+      </div>
+    </div>
+    ${AI_PINNED.length?`<div style="padding:10px 20px;border-bottom:1px solid var(--rule);flex-shrink:0;background:var(--amber-lt)">
+      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);margin-bottom:6px">Pinned responses</div>
+      ${AI_PINNED.map((p,i)=>`<div class="pinned-response">${p}<span style="cursor:pointer;float:right;color:var(--ink3)" onclick="AI_PINNED.splice(${i},1);renderPage('ai')">×</span></div>`).join('')}
+    </div>`:''}
+    <div class="ai-chat" id="ai-chat">
+      <div class="ai-msg ai-msg-ai">
+        <div class="ai-msg-from">AI · Service Desk</div>
+        Hello ${SESSION?.name?.split(' ')[0]}. I have context on ${AI_SOURCES.tickets?TICKETS.length+' tickets':'—'}, ${AI_SOURCES.customers?CUSTOMERS.length+' customers':'—'}${AI_SOURCES.kpis?', and current KPIs':''}.
+      </div>
+      ${AI_MESSAGES.map((m,i)=>`
+        <div class="ai-msg ${m.role==='user'?'ai-msg-user':'ai-msg-ai'}">
+          <div class="ai-msg-from" style="display:flex;align-items:center;justify-content:space-between">
+            <span>${m.role==='user'?SESSION?.name:'AI · Service Desk'}</span>
+            ${m.role==='ai'?`<span style="display:flex;gap:6px">
+              <span style="cursor:pointer;font-size:9px;color:var(--ink3);letter-spacing:.04em" onclick="AI_PINNED.push(AI_MESSAGES[${i}].text);renderPage('ai')" title="Pin">📌</span>
+              <span style="cursor:pointer;font-size:9px;color:var(--ink3);letter-spacing:.04em" onclick="exportAIResponse(${i})" title="Export">↓</span>
+            </span>`:''}
+          </div>
+          ${m.text}
+        </div>`).join('')}
+    </div>
+    <div class="prompt-cards">
+      ${prompts.map(p=>`<div class="prompt-card" onclick="sendAIPrompt('${p.replace(/'/g,"\\'")}')">${p}</div>`).join('')}
+    </div>
+    <div class="ai-input-row">
+      <input class="form-input" id="ai-input" placeholder="Ask about tickets, customers, performance…" style="flex:1" onkeydown="if(event.key==='Enter')sendAIPrompt()"/>
+      <button class="btn btn-solid" onclick="sendAIPrompt()">Send</button>
+    </div>
+  </div>`;
+}
+
+function toggleAISource(s) {
+  AI_SOURCES[s] = !AI_SOURCES[s];
+  renderPage('ai');
+}
+
+function exportAIResponse(idx) {
+  const text = AI_MESSAGES[idx]?.text;
+  if(!text) return;
+  const blob = new Blob([text], {type:'text/plain'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ai-response-${idx+1}.txt`; a.click();
+}
+
+// ─── Custom fields manager ─────────────────────────────────────────────────────
+function showManageFieldsModal() {
+  const renderFields = () => `
+    ${CUSTOM_FIELDS.map((f,i)=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--rule)">
+        <span style="flex:1;font-size:12px;font-weight:500;color:var(--ink)">${f.label}</span>
+        <span class="tag tag-neutral">${f.type}</span>
+        <span style="cursor:pointer;color:var(--red);font-size:11px" onclick="removeCustomField(${i})">Remove</span>
+      </div>`).join('')}
+    <div style="margin-top:12px;display:grid;grid-template-columns:1fr auto auto;gap:6px">
+      <input class="form-input" id="cf-label" placeholder="Field label"/>
+      <select class="form-input" id="cf-type"><option value="text">Text</option><option value="number">Number</option><option value="date">Date</option><option value="url">URL</option></select>
+      <button class="btn btn-sm btn-solid" onclick="addCustomField()">Add</button>
+    </div>`;
+
+  showModal('Manage custom fields', `<div id="cf-body">${renderFields()}</div>`, null, null);
+}
+
+function addCustomField() {
+  const label = document.getElementById('cf-label')?.value.trim();
+  const type = document.getElementById('cf-type')?.value;
+  if(!label) return;
+  CUSTOM_FIELDS.push({id:'cf'+Date.now(),label,type});
+  const el = document.getElementById('cf-body');
+  if(el) el.innerHTML = renderFieldsList();
+  document.getElementById('cf-label').value='';
+}
+
+function renderFieldsList() {
+  return `${CUSTOM_FIELDS.map((f,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--rule)">
+      <span style="flex:1;font-size:12px;font-weight:500;color:var(--ink)">${f.label}</span>
+      <span class="tag tag-neutral">${f.type}</span>
+      <span style="cursor:pointer;color:var(--red);font-size:11px" onclick="removeCustomField(${i})">Remove</span>
+    </div>`).join('')}
+  <div style="margin-top:12px;display:grid;grid-template-columns:1fr auto auto;gap:6px">
+    <input class="form-input" id="cf-label" placeholder="Field label"/>
+    <select class="form-input" id="cf-type"><option value="text">Text</option><option value="number">Number</option><option value="date">Date</option><option value="url">URL</option></select>
+    <button class="btn btn-sm btn-solid" onclick="addCustomField()">Add</button>
+  </div>`;
+}
+
+function removeCustomField(i) {
+  CUSTOM_FIELDS.splice(i,1);
+  const el = document.getElementById('cf-body');
+  if(el) el.innerHTML = renderFieldsList();
+}
+
+// ─── Enhanced composer with macros/redact/attach ────────────────────────────
+// Patch openTicket to add macro/redact/attach buttons and multi-tag filter
+const _origOpenTicket = openTicket;
+function openTicket(id) {
+  _origOpenTicket(id);
+  // Inject extra composer action buttons after render
+  setTimeout(()=>{
+    const foot = document.querySelector('.composer-foot .composer-actions');
+    if(foot && !foot.querySelector('.macro-btn')) {
+      const extras = document.createElement('span');
+      extras.style.display='flex'; extras.style.gap='5px';
+      extras.innerHTML=`
+        <button class="btn btn-sm macro-btn" onclick="showMacroPanel('${id}')">Macros</button>
+        <button class="btn btn-sm" onclick="showAttachPanel('${id}')">Attach</button>
+        <button class="btn btn-sm btn-danger" onclick="showGDPRModal('${id}')">GDPR</button>
+        <button class="btn btn-sm" onclick="redactTicketData('${id}')">Redact</button>`;
+      foot.appendChild(extras);
+    }
+  }, 0);
+}
+
+// ─── Customer page: Manage Fields button ──────────────────────────────────────
+const _origRenderCustomers = renderCustomers;
+function renderCustomers() {
+  let html = _origRenderCustomers();
+  return html.replace('CSV Import', 'Manage Fields</button><button class="btn btn-sm" onclick="showCSVModal()">CSV Import');
+}
+
+// Fix Manage Fields button injection
+document.addEventListener('click', e => {
+  if(e.target.textContent==='Manage Fields') showManageFieldsModal();
+});
+
+// ─── Modal helpers ─────────────────────────────────────────────────────────────
 function showModal(title, body, onConfirm, confirmLabel='Save', isLarge=false) {
   document.getElementById('modal-container').innerHTML = `
     <div class="modal-bg" onclick="closeModal()">
