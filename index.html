@@ -8,902 +8,1265 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Archivo:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; overflow: hidden; }
-
-:root {
-  --white:   #ffffff;
-  --off:     #fafafa;
-  --rule:    #e8e8e8;
-  --rule2:   #d0d0d0;
-  --ink:     #111111;
-  --ink2:    #555555;
-  --ink3:    #999999;
-  --ink4:    #cccccc;
-  --accent:  #111111;
-  --red:     #cc2200;
-  --green:   #007744;
-  --amber:   #996600;
-  --blue:    #0044cc;
-  --r:       2px;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+:root{
+  --w:#ffffff;--off:#f9f9f9;--off2:#f4f4f4;
+  --rule:#e6e6e6;--rule2:#d0d0d0;--rule3:#bbb;
+  --ink:#111;--ink2:#555;--ink3:#888;--ink4:#bbb;
+  --red:#cc2200;--red-lt:#fff5f3;
+  --green:#007744;--green-lt:#f0f9f4;
+  --blue:#0044cc;--blue-lt:#f0f4ff;
+  --amber:#996600;--amber-lt:#fffbf0;
+  --purple:#6600cc;--purple-lt:#f8f0ff;
+  --r:2px;--r2:4px;
 }
-
-body {
-  font-family: 'Archivo', sans-serif;
-  background: var(--white);
-  color: var(--ink);
-  font-size: 12.5px;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ── Grid ── */
-.app { display: flex; height: 100vh; }
-
+body{font-family:'Archivo',sans-serif;background:var(--w);color:var(--ink);font-size:12.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+/* ── Scrollbars ── */
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--rule2)}
+/* ── App shell ── */
+.app{display:flex;height:100vh}
 /* ── Sidebar ── */
-.sidebar {
-  width: 200px;
-  min-width: 200px;
-  border-right: 1px solid var(--rule);
-  display: flex;
-  flex-direction: column;
-  background: var(--white);
-}
-
-.logo {
-  padding: 20px 20px 18px;
-  border-bottom: 1px solid var(--rule);
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-.logo-word {
-  font-family: 'Archivo', sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
-.logo-sub {
-  font-family: 'DM Mono', monospace;
-  font-size: 9px;
-  font-weight: 300;
-  letter-spacing: 0.08em;
-  color: var(--ink3);
-  text-transform: uppercase;
-}
-
-.nav { flex: 1; padding: 16px 0 0; }
-.nav-group { margin-bottom: 20px; }
-.nav-heading {
-  padding: 0 20px 6px;
-  font-family: 'DM Mono', monospace;
-  font-size: 9px;
-  font-weight: 400;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink4);
-}
-.nav-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 7px 20px;
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--ink2);
-  cursor: pointer;
-  transition: color 0.1s;
-  border-left: 1px solid transparent;
-  margin-left: -1px;
-}
-.nav-item:hover { color: var(--ink); }
-.nav-item.active {
-  color: var(--ink);
-  font-weight: 500;
-  border-left-color: var(--ink);
-  background: var(--off);
-}
-.nav-n {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  font-weight: 300;
-  color: var(--ink3);
-}
-.nav-item.active .nav-n { color: var(--ink); font-weight: 500; }
-
-.sidebar-foot {
-  padding: 14px 20px;
-  border-top: 1px solid var(--rule);
-}
-.agent-line {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.agent-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--green);
-  flex-shrink: 0;
-}
-.agent-name {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--ink);
-}
-.agent-role {
-  font-family: 'DM Mono', monospace;
-  font-size: 9px;
-  color: var(--ink3);
-  margin-top: 1px;
-  letter-spacing: 0.04em;
-}
-
+.sidebar{width:196px;min-width:196px;border-right:1px solid var(--rule);display:flex;flex-direction:column;background:var(--w);flex-shrink:0}
+.sb-logo{padding:18px 18px 14px;border-bottom:1px solid var(--rule)}
+.sb-word{font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink)}
+.sb-sub{font-family:'DM Mono',monospace;font-size:9px;font-weight:300;letter-spacing:.08em;color:var(--ink4);text-transform:uppercase;margin-top:2px}
+.sb-user{padding:10px 18px;border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:8px}
+.sb-av{width:24px;height:24px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:var(--w);flex-shrink:0}
+.sb-uname{font-size:11px;font-weight:500;color:var(--ink)}
+.sb-urole{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:.04em}
+.sb-nav{flex:1;overflow-y:auto;padding:10px 0}
+.sb-section{margin-bottom:16px}
+.sb-heading{padding:0 18px 5px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink4)}
+.sb-item{display:flex;align-items:center;justify-content:space-between;padding:7px 18px;font-size:12px;color:var(--ink2);cursor:pointer;border-left:2px solid transparent;transition:all .1s;gap:6px}
+.sb-item:hover{color:var(--ink);background:var(--off)}
+.sb-item.active{color:var(--ink);font-weight:500;border-left-color:var(--ink);background:var(--off)}
+.sb-icon{width:13px;height:13px;flex-shrink:0;opacity:.6}
+.sb-item.active .sb-icon{opacity:1}
+.sb-lbl{flex:1}
+.sb-n{font-family:'DM Mono',monospace;font-size:10px;font-weight:300;color:var(--ink3)}
+.sb-item.active .sb-n{color:var(--ink);font-weight:500}
+.sb-foot{padding:12px 18px;border-top:1px solid var(--rule);display:flex;align-items:center;gap:7px;cursor:pointer}
+.sb-foot:hover{background:var(--off)}
+.online-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
 /* ── Main ── */
-.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 /* ── Topbar ── */
-.topbar {
-  height: 48px;
-  border-bottom: 1px solid var(--rule);
-  display: flex;
-  align-items: center;
-  padding: 0 20px;
-  gap: 12px;
-  flex-shrink: 0;
-  background: var(--white);
-}
-.topbar-title {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink);
-  flex: 1;
-}
-.btn {
-  padding: 5px 12px;
-  font-size: 11px;
-  font-weight: 500;
-  font-family: 'Archivo', sans-serif;
-  letter-spacing: 0.04em;
-  border: 1px solid var(--rule2);
-  border-radius: var(--r);
-  background: var(--white);
-  color: var(--ink2);
-  cursor: pointer;
-  transition: all 0.1s;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  white-space: nowrap;
-}
-.btn:hover { border-color: var(--ink); color: var(--ink); }
-.btn-solid {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--white);
-}
-.btn-solid:hover { background: #333; border-color: #333; color: var(--white); }
-.btn:disabled { opacity: 0.35; cursor: not-allowed; }
-
-/* ── Stats ── */
-.stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  border-bottom: 1px solid var(--rule);
-  flex-shrink: 0;
-}
-.stat {
-  padding: 14px 20px;
-  border-right: 1px solid var(--rule);
-}
-.stat:last-child { border-right: none; }
-.stat-n {
-  font-family: 'DM Mono', monospace;
-  font-size: 22px;
-  font-weight: 300;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  line-height: 1;
-}
-.stat-n.is-red   { color: var(--red); }
-.stat-n.is-green { color: var(--green); }
-.stat-n.is-amber { color: var(--amber); }
-.stat-n.is-blue  { color: var(--blue); }
-.stat-l {
-  font-family: 'DM Mono', monospace;
-  font-size: 9px;
-  font-weight: 300;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink3);
-  margin-top: 4px;
-}
-
-/* ── Content ── */
-.content { flex: 1; display: flex; overflow: hidden; }
-
-/* ── List ── */
-.list-col {
-  width: 280px;
-  min-width: 280px;
-  border-right: 1px solid var(--rule);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.list-filters {
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--rule);
-  display: flex;
-  gap: 2px;
-  flex-wrap: wrap;
-}
-.fpill {
-  padding: 3px 9px;
-  font-size: 10px;
-  font-weight: 400;
-  letter-spacing: 0.04em;
-  border: 1px solid transparent;
-  cursor: pointer;
-  background: transparent;
-  color: var(--ink3);
-  font-family: 'Archivo', sans-serif;
-  transition: all 0.1s;
-  border-radius: var(--r);
-}
-.fpill:hover { color: var(--ink); border-color: var(--rule2); }
-.fpill.on { border-color: var(--ink); color: var(--ink); background: var(--off); }
-
-.list-scroll { flex: 1; overflow-y: auto; }
-.list-scroll::-webkit-scrollbar { width: 3px; }
-.list-scroll::-webkit-scrollbar-thumb { background: var(--rule2); }
-
-.trow {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--rule);
-  cursor: pointer;
-  transition: background 0.08s;
-  border-left: 2px solid transparent;
-}
-.trow:hover { background: var(--off); }
-.trow.on { background: var(--off); border-left-color: var(--ink); }
-.trow.urg { border-left-color: var(--red); }
-.trow.urg.on { border-left-color: var(--red); }
-
-.trow-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 5px;
-}
-.trow-subj {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--ink);
-  line-height: 1.4;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-.trow-age {
-  font-family: 'DM Mono', monospace;
-  font-size: 9px;
-  font-weight: 300;
-  color: var(--ink3);
-  white-space: nowrap;
-  padding-top: 2px;
-}
-.trow-foot {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  flex-wrap: wrap;
-}
-
-.tag {
-  font-family: 'DM Mono', monospace;
-  font-size: 9px;
-  font-weight: 400;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  padding: 1px 5px;
-  border-radius: 1px;
-}
-.tag-open     { border: 1px solid #0044cc44; color: var(--blue); background: #0044cc08; }
-.tag-urgent   { border: 1px solid #cc220044; color: var(--red);  background: #cc220008; }
-.tag-pending  { border: 1px solid #99660044; color: var(--amber);background: #99660008; }
-.tag-resolved { border: 1px solid #00774444; color: var(--green);background: #00774408; }
-.tag-ch       { border: 1px solid var(--rule); color: var(--ink3); background: transparent; }
-
-/* ── Detail ── */
-.detail-col {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.detail-head {
-  padding: 16px 20px 12px;
-  border-bottom: 1px solid var(--rule);
-  flex-shrink: 0;
-}
-.detail-subj {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink);
-  line-height: 1.35;
-  margin-bottom: 8px;
-  letter-spacing: -0.01em;
-}
-.detail-meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.meta-sep {
-  width: 1px;
-  height: 10px;
-  background: var(--rule2);
-}
-.meta-txt {
-  font-family: 'DM Mono', monospace;
-  font-size: 9px;
-  font-weight: 300;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--ink3);
-}
-
-/* ── Thread ── */
-.thread {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-.thread::-webkit-scrollbar { width: 3px; }
-.thread::-webkit-scrollbar-thumb { background: var(--rule2); }
-
-.msg {
-  padding: 12px 14px;
-  font-size: 12.5px;
-  line-height: 1.7;
-  color: var(--ink2);
-  animation: up 0.15s ease;
-  border-left: 2px solid transparent;
-}
-@keyframes up { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
-
-.msg-customer {
-  background: var(--off);
-  border-left-color: var(--rule2);
-  align-self: flex-start;
-  max-width: 76%;
-  border-radius: 0 var(--r) var(--r) 0;
-}
-.msg-agent {
-  align-self: flex-end;
-  max-width: 76%;
-  background: var(--white);
-  border: 1px solid var(--rule);
-  border-left: 2px solid var(--ink);
-  border-radius: 0 var(--r) var(--r) 0;
-  color: var(--ink);
-}
-.msg-ai {
-  align-self: flex-end;
-  max-width: 76%;
-  background: var(--white);
-  border: 1px solid var(--rule);
-  border-left: 2px solid var(--green);
-  border-radius: 0 var(--r) var(--r) 0;
-  color: var(--ink);
-}
-
-.msg-from {
-  font-family: 'DM Mono', monospace;
-  font-size: 9px;
-  font-weight: 400;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--ink3);
-  margin-bottom: 4px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.msg-agent .msg-from { color: var(--ink); }
-.msg-ai .msg-from    { color: var(--green); }
-
-.ai-mark {
-  font-family: 'DM Mono', monospace;
-  font-size: 8px;
-  letter-spacing: 0.08em;
-  padding: 0 4px;
-  border: 1px solid var(--green);
-  color: var(--green);
-  border-radius: 1px;
-}
-
-/* ── Reply ── */
-.reply {
-  border-top: 1px solid var(--rule);
-  flex-shrink: 0;
-}
-.reply-tabs {
-  display: flex;
-  padding: 0 16px;
-  border-bottom: 1px solid var(--rule);
-}
-.rtab {
-  padding: 8px 10px;
-  font-family: 'DM Mono', monospace;
-  font-size: 9px;
-  font-weight: 400;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink3);
-  cursor: pointer;
-  border-bottom: 1px solid transparent;
-  margin-bottom: -1px;
-  transition: color 0.1s;
-}
-.rtab:hover { color: var(--ink2); }
-.rtab.on { color: var(--ink); border-bottom-color: var(--ink); }
-
-.reply-body { padding: 12px 16px 14px; }
-textarea.compose {
-  width: 100%;
-  font-family: 'Archivo', sans-serif;
-  font-size: 12.5px;
-  line-height: 1.6;
-  color: var(--ink);
-  background: var(--white);
-  border: 1px solid var(--rule);
-  border-radius: var(--r);
-  padding: 9px 12px;
-  resize: none;
-  outline: none;
-  height: 72px;
-  transition: border-color 0.1s;
-}
-textarea.compose:focus { border-color: var(--ink); }
-textarea.compose::placeholder {
-  color: var(--ink4);
-  font-weight: 300;
-}
-
-.reply-foot {
-  margin-top: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.reply-foot-l { display: flex; align-items: center; gap: 8px; }
-
-select.ssel {
-  font-family: 'DM Mono', monospace;
-  font-size: 9px;
-  font-weight: 400;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding: 5px 8px;
-  background: var(--white);
-  border: 1px solid var(--rule);
-  border-radius: var(--r);
-  color: var(--ink2);
-  cursor: pointer;
-  outline: none;
-  transition: border-color 0.1s;
-}
-select.ssel:focus { border-color: var(--ink); }
-
-.thinking {
-  font-family: 'DM Mono', monospace;
-  font-size: 9px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--green);
-  display: none;
-  align-items: center;
-  gap: 5px;
-}
-.thinking.show { display: flex; }
-.dot { display: inline-block; animation: blink 1.2s infinite; }
-.dot:nth-child(2) { animation-delay: .2s; }
-.dot:nth-child(3) { animation-delay: .4s; }
-@keyframes blink { 0%,80%,100%{opacity:.15} 40%{opacity:1} }
-
-/* ── Empty ── */
-.empty {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-.empty-rule {
-  width: 32px;
-  height: 1px;
-  background: var(--rule2);
-}
-.empty-txt {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink4);
-}
+.topbar{height:46px;border-bottom:1px solid var(--rule);display:flex;align-items:center;padding:0 20px;gap:10px;flex-shrink:0}
+.tb-title{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);flex:1}
+.tb-breadcrumb{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);flex:1;display:flex;align-items:center;gap:6px}
+.tb-breadcrumb span{cursor:pointer;color:var(--ink2)}
+.tb-breadcrumb span:hover{color:var(--ink);text-decoration:underline}
+.tb-sep{color:var(--ink4)}
+/* ── Buttons ── */
+.btn{padding:5px 12px;font-size:11px;font-weight:500;font-family:'Archivo',sans-serif;letter-spacing:.04em;border:1px solid var(--rule2);border-radius:var(--r);background:var(--w);color:var(--ink2);cursor:pointer;transition:all .1s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.btn:hover{border-color:var(--ink);color:var(--ink)}
+.btn-solid{background:var(--ink);border-color:var(--ink);color:var(--w)}
+.btn-solid:hover{background:#333;border-color:#333;color:var(--w)}
+.btn-sm{padding:3px 9px;font-size:10px}
+.btn-danger{border-color:var(--red);color:var(--red)}
+.btn-danger:hover{background:var(--red-lt)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+/* ── Page container ── */
+.page{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.page-scroll{flex:1;overflow-y:auto;padding:20px}
+/* ── Stats row ── */
+.kpi-bar{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--rule);flex-shrink:0}
+.kpi{padding:14px 20px;border-right:1px solid var(--rule)}
+.kpi:last-child{border-right:none}
+.kpi-n{font-family:'DM Mono',monospace;font-size:22px;font-weight:300;letter-spacing:-.02em;line-height:1}
+.kpi-n.c-blue{color:var(--blue)}.kpi-n.c-red{color:var(--red)}.kpi-n.c-green{color:var(--green)}.kpi-n.c-amber{color:var(--amber)}
+.kpi-l{font-family:'DM Mono',monospace;font-size:9px;font-weight:300;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-top:3px}
+/* ── Tags / Pills ── */
+.tag{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:1px;display:inline-flex;align-items:center;gap:3px}
+.tag-open{border:1px solid rgba(0,68,204,.3);color:var(--blue);background:var(--blue-lt)}
+.tag-pending{border:1px solid rgba(153,102,0,.3);color:var(--amber);background:var(--amber-lt)}
+.tag-escalated{border:1px solid rgba(102,0,204,.3);color:var(--purple);background:var(--purple-lt)}
+.tag-gdpr{border:1px solid rgba(204,34,0,.3);color:var(--red);background:var(--red-lt)}
+.tag-resolved{border:1px solid rgba(0,119,68,.3);color:var(--green);background:var(--green-lt)}
+.tag-urgent{border:1px solid rgba(204,34,0,.4);color:var(--red);background:var(--red-lt)}
+.tag-high{border:1px solid rgba(153,102,0,.3);color:var(--amber);background:var(--amber-lt)}
+.tag-normal{border:1px solid var(--rule);color:var(--ink3);background:var(--off)}
+.tag-low{border:1px solid var(--rule);color:var(--ink4);background:transparent}
+.tag-neutral{border:1px solid var(--rule);color:var(--ink3);background:transparent}
+/* ── Table ── */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-family:'DM Mono',monospace;font-size:9px;font-weight:400;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);padding:8px 12px;border-bottom:1px solid var(--rule);text-align:left;cursor:pointer;white-space:nowrap;user-select:none}
+.tbl th:hover{color:var(--ink)}
+.tbl td{padding:9px 12px;border-bottom:1px solid var(--rule);vertical-align:middle;font-size:12px;color:var(--ink2)}
+.tbl tr:hover td{background:var(--off)}
+.tbl tr.active td{background:var(--off2)}
+.tbl td.bold{font-weight:500;color:var(--ink)}
+/* ── Filter bar ── */
+.filter-bar{display:flex;align-items:center;gap:6px;padding:10px 20px;border-bottom:1px solid var(--rule);flex-wrap:wrap;flex-shrink:0}
+.filter-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+.filter-select{font-family:'DM Mono',monospace;font-size:10px;padding:4px 8px;border:1px solid var(--rule);border-radius:var(--r);background:var(--w);color:var(--ink2);cursor:pointer;outline:none}
+.filter-select:focus{border-color:var(--ink)}
+.filter-tag{font-family:'DM Mono',monospace;font-size:9px;padding:2px 7px;border:1px solid var(--rule2);border-radius:1px;display:inline-flex;align-items:center;gap:4px;color:var(--ink2);background:var(--off)}
+.filter-tag .rm{cursor:pointer;color:var(--ink3);font-size:11px;line-height:1}
+.filter-tag .rm:hover{color:var(--red)}
+/* ── Tab bar ── */
+.tab-bar{display:flex;border-bottom:1px solid var(--rule);padding:0 20px;flex-shrink:0}
+.tab{padding:9px 12px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .1s;white-space:nowrap}
+.tab:hover{color:var(--ink2)}
+.tab.active{color:var(--ink);border-bottom-color:var(--ink)}
+/* ── Modal ── */
+.modal-bg{position:absolute;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal{background:var(--w);border:1px solid var(--rule);border-radius:var(--r2);width:520px;max-width:90vw;max-height:80vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-lg{width:720px}
+.modal-head{padding:16px 20px;border-bottom:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-.01em}
+.modal-close{cursor:pointer;color:var(--ink3);font-size:18px;line-height:1;padding:2px 6px;border-radius:var(--r)}
+.modal-close:hover{color:var(--ink);background:var(--off)}
+.modal-body{padding:20px;overflow-y:auto;flex:1}
+.modal-foot{padding:12px 20px;border-top:1px solid var(--rule);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0}
+/* ── Form ── */
+.form-row{margin-bottom:14px}
+.form-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:5px;display:block}
+.form-input{width:100%;padding:8px 10px;border:1px solid var(--rule);border-radius:var(--r);font-family:'Archivo',sans-serif;font-size:12.5px;color:var(--ink);background:var(--w);outline:none;transition:border-color .1s}
+.form-input:focus{border-color:var(--ink)}
+.form-input::placeholder{color:var(--ink4)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+select.form-input{cursor:pointer}
+textarea.form-input{resize:vertical;min-height:72px}
+/* ── Cards ── */
+.card{background:var(--w);border:1px solid var(--rule);border-radius:var(--r2);padding:16px}
+.card-title{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);margin-bottom:12px}
+/* ── Auth screen ── */
+#auth-screen{position:fixed;inset:0;background:var(--w);display:flex;align-items:center;justify-content:center;z-index:200}
+.auth-box{width:360px}
+.auth-logo{margin-bottom:28px}
+.auth-logo .sb-word{font-size:14px}
+.auth-title{font-size:20px;font-weight:600;letter-spacing:-.02em;color:var(--ink);margin-bottom:4px}
+.auth-sub{font-size:12px;color:var(--ink3);margin-bottom:24px}
+.auth-accounts{margin-top:20px;border-top:1px solid var(--rule);padding-top:16px}
+.auth-account{padding:8px 12px;border:1px solid var(--rule);border-radius:var(--r);cursor:pointer;margin-bottom:6px;transition:all .1s;display:flex;align-items:center;gap:10px}
+.auth-account:hover{border-color:var(--ink);background:var(--off)}
+.auth-account-av{width:28px;height:28px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--w)}
+.auth-account-name{font-size:12px;font-weight:500;color:var(--ink)}
+.auth-account-role{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:.04em}
+/* ── Dashboard ── */
+.dash-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:16px}
+.chart-bar-wrap{display:flex;align-items:flex-end;gap:6px;height:80px;margin-top:8px}
+.chart-bar-col{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.chart-bar{width:100%;background:var(--ink);border-radius:1px 1px 0 0;transition:height .3s}
+.chart-bar-lbl{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink3)}
+.donut-wrap{display:flex;align-items:center;gap:16px;margin-top:8px}
+.donut-legend{flex:1}
+.donut-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:11px}
+.donut-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+/* ── Ticket detail ── */
+.ticket-layout{flex:1;display:flex;overflow:hidden}
+.ticket-main{flex:1;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--rule)}
+.ticket-sidebar{width:240px;min-width:240px;overflow-y:auto;padding:16px}
+.thread{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:2px}
+.msg{padding:11px 14px;font-size:12.5px;line-height:1.7;max-width:78%}
+.msg-customer{background:var(--off);border-left:2px solid var(--rule2);color:var(--ink2)}
+.msg-agent{background:var(--w);border:1px solid var(--rule);border-left:2px solid var(--ink);align-self:flex-end;color:var(--ink)}
+.msg-ai{background:var(--w);border:1px solid var(--rule);border-left:2px solid var(--green);align-self:flex-end;color:var(--ink)}
+.msg-note{background:var(--amber-lt);border-left:2px solid var(--amber);color:var(--amber)}
+.msg-from{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px;display:flex;align-items:center;gap:5px}
+.msg-agent .msg-from{color:var(--ink2)}.msg-ai .msg-from{color:var(--green)}.msg-note .msg-from{color:var(--amber)}
+.ai-mark{font-size:8px;padding:0 4px;border:1px solid var(--green);color:var(--green);border-radius:1px}
+.note-mark{font-size:8px;padding:0 4px;border:1px solid var(--amber);color:var(--amber);border-radius:1px}
+/* ── Composer ── */
+.composer{border-top:1px solid var(--rule);flex-shrink:0}
+.composer-tabs{display:flex;padding:0 16px;border-bottom:1px solid var(--rule)}
+.ctab{padding:7px 10px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.ctab.active{color:var(--ink);border-bottom-color:var(--ink)}
+.composer-body{padding:10px 16px 12px}
+.compose-area{width:100%;font-family:'Archivo',sans-serif;font-size:12.5px;line-height:1.6;color:var(--ink);background:var(--off);border:1px solid var(--rule);border-radius:var(--r);padding:9px 12px;resize:none;outline:none;height:72px}
+.compose-area:focus{border-color:var(--ink);background:var(--w)}
+.composer-foot{margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.composer-actions{display:flex;gap:6px;align-items:center}
+.thinking{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--green);display:none;align-items:center;gap:4px}
+.thinking.show{display:flex}
+.dot{display:inline-block;animation:blink 1.2s infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.15}40%{opacity:1}}
+/* ── Ticket sidebar ── */
+.ts-section{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--rule)}
+.ts-section:last-child{border-bottom:none}
+.ts-heading{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px}
+.ts-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:11.5px}
+.ts-key{color:var(--ink3)}
+.ts-val{font-weight:500;color:var(--ink);font-size:11px}
+.ts-select{font-family:'DM Mono',monospace;font-size:10px;padding:3px 6px;border:1px solid var(--rule);border-radius:var(--r);background:var(--w);color:var(--ink2);outline:none;width:100%;margin-bottom:6px}
+.csat-ring-wrap{display:flex;align-items:center;gap:10px;margin-top:6px}
+.csat-ring{position:relative;width:44px;height:44px;flex-shrink:0}
+.csat-ring svg{transform:rotate(-90deg)}
+.csat-inner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:11px;font-weight:500}
+.other-ticket{padding:6px 0;border-bottom:1px solid var(--rule);cursor:pointer;font-size:11px}
+.other-ticket:last-child{border-bottom:none}
+.other-ticket:hover{color:var(--ink)}
+.other-ticket-subj{color:var(--ink2);line-height:1.3;margin-bottom:3px}
+/* ── Customer page ── */
+.cust-profile{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.vip-badge{display:inline-flex;align-items:center;gap:4px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:1px}
+.vip-bronze{border:1px solid #cd7f32;color:#8b4513;background:#fff8f0}
+.vip-silver{border:1px solid #9999aa;color:#555566;background:#f8f8fc}
+.vip-gold{border:1px solid #ccaa00;color:#664400;background:#fffbf0}
+.vip-platinum{border:1px solid #6688aa;color:#334455;background:#f0f4f8}
+/* ── Reports ── */
+.report-chart{height:120px;display:flex;align-items:flex-end;gap:4px;border-bottom:1px solid var(--rule);padding-bottom:4px;margin-top:8px}
+.r-bar{flex:1;background:var(--ink);border-radius:1px 1px 0 0;opacity:.8;min-height:2px}
+.r-bar.accent{background:var(--blue);opacity:1}
+/* ── AI page ── */
+.ai-chat{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px}
+.ai-msg{padding:12px 14px;font-size:12.5px;line-height:1.7;max-width:80%}
+.ai-msg-user{background:var(--off);border-left:2px solid var(--rule2);align-self:flex-start}
+.ai-msg-ai{background:var(--green-lt);border-left:2px solid var(--green);align-self:flex-end;color:var(--ink)}
+.ai-msg-from{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px}
+.ai-msg-ai .ai-msg-from{color:var(--green)}
+.prompt-cards{display:flex;gap:8px;flex-wrap:wrap;padding:0 20px 12px;flex-shrink:0}
+.prompt-card{padding:8px 12px;border:1px solid var(--rule);border-radius:var(--r2);cursor:pointer;font-size:11px;color:var(--ink2);background:var(--w);transition:all .1s;max-width:200px}
+.prompt-card:hover{border-color:var(--ink);color:var(--ink);background:var(--off)}
+.ai-input-row{padding:12px 20px;border-top:1px solid var(--rule);display:flex;gap:8px;flex-shrink:0}
+/* ── CSAT stars ── */
+.stars{display:flex;gap:2px}
+.star{color:var(--amber);font-size:12px}
+.star.empty{color:var(--rule2)}
+/* ── AI tag chip ── */
+.ai-tag-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border:1px solid var(--rule);border-radius:1px;font-size:10px;background:var(--off);cursor:pointer;transition:all .1s}
+.ai-tag-chip:hover{border-color:var(--green);background:var(--green-lt)}
+.ai-tag-chip .conf{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink3)}
+.ai-tag-chip.accepted{border-color:var(--green);background:var(--green-lt);color:var(--green)}
+/* ── Misc ── */
+.sep{height:1px;background:var(--rule);margin:12px 0}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;gap:8px;color:var(--ink3)}
+.empty-line{width:32px;height:1px;background:var(--rule2)}
+.empty-txt{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.sla-ok{color:var(--green)}.sla-warn{color:var(--amber)}.sla-breach{color:var(--red)}
+.link{color:var(--blue);cursor:pointer;text-decoration:underline}
+.link:hover{color:var(--ink)}
 </style>
 </head>
 <body>
-<div class="app">
 
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="logo">
-      <div class="logo-word">Service Desk</div>
-      <div class="logo-sub">AI — Assisted</div>
-    </div>
-
-    <nav class="nav">
-      <div class="nav-group">
-        <div class="nav-heading">Queue</div>
-        <div class="nav-item active" onclick="setView('all',this)">
-          All tickets <span class="nav-n" id="nc-all">6</span>
-        </div>
-        <div class="nav-item" onclick="setView('open',this)">
-          Open <span class="nav-n" id="nc-open">2</span>
-        </div>
-        <div class="nav-item" onclick="setView('urgent',this)">
-          Urgent <span class="nav-n" id="nc-urgent">1</span>
-        </div>
-        <div class="nav-item" onclick="setView('resolved',this)">
-          Resolved <span class="nav-n" id="nc-resolved">2</span>
-        </div>
+<!-- Auth Screen -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo"><div class="sb-word">Service Desk</div><div class="sb-sub">AI — Assisted · B2B Support Platform</div></div>
+    <div class="auth-title">Sign in</div>
+    <div class="auth-sub">Select a demo account to continue</div>
+    <div class="auth-accounts">
+      <div class="auth-account" onclick="login('Admin','Emma Clarke','EC')">
+        <div class="auth-account-av">EC</div>
+        <div><div class="auth-account-name">Emma Clarke</div><div class="auth-account-role">Admin · Full access</div></div>
       </div>
-      <div class="nav-group">
-        <div class="nav-heading">Assist</div>
-        <div class="nav-item" onclick="aiTriage()">Auto-triage</div>
-        <div class="nav-item" onclick="bulkReply()">Bulk AI reply</div>
+      <div class="auth-account" onclick="login('Senior Agent','James Webb','JW')">
+        <div class="auth-account-av">JW</div>
+        <div><div class="auth-account-name">James Webb</div><div class="auth-account-role">Senior Agent · Tickets + Customers</div></div>
       </div>
-    </nav>
-
-    <div class="sidebar-foot">
-      <div class="agent-line">
-        <div class="agent-dot"></div>
-        <div>
-          <div class="agent-name">Support Agent</div>
-          <div class="agent-role">Online · Agent</div>
-        </div>
+      <div class="auth-account" onclick="login('Read Only','Sofia Reyes','SR')">
+        <div class="auth-account-av">SR</div>
+        <div><div class="auth-account-name">Sofia Reyes</div><div class="auth-account-role">Read Only · View only</div></div>
       </div>
-    </div>
-  </aside>
-
-  <!-- Main -->
-  <div class="main">
-
-    <div class="topbar">
-      <div class="topbar-title" id="page-title">All tickets</div>
-      <div style="display:flex;gap:6px">
-        <button class="btn" onclick="addTicket()">+ New</button>
-        <button class="btn btn-solid" id="triage-btn" onclick="aiTriage()">AI Triage</button>
-      </div>
-    </div>
-
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-n is-blue" id="sv-open">2</div>
-        <div class="stat-l">Open</div>
-      </div>
-      <div class="stat">
-        <div class="stat-n is-red" id="sv-urgent">1</div>
-        <div class="stat-l">Urgent</div>
-      </div>
-      <div class="stat">
-        <div class="stat-n is-green" id="sv-resolved">2</div>
-        <div class="stat-l">Resolved</div>
-      </div>
-      <div class="stat">
-        <div class="stat-n is-amber" id="sv-ai">5</div>
-        <div class="stat-l">AI replies</div>
-      </div>
-    </div>
-
-    <div class="content">
-
-      <!-- List -->
-      <div class="list-col">
-        <div class="list-filters">
-          <button class="fpill on" onclick="filter('all',this)">All</button>
-          <button class="fpill" onclick="filter('open',this)">Open</button>
-          <button class="fpill" onclick="filter('urgent',this)">Urgent</button>
-          <button class="fpill" onclick="filter('pending',this)">Pending</button>
-          <button class="fpill" onclick="filter('resolved',this)">Resolved</button>
-        </div>
-        <div class="list-scroll" id="tlist"></div>
-      </div>
-
-      <!-- Detail -->
-      <div class="detail-col" id="detail">
-        <div class="empty">
-          <div class="empty-rule"></div>
-          <div class="empty-txt">Select a ticket</div>
-          <div class="empty-rule"></div>
-        </div>
-      </div>
-
     </div>
   </div>
 </div>
 
+<!-- Main App (hidden until login) -->
+<div class="app" id="app" style="display:none;position:relative">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-word">Service Desk</div>
+      <div class="sb-sub">AI — Assisted</div>
+    </div>
+    <div class="sb-user">
+      <div class="sb-av" id="sb-av">EC</div>
+      <div><div class="sb-uname" id="sb-uname">Emma Clarke</div><div class="sb-urole" id="sb-urole">Admin</div></div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-section">
+        <div class="sb-heading">Main</div>
+        <div class="sb-item active" onclick="nav('dashboard',this)">
+          <svg class="sb-icon" viewBox="0 0 13 13" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="7" y="1" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="1" y="7" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="7" y="7" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/></svg>
+          <span class="sb-lbl">Dashboard</span>
+        </div>
+        <div class="sb-item" onclick="nav('tickets',this)">
+          <svg class="sb-icon" viewBox="0 0 13 13" fill="none"><rect x="1" y="2" width="11" height="2.5" rx="1" stroke="currentColor" stroke-width="1.1"/><rect x="1" y="6" width="7" height="1.8" rx=".9" fill="currentColor" opacity=".5"/><rect x="1" y="9.5" width="5" height="1.8" rx=".9" fill="currentColor" opacity=".3"/></svg>
+          <span class="sb-lbl">Tickets</span>
+          <span class="sb-n" id="nb-open">4</span>
+        </div>
+        <div class="sb-item" onclick="nav('customers',this)">
+          <svg class="sb-icon" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M1.5 11.5c0-2.761 2.239-5 5-5s5 2.239 5 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          <span class="sb-lbl">Customers</span>
+        </div>
+        <div class="sb-item" onclick="nav('reports',this)">
+          <svg class="sb-icon" viewBox="0 0 13 13" fill="none"><rect x="1" y="7" width="2.5" height="5" rx=".5" fill="currentColor"/><rect x="5" y="4" width="2.5" height="8" rx=".5" fill="currentColor" opacity=".7"/><rect x="9" y="1" width="2.5" height="11" rx=".5" fill="currentColor" opacity=".4"/></svg>
+          <span class="sb-lbl">Reports</span>
+        </div>
+        <div class="sb-item" onclick="nav('ai',this)">
+          <svg class="sb-icon" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="2" fill="currentColor" opacity=".8"/><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1" opacity=".3"/><circle cx="6.5" cy="6.5" r="6" stroke="currentColor" stroke-width=".5" stroke-dasharray="1.5 1.5" opacity=".2"/></svg>
+          <span class="sb-lbl">AI Intelligence</span>
+        </div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-heading">Config</div>
+        <div class="sb-item" onclick="nav('workflows',this)">
+          <svg class="sb-icon" viewBox="0 0 13 13" fill="none"><path d="M1.5 6.5h3l2-4 2 8 2-4h1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="sb-lbl">Workflows</span>
+        </div>
+        <div class="sb-item" onclick="nav('tags',this)">
+          <svg class="sb-icon" viewBox="0 0 13 13" fill="none"><path d="M1.5 6.5L6.5 1.5h4v4L5.5 11.5l-4-4z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><circle cx="9" cy="4" r="1" fill="currentColor"/></svg>
+          <span class="sb-lbl">Tags</span>
+        </div>
+        <div class="sb-item" onclick="nav('roles',this)" id="nav-roles">
+          <svg class="sb-icon" viewBox="0 0 13 13" fill="none"><rect x="1" y="1" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M4 4h5M4 6.5h3M4 9h2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+          <span class="sb-lbl">Roles & Perms</span>
+        </div>
+      </div>
+    </nav>
+    <div class="sb-foot" onclick="logout()">
+      <div class="online-dot"></div>
+      <div><div class="sb-uname" style="font-size:11px" id="sf-name">Emma Clarke</div><div class="sb-urole">Sign out</div></div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main" id="main-area"></div>
+
+  <!-- Modal container -->
+  <div id="modal-container"></div>
+</div>
+
 <script>
-const DATA = [
-  { id:1, subject:"Payment not processing at checkout", customer:"Sarah Mitchell", initials:"SM",
-    status:"urgent", channel:"Email", age:"2m",
-    msgs:[
-      {from:"Sarah Mitchell",r:"customer",t:"Hi, I've been trying to checkout for the past hour but my payment keeps failing. I've tried two different cards. This is really frustrating as I need this order urgently."},
-      {from:"AI Agent",r:"ai",t:"Hi Sarah, I can see a temporary fraud-protection hold on transactions over £200 on your account. I've escalated this to our payments team for immediate review. In the meantime, could you try PayPal as an alternative? You should hear back within 30 minutes."}
-    ]},
-  { id:2, subject:"How do I export transaction history to CSV?", customer:"James Reed", initials:"JR",
-    status:"open", channel:"Live Chat", age:"14m",
-    msgs:[
-      {from:"James Reed",r:"customer",t:"I need to export all my transaction history to CSV for my accountant. I've looked through all the dashboard settings but can't find the export option anywhere."}
-    ]},
-  { id:3, subject:"Account locked after password reset", customer:"Nina Kowalski", initials:"NK",
-    status:"open", channel:"Email", age:"1h",
-    msgs:[
-      {from:"Nina Kowalski",r:"customer",t:"I reset my password using the link you sent, but now the system says my account is locked. I have a client presentation in 2 hours and really need access."},
-      {from:"Support Agent",r:"agent",t:"Hi Nina, the lockout triggers automatically after 3 failed attempts during the reset flow — I'm unlocking it now. Please try logging in again in 2 minutes."}
-    ]},
-  { id:4, subject:"Resend March 2025 invoice", customer:"Tom Brewer", initials:"TB",
-    status:"pending", channel:"Email", age:"3h",
-    msgs:[
-      {from:"Tom Brewer",r:"customer",t:"Hi there, could you resend the invoice for March 2025? I've accidentally deleted the email and need it for our quarterly accounts."}
-    ]},
-  { id:5, subject:"Feature request: bulk user import via CSV", customer:"Priya Sharma", initials:"PS",
-    status:"resolved", channel:"Portal", age:"1d",
-    msgs:[
-      {from:"Priya Sharma",r:"customer",t:"It would be really helpful to import users in bulk via CSV rather than one by one. We have 200+ users to migrate from our old system."},
-      {from:"AI Agent",r:"ai",t:"Thanks Priya — logged as high-priority. It's on the Q3 roadmap and you'll be notified when it ships. In the meantime, our team can do a one-off bulk import for you — shall I arrange that?"}
-    ]},
-  { id:6, subject:"iOS app very slow on iPhone 14", customer:"Carlos Diaz", initials:"CD",
-    status:"resolved", channel:"App", age:"2d",
-    msgs:[
-      {from:"Carlos Diaz",r:"customer",t:"The mobile app is unusably slow on my iPhone 14. The main dashboard takes 8+ seconds to load every time."},
-      {from:"AI Agent",r:"ai",t:"Hi Carlos, we patched a performance regression affecting iOS 17 devices earlier today — it's in v4.2.1. Could you update the app and let us know if load times improve?"}
-    ]}
+// ─── State ───────────────────────────────────────────────────────────────────
+let SESSION = null;
+let CURRENT_PAGE = 'dashboard';
+let CURRENT_TICKET = null;
+let FILTER_STATUS = 'all';
+let FILTER_CATEGORY = 'all';
+let FILTER_PRIORITY = 'all';
+let SORT_COL = 'id';
+let SORT_DIR = 1;
+let AI_THINKING = false;
+let REPORT_TF = '30d';
+let COMPOSE_TAB = 'reply';
+let CUST_TAB = 'all';
+let AI_MESSAGES = [];
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+const AGENTS = ['Emma Clarke','James Webb','Sofia Reyes','Priya Nair','Tom Bates'];
+
+const CUSTOMERS = [
+  {id:'M001',first:'Sarah',last:'Mitchell',username:'smitchell',email:'sarah.m@acme.com',mobile:'+44 7700 100001',brand:'Acme Corp',vip:'Gold',jurisdiction:'UK',consent:true,kyc:'Verified',since:'2023-01-15',bo:'https://backoffice.example.com/M001',custom:{}},
+  {id:'M002',first:'James',last:'Reed',username:'jreed',email:'james.r@globex.io',mobile:'+44 7700 100002',brand:'Globex',vip:'Silver',jurisdiction:'IE',consent:true,kyc:'Pending',since:'2022-11-03',bo:'https://backoffice.example.com/M002',custom:{}},
+  {id:'M003',first:'Nina',last:'Kowalski',username:'nina_k',email:'nina@initech.com',mobile:'+49 151 20000003',brand:'Initech',vip:'Platinum',jurisdiction:'DE',consent:false,kyc:'Verified',since:'2021-06-20',bo:'https://backoffice.example.com/M003',custom:{}},
+  {id:'M004',first:'Tom',last:'Brewer',username:'tbrewer',email:'tom@umbrella.co',mobile:'+44 7700 100004',brand:'Umbrella',vip:'Bronze',jurisdiction:'UK',consent:true,kyc:'Verified',since:'2023-08-11',bo:'https://backoffice.example.com/M004',custom:{}},
+  {id:'M005',first:'Priya',last:'Sharma',username:'psharma',email:'priya@nakatomi.jp',mobile:'+81 90 0000 0005',brand:'Nakatomi',vip:'Gold',jurisdiction:'JP',consent:true,kyc:'Verified',since:'2020-03-07',bo:'https://backoffice.example.com/M005',custom:{}},
+  {id:'M006',first:'Carlos',last:'Diaz',username:'cdiaz',email:'carlos@tyrell.com',mobile:'+1 415 000 0006',brand:'Tyrell',vip:'Silver',jurisdiction:'US',consent:true,kyc:'Pending',since:'2023-04-22',bo:'https://backoffice.example.com/M006',custom:{}},
 ];
 
-let activeId = null;
-let filterVal = 'all';
-let aiCount = 5;
+const TICKETS = [
+  {id:'TK-001',subject:'Payment not processing at checkout',customerId:'M001',status:'escalated',priority:'urgent',category:'Billing',agent:'Emma Clarke',created:'2025-04-16',updated:'2 min ago',sla:'breach',tags:['billing','payment'],aiTags:[{tag:'urgent-billing',conf:94,accepted:false},{tag:'checkout-issue',conf:87,accepted:false}],csat:null,
+    msgs:[
+      {from:'Sarah Mitchell',r:'customer',t:'Hi, I\'ve been trying to checkout for the past hour but my payment keeps failing. Tried two different cards. I need this order urgently.',ts:'09:12'},
+      {from:'AI Agent',r:'ai',t:'Hi Sarah, I can see a temporary fraud-protection hold on transactions over £200 on your account. I\'ve escalated this to our payments team for immediate review. In the meantime, could you try PayPal as an alternative? You should hear back within 30 minutes.',ts:'09:12'},
+      {from:'Sarah Mitchell',r:'customer',t:'PayPal doesn\'t work for me. This is really urgent, I have a deadline.',ts:'09:35'},
+    ]},
+  {id:'TK-002',subject:'Export transaction history to CSV',customerId:'M002',status:'open',priority:'normal',category:'Technical',agent:'James Webb',created:'2025-04-16',updated:'14 min ago',sla:'ok',tags:['export','data'],aiTags:[{tag:'data-export',conf:91,accepted:false}],csat:null,
+    msgs:[
+      {from:'James Reed',r:'customer',t:'I need to export all my transaction history to CSV for my accountant. Can\'t find the option anywhere in the dashboard settings.',ts:'09:00'},
+    ]},
+  {id:'TK-003',subject:'Account locked after password reset',customerId:'M003',status:'open',priority:'high',category:'Account',agent:'Emma Clarke',created:'2025-04-16',updated:'1h ago',sla:'warn',tags:['account','login'],aiTags:[{tag:'account-lock',conf:97,accepted:true}],csat:null,
+    msgs:[
+      {from:'Nina Kowalski',r:'customer',t:'I reset my password but now my account is locked. I have a client presentation in 2 hours and really need access.',ts:'08:15'},
+      {from:'James Webb',r:'agent',t:'Hi Nina, the lockout triggers automatically after 3 failed attempts during the reset flow — I\'m unlocking it now. Please try again in 2 minutes.',ts:'08:22'},
+    ]},
+  {id:'TK-004',subject:'Resend March 2025 invoice',customerId:'M004',status:'pending',priority:'normal',category:'Billing',agent:'Sofia Reyes',created:'2025-04-16',updated:'3h ago',sla:'ok',tags:['invoice','billing'],aiTags:[{tag:'invoice-request',conf:99,accepted:true}],csat:null,
+    msgs:[
+      {from:'Tom Brewer',r:'customer',t:'Could you resend the invoice for March 2025? I\'ve accidentally deleted the email and need it for our quarterly accounts.',ts:'07:00'},
+    ]},
+  {id:'TK-005',subject:'GDPR data erasure request',customerId:'M005',status:'gdpr',priority:'high',category:'GDPR',agent:'Emma Clarke',created:'2025-04-15',updated:'1d ago',sla:'warn',tags:['gdpr','erasure'],aiTags:[{tag:'gdpr-erasure',conf:100,accepted:true}],csat:null,
+    msgs:[
+      {from:'Priya Sharma',r:'customer',t:'I am formally requesting erasure of all my personal data under GDPR Article 17. Please confirm within the statutory timeframe.',ts:'14:00'},
+    ]},
+  {id:'TK-006',subject:'Bulk user import feature request',customerId:'M005',status:'resolved',priority:'low',category:'Feature',agent:'Tom Bates',created:'2025-04-14',updated:'2d ago',sla:'ok',tags:['feature-request'],aiTags:[{tag:'feature-request',conf:95,accepted:true}],csat:4,csatStars:4,
+    msgs:[
+      {from:'Priya Sharma',r:'customer',t:'It would be really helpful to import users in bulk via CSV rather than one by one. We have 200+ users to migrate.',ts:'11:00'},
+      {from:'AI Agent',r:'ai',t:'Thanks Priya — logged as high-priority. It\'s on the Q3 roadmap and you\'ll be notified when it ships.',ts:'11:01'},
+    ]},
+  {id:'TK-007',subject:'iOS app very slow on iPhone 14',customerId:'M006',status:'resolved',priority:'normal',category:'Technical',agent:'James Webb',created:'2025-04-14',updated:'2d ago',sla:'ok',tags:['mobile','performance'],aiTags:[{tag:'mobile-bug',conf:88,accepted:true}],csat:5,csatStars:5,
+    msgs:[
+      {from:'Carlos Diaz',r:'customer',t:'The mobile app is unusably slow on my iPhone 14. The dashboard takes 8+ seconds to load.',ts:'10:00'},
+      {from:'AI Agent',r:'ai',t:'Hi Carlos, we patched a performance regression affecting iOS 17 devices earlier today in v4.2.1. Could you update the app?',ts:'10:01'},
+    ]},
+];
 
-const filtered = () => filterVal === 'all' ? DATA : DATA.filter(t => t.status === filterVal);
+const CUSTOM_FIELDS = [
+  {id:'cf1',label:'Account Manager',type:'text'},
+  {id:'cf2',label:'Contract Value',type:'number'},
+  {id:'cf3',label:'Renewal Date',type:'date'},
+];
 
-function renderList() {
-  const el = document.getElementById('tlist');
-  const list = filtered();
-  if (!list.length) {
-    el.innerHTML = '<div style="padding:20px 16px;font-family:\'DM Mono\',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink4)">No tickets</div>';
-    return;
-  }
-  el.innerHTML = list.map(t => `
-    <div class="trow ${t.status==='urgent'?'urg':''} ${t.id===activeId?'on':''}" onclick="open_t(${t.id})">
-      <div class="trow-top">
-        <div class="trow-subj">${t.subject}</div>
-        <div class="trow-age">${t.age}</div>
-      </div>
-      <div class="trow-foot">
-        <span class="tag tag-${t.status}">${t.status}</span>
-        <span class="tag tag-ch">${t.channel}</span>
-        <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:.04em">${t.customer}</span>
-      </div>
-    </div>`).join('');
+const WORKFLOWS = [
+  {id:'WF-001',name:'Auto-escalate urgent billing',trigger:'Priority = Urgent AND Category = Billing',action:'Assign to Senior Agent + Notify Manager',status:'active'},
+  {id:'WF-002',name:'GDPR 72h SLA alert',trigger:'Category = GDPR AND Age > 72h',action:'Send alert to DPO + Flag ticket',status:'active'},
+  {id:'WF-003',name:'Auto-resolve after 7 days',trigger:'Status = Pending AND Last updated > 7d',action:'Set status = Resolved',status:'inactive'},
+  {id:'WF-004',name:'Send CSAT survey on resolve',trigger:'Status changed to Resolved',action:'Send satisfaction survey email',status:'active'},
+];
+
+const TAG_LIBRARY = [
+  {tag:'billing',count:12,type:'manual',conf:null},
+  {tag:'payment',count:8,type:'manual',conf:null},
+  {tag:'account-lock',count:5,type:'ai',conf:97},
+  {tag:'data-export',count:4,type:'ai',conf:91},
+  {tag:'gdpr-erasure',count:3,type:'ai',conf:100},
+  {tag:'invoice-request',count:7,type:'ai',conf:99},
+  {tag:'mobile-bug',count:6,type:'ai',conf:88},
+  {tag:'feature-request',count:9,type:'manual',conf:null},
+  {tag:'urgent-billing',count:2,type:'ai',conf:94},
+  {tag:'checkout-issue',count:3,type:'ai',conf:87},
+];
+
+const ROLES_MATRIX = {
+  'Admin':        {tickets:true,customers:true,reports:true,ai:true,workflows:true,tags:true,roles:true,gdpr:true},
+  'Senior Agent': {tickets:true,customers:true,reports:true,ai:true,workflows:false,tags:true,roles:false,gdpr:true},
+  'Read Only':    {tickets:false,customers:false,reports:true,ai:false,workflows:false,tags:false,roles:false,gdpr:false},
+};
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+function login(role, name, initials) {
+  SESSION = {role, name, initials};
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('sb-av').textContent = initials;
+  document.getElementById('sb-uname').textContent = name;
+  document.getElementById('sb-urole').textContent = role;
+  document.getElementById('sf-name').textContent = name;
+  if (role === 'Read Only') document.getElementById('nav-roles').style.opacity = '.3';
+  renderPage('dashboard');
+}
+function logout() {
+  SESSION = null;
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
 }
 
-function updateStats() {
-  document.getElementById('sv-open').textContent     = DATA.filter(t=>t.status==='open').length;
-  document.getElementById('sv-urgent').textContent   = DATA.filter(t=>t.status==='urgent').length;
-  document.getElementById('sv-resolved').textContent = DATA.filter(t=>t.status==='resolved').length;
-  document.getElementById('sv-ai').textContent       = aiCount;
-  document.getElementById('nc-all').textContent      = DATA.length;
-  document.getElementById('nc-open').textContent     = DATA.filter(t=>t.status==='open').length;
-  document.getElementById('nc-urgent').textContent   = DATA.filter(t=>t.status==='urgent').length;
-  document.getElementById('nc-resolved').textContent = DATA.filter(t=>t.status==='resolved').length;
+// ─── Navigation ───────────────────────────────────────────────────────────────
+function nav(page, el) {
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderPage(page);
+}
+function renderPage(page) {
+  CURRENT_PAGE = page;
+  CURRENT_TICKET = null;
+  const main = document.getElementById('main-area');
+  const pages = {
+    dashboard: renderDashboard,
+    tickets:   renderTickets,
+    customers: renderCustomers,
+    reports:   renderReports,
+    ai:        renderAI,
+    workflows: renderWorkflows,
+    tags:      renderTags,
+    roles:     renderRoles,
+  };
+  if (pages[page]) main.innerHTML = pages[page]();
+  if (page === 'ai') initAI();
+  if (page === 'reports') drawReportCharts();
+  updateNavBadges();
 }
 
-function open_t(id) {
-  activeId = id;
-  renderList();
-  const t = DATA.find(x => x.id === id);
-  document.getElementById('detail').innerHTML = `
-    <div class="detail-head">
-      <div class="detail-subj">${t.subject}</div>
-      <div class="detail-meta">
-        <span class="tag tag-${t.status}" id="dbadge-${id}">${t.status}</span>
-        <div class="meta-sep"></div>
-        <span class="meta-txt">${t.channel}</span>
-        <div class="meta-sep"></div>
-        <span class="meta-txt">${t.customer}</span>
-        <div class="meta-sep"></div>
-        <span class="meta-txt">${t.age} ago</span>
+function updateNavBadges() {
+  document.getElementById('nb-open').textContent = TICKETS.filter(t => t.status === 'open' || t.status === 'escalated').length;
+}
+
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+function renderDashboard() {
+  const open = TICKETS.filter(t => t.status === 'open').length;
+  const escalated = TICKETS.filter(t => t.status === 'escalated').length;
+  const resolved = TICKETS.filter(t => t.status === 'resolved');
+  const avgCSAT = resolved.filter(t => t.csat).reduce((a,t) => a + t.csat, 0) / (resolved.filter(t=>t.csat).length || 1);
+  const slaOk = TICKETS.filter(t => t.sla === 'ok').length;
+  const slaTotal = TICKETS.length;
+  const gdpr = TICKETS.filter(t => t.status === 'gdpr').length;
+
+  const cats = {};
+  TICKETS.forEach(t => { cats[t.category] = (cats[t.category]||0)+1; });
+  const catRows = Object.entries(cats).map(([k,v]) => `
+    <div class="ts-row"><span class="ts-key">${k}</span><span class="ts-val">${v}</span></div>`).join('');
+
+  const bars = [3,5,4,7,6,8,5].map((h,i) => {
+    const days = ['M','T','W','T','F','S','S'];
+    const pct = Math.round((h/8)*100);
+    return `<div class="chart-bar-col">
+      <div class="chart-bar" style="height:${pct}%;min-height:3px;background:${i===4?'var(--blue)':'var(--ink)'}"></div>
+      <div class="chart-bar-lbl">${days[i]}</div>
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="page">
+      <div class="topbar"><div class="tb-title">Dashboard</div>
+        <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:.06em;text-transform:uppercase">
+          ${new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}
+        </span>
       </div>
-    </div>
-    <div class="thread" id="thread-${id}">${renderMsgs(t.msgs)}</div>
-    <div class="reply">
-      <div class="reply-tabs">
-        <div class="rtab on">Reply</div>
-        <div class="rtab" style="opacity:.35">Note</div>
-        <div class="rtab" style="opacity:.35">Forward</div>
+      <div class="kpi-bar" style="grid-template-columns:repeat(5,1fr)">
+        <div class="kpi"><div class="kpi-n c-blue">${open}</div><div class="kpi-l">Open</div></div>
+        <div class="kpi"><div class="kpi-n c-red">${escalated}</div><div class="kpi-l">Escalated</div></div>
+        <div class="kpi"><div class="kpi-n c-green">${avgCSAT.toFixed(1)}</div><div class="kpi-l">Avg CSAT</div></div>
+        <div class="kpi"><div class="kpi-n">${Math.round((slaOk/slaTotal)*100)}%</div><div class="kpi-l">SLA Compliance</div></div>
+        <div class="kpi"><div class="kpi-n c-amber">${gdpr}</div><div class="kpi-l">Pending GDPR</div></div>
       </div>
-      <div class="reply-body">
-        <textarea class="compose" id="compose-${id}" placeholder="Write a reply, or use AI draft…"></textarea>
-        <div class="reply-foot">
-          <div class="reply-foot-l">
-            <select class="ssel" onchange="changeStatus(${id},this.value)">
-              <option value="open"     ${t.status==='open'    ?'selected':''}>Open</option>
-              <option value="pending"  ${t.status==='pending' ?'selected':''}>Pending</option>
-              <option value="urgent"   ${t.status==='urgent'  ?'selected':''}>Urgent</option>
-              <option value="resolved" ${t.status==='resolved'?'selected':''}>Resolved</option>
-            </select>
-            <div class="thinking" id="thinking-${id}">
-              <span class="dot">·</span><span class="dot">·</span><span class="dot">·</span>&nbsp;drafting
-            </div>
+      <div class="page-scroll">
+        <div class="dash-grid">
+          <div class="card">
+            <div class="card-title">Weekly ticket volume</div>
+            <div class="chart-bar-wrap">${bars}</div>
           </div>
-          <div style="display:flex;gap:6px">
-            <button class="btn" onclick="aiDraft(${id})">AI Draft</button>
-            <button class="btn btn-solid" onclick="send(${id})">Send</button>
+          <div class="card">
+            <div class="card-title">By category</div>
+            ${catRows}
+          </div>
+        </div>
+        <div style="margin-top:16px">
+          <div class="card">
+            <div class="card-title">Recent activity</div>
+            ${TICKETS.slice(0,4).map(t => `
+              <div class="ts-row" style="cursor:pointer" onclick="openTicket('${t.id}')">
+                <span style="font-size:11.5px;font-weight:500;color:var(--ink)">${t.id} — ${t.subject}</span>
+                <span class="tag tag-${t.status}">${t.status}</span>
+              </div>`).join('')}
           </div>
         </div>
       </div>
     </div>`;
 }
 
-function renderMsgs(msgs) {
-  return msgs.map(m => `
-    <div class="msg msg-${m.r==='ai'?'ai':m.r==='agent'?'agent':'customer'}">
-      <div class="msg-from">
-        ${m.from}
-        ${m.r==='ai'?'<span class="ai-mark">AI</span>':''}
+// ─── Tickets ──────────────────────────────────────────────────────────────────
+function renderTickets() {
+  const statuses = ['all','open','pending','escalated','gdpr','resolved'];
+  const tabs = statuses.map(s => `<div class="tab ${FILTER_STATUS===s?'active':''}" onclick="setStatusFilter('${s}')">${s==='all'?'All':s.charAt(0).toUpperCase()+s.slice(1)}${s!=='all'?' ('+TICKETS.filter(t=>t.status===s).length+')':' ('+TICKETS.length+')'}</div>`).join('');
+
+  let list = [...TICKETS];
+  if (FILTER_STATUS !== 'all') list = list.filter(t => t.status === FILTER_STATUS);
+  if (FILTER_CATEGORY !== 'all') list = list.filter(t => t.category === FILTER_CATEGORY);
+  if (FILTER_PRIORITY !== 'all') list = list.filter(t => t.priority === FILTER_PRIORITY);
+
+  list.sort((a,b) => {
+    let av = a[SORT_COL]||'', bv = b[SORT_COL]||'';
+    return typeof av === 'string' ? av.localeCompare(bv)*SORT_DIR : (av-bv)*SORT_DIR;
+  });
+
+  const cats = [...new Set(TICKETS.map(t=>t.category))];
+
+  const rows = list.map(t => {
+    const cust = CUSTOMERS.find(c => c.id === t.customerId);
+    return `<tr onclick="openTicket('${t.id}')" style="cursor:pointer">
+      <td class="bold">${t.id}</td>
+      <td>${cust ? cust.first+' '+cust.last : '—'}</td>
+      <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;color:var(--ink)">${t.subject}</td>
+      <td><span class="tag tag-${t.status}">${t.status}</span></td>
+      <td><span class="tag tag-${t.priority}">${t.priority}</span></td>
+      <td>${t.category}</td>
+      <td>${t.agent}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3)">${t.updated}</td>
+      <td><span class="sla-${t.sla}" style="font-family:'DM Mono',monospace;font-size:9px;font-weight:500;text-transform:uppercase">${t.sla}</span></td>
+    </tr>`;
+  }).join('');
+
+  return `
+    <div class="page">
+      <div class="topbar">
+        <div class="tb-title">Tickets</div>
+        <button class="btn btn-solid btn-sm" onclick="showNewTicketModal()">+ New Ticket</button>
       </div>
+      <div class="tab-bar">${tabs}</div>
+      <div class="filter-bar">
+        <span class="filter-label">Filter</span>
+        <select class="filter-select" onchange="FILTER_CATEGORY=this.value;renderPage('tickets')">
+          <option value="all">All categories</option>
+          ${cats.map(c=>`<option value="${c}" ${FILTER_CATEGORY===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+        <select class="filter-select" onchange="FILTER_PRIORITY=this.value;renderPage('tickets')">
+          <option value="all">All priorities</option>
+          <option value="urgent" ${FILTER_PRIORITY==='urgent'?'selected':''}>Urgent</option>
+          <option value="high" ${FILTER_PRIORITY==='high'?'selected':''}>High</option>
+          <option value="normal" ${FILTER_PRIORITY==='normal'?'selected':''}>Normal</option>
+          <option value="low" ${FILTER_PRIORITY==='low'?'selected':''}>Low</option>
+        </select>
+        <select class="filter-select" onchange="setAgentFilter(this.value)">
+          <option value="all">All agents</option>
+          ${AGENTS.map(a=>`<option value="${a}">${a}</option>`).join('')}
+        </select>
+        ${FILTER_CATEGORY!=='all'?`<span class="filter-tag">${FILTER_CATEGORY}<span class="rm" onclick="FILTER_CATEGORY='all';renderPage('tickets')">×</span></span>`:''}
+        ${FILTER_PRIORITY!=='all'?`<span class="filter-tag">${FILTER_PRIORITY}<span class="rm" onclick="FILTER_PRIORITY='all';renderPage('tickets')">×</span></span>`:''}
+      </div>
+      <div style="flex:1;overflow-y:auto">
+        <table class="tbl">
+          <thead><tr>
+            ${[['id','ID'],['customerId','Customer'],['subject','Subject'],['status','Status'],['priority','Priority'],['category','Category'],['agent','Agent'],['updated','Updated'],['sla','SLA']].map(([k,l])=>`<th onclick="sortTickets('${k}')">${l} ${SORT_COL===k?(SORT_DIR===1?'↑':'↓'):''}</th>`).join('')}
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        ${list.length===0?'<div class="empty-state"><div class="empty-line"></div><div class="empty-txt">No tickets found</div><div class="empty-line"></div></div>':''}
+      </div>
+    </div>`;
+}
+
+function setStatusFilter(s) { FILTER_STATUS = s; renderPage('tickets'); }
+function sortTickets(col) {
+  if (SORT_COL === col) SORT_DIR *= -1; else { SORT_COL = col; SORT_DIR = 1; }
+  renderPage('tickets');
+}
+function setAgentFilter(v) {
+  if (v !== 'all') TICKETS.forEach(t => {});
+  renderPage('tickets');
+}
+
+// ─── Ticket Detail ────────────────────────────────────────────────────────────
+function openTicket(id) {
+  CURRENT_TICKET = id;
+  const t = TICKETS.find(x => x.id === id);
+  const cust = CUSTOMERS.find(c => c.id === t.customerId);
+  const otherTickets = TICKETS.filter(x => x.customerId === t.customerId && x.id !== id);
+  const csatScore = cust ? TICKETS.filter(x=>x.customerId===cust.id&&x.csat).reduce((a,x)=>a+x.csat,0) / (TICKETS.filter(x=>x.customerId===cust.id&&x.csat).length||1) : 0;
+  const csatColor = csatScore >= 4 ? '#007744' : csatScore >= 3 ? '#0044cc' : '#cc2200';
+  const csatPct = Math.round((csatScore/5)*100);
+  const circumference = 2*Math.PI*18;
+  const dash = (csatPct/100)*circumference;
+
+  const pendingAITags = t.aiTags.filter(x => !x.accepted);
+  const aiTagsHtml = pendingAITags.length ? `
+    <div class="ts-section">
+      <div class="ts-heading">AI Tag Suggestions</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">
+        ${pendingAITags.map(at=>`<span class="ai-tag-chip" onclick="acceptAITag('${id}','${at.tag}')">${at.tag} <span class="conf">${at.conf}%</span></span>`).join('')}
+      </div>
+      <button class="btn btn-sm" onclick="acceptAllAITags('${id}')">Accept all</button>
+    </div>` : '';
+
+  const msgsHtml = t.msgs.map(m => `
+    <div class="msg msg-${m.r}">
+      <div class="msg-from">${m.from} ${m.r==='ai'?'<span class="ai-mark">AI</span>':''} ${m.r==='note'?'<span class="note-mark">Note</span>':''}<span style="margin-left:auto;font-family:\'DM Mono\',monospace;font-size:9px;color:var(--ink3)">${m.ts}</span></div>
       ${m.t}
     </div>`).join('');
+
+  const main = document.getElementById('main-area');
+  main.innerHTML = `
+    <div class="page">
+      <div class="topbar">
+        <div class="tb-breadcrumb">
+          <span onclick="renderPage('tickets')">Tickets</span>
+          <span class="tb-sep">/</span>
+          <span style="color:var(--ink);font-weight:500">${t.id}</span>
+          <span style="margin-left:auto;display:flex;gap:6px">
+            <button class="btn btn-sm" onclick="prevNextTicket(-1)">← Prev</button>
+            <button class="btn btn-sm" onclick="prevNextTicket(1)">Next →</button>
+          </span>
+        </div>
+      </div>
+      <div style="padding:14px 20px 10px;border-bottom:1px solid var(--rule);flex-shrink:0">
+        <div style="font-size:15px;font-weight:600;color:var(--ink);letter-spacing:-.01em;margin-bottom:7px">${t.subject}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <span class="tag tag-${t.status}">${t.status}</span>
+          <span class="tag tag-${t.priority}">${t.priority}</span>
+          <span class="tag tag-neutral">${t.category}</span>
+          ${t.tags.map(tg=>`<span class="tag tag-neutral">${tg}</span>`).join('')}
+          <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);margin-left:4px">SLA: <span class="sla-${t.sla}">${t.sla.toUpperCase()}</span></span>
+        </div>
+      </div>
+      <div class="ticket-layout">
+        <div class="ticket-main">
+          <div class="thread" id="thread-${id}">${msgsHtml}</div>
+          <div class="composer">
+            <div class="composer-tabs">
+              <div class="ctab ${COMPOSE_TAB==='reply'?'active':''}" onclick="setComposeTab('reply','${id}')">Reply</div>
+              <div class="ctab ${COMPOSE_TAB==='note'?'active':''}" onclick="setComposeTab('note','${id}')">Internal note</div>
+            </div>
+            <div class="composer-body">
+              <textarea class="compose-area" id="compose-${id}" placeholder="${COMPOSE_TAB==='reply'?'Write a reply or use AI draft…':'Add an internal note…'}"></textarea>
+              <div class="composer-foot">
+                <div class="composer-actions">
+                  <select class="filter-select" id="status-sel-${id}" onchange="changeTicketStatus('${id}',this.value)">
+                    <option value="open" ${t.status==='open'?'selected':''}>Open</option>
+                    <option value="pending" ${t.status==='pending'?'selected':''}>Pending</option>
+                    <option value="escalated" ${t.status==='escalated'?'selected':''}>Escalated</option>
+                    <option value="resolved" ${t.status==='resolved'?'selected':''}>Resolved</option>
+                  </select>
+                  <div class="thinking" id="thinking-${id}"><span class="dot">·</span><span class="dot">·</span><span class="dot">·</span>&nbsp;drafting</div>
+                </div>
+                <div style="display:flex;gap:6px">
+                  ${COMPOSE_TAB==='reply'?`<button class="btn btn-sm" onclick="aiDraft('${id}')">AI Draft</button>`:''}
+                  <button class="btn btn-sm btn-solid" onclick="sendCompose('${id}')">${COMPOSE_TAB==='reply'?'Send':'Add Note'}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ticket-sidebar">
+          ${cust?`
+          <div class="ts-section" style="cursor:pointer" onclick="openCustomerModal('${cust.id}')">
+            <div class="ts-heading">Customer</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--w);flex-shrink:0">${cust.first[0]}${cust.last[0]}</div>
+              <div><div style="font-size:12px;font-weight:500;color:var(--ink)">${cust.first} ${cust.last}</div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3)">${cust.id}</div></div>
+            </div>
+            <div class="ts-row"><span class="ts-key">Brand</span><span class="ts-val">${cust.brand}</span></div>
+            <div class="ts-row"><span class="ts-key">VIP</span><span class="vip-badge vip-${cust.vip.toLowerCase()}">${cust.vip}</span></div>
+            <div class="ts-row"><span class="ts-key">Jurisdiction</span><span class="ts-val">${cust.jurisdiction}</span></div>
+          </div>`:``}
+          <div class="ts-section">
+            <div class="ts-heading">CSAT</div>
+            <div class="csat-ring-wrap">
+              <div class="csat-ring">
+                <svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" fill="none" stroke="var(--rule)" stroke-width="4"/><circle cx="22" cy="22" r="18" fill="none" stroke="${csatColor}" stroke-width="4" stroke-dasharray="${dash} ${circumference-dash}" stroke-linecap="round"/></svg>
+                <div class="csat-inner" style="color:${csatColor};font-size:10px">${csatScore>0?csatScore.toFixed(1):'—'}</div>
+              </div>
+              <div style="font-size:11px;color:var(--ink2)">Avg score<br/><span style="color:var(--ink3);font-family:'DM Mono',monospace;font-size:9px">${TICKETS.filter(x=>x.customerId===t.customerId&&x.csat).length} rated tickets</span></div>
+            </div>
+          </div>
+          ${aiTagsHtml}
+          <div class="ts-section">
+            <div class="ts-heading">Properties</div>
+            <select class="ts-select" onchange="changeTicketStatus('${id}',this.value)">
+              <option value="open" ${t.status==='open'?'selected':''}>Open</option>
+              <option value="pending" ${t.status==='pending'?'selected':''}>Pending</option>
+              <option value="escalated" ${t.status==='escalated'?'selected':''}>Escalated</option>
+              <option value="gdpr" ${t.status==='gdpr'?'selected':''}>GDPR</option>
+              <option value="resolved" ${t.status==='resolved'?'selected':''}>Resolved</option>
+            </select>
+            <select class="ts-select" onchange="changeTicketPriority('${id}',this.value)">
+              <option value="urgent" ${t.priority==='urgent'?'selected':''}>Urgent</option>
+              <option value="high" ${t.priority==='high'?'selected':''}>High</option>
+              <option value="normal" ${t.priority==='normal'?'selected':''}>Normal</option>
+              <option value="low" ${t.priority==='low'?'selected':''}>Low</option>
+            </select>
+            <select class="ts-select">
+              ${AGENTS.map(a=>`<option ${t.agent===a?'selected':''}>${a}</option>`).join('')}
+            </select>
+          </div>
+          ${t.status==='gdpr'||t.category==='GDPR'?`
+          <div class="ts-section">
+            <div class="ts-heading">GDPR Actions</div>
+            <button class="btn btn-sm btn-danger" style="width:100%;margin-bottom:5px;justify-content:center" onclick="alert('Erasure request initiated')">Request Erasure</button>
+            <button class="btn btn-sm" style="width:100%;margin-bottom:5px;justify-content:center" onclick="alert('Data redacted')">Redact Data</button>
+            <button class="btn btn-sm" style="width:100%;justify-content:center" onclick="alert('SAR export started')">SAR Export</button>
+          </div>`:''}
+          ${otherTickets.length?`
+          <div class="ts-section">
+            <div class="ts-heading">Other tickets (${otherTickets.length})</div>
+            ${otherTickets.map(ot=>`
+              <div class="other-ticket" onclick="openTicket('${ot.id}')">
+                <div class="other-ticket-subj">${ot.subject}</div>
+                <span class="tag tag-${ot.status}">${ot.status}</span>
+              </div>`).join('')}
+          </div>`:''}
+        </div>
+      </div>
+    </div>`;
+}
+
+function setComposeTab(tab, id) { COMPOSE_TAB = tab; openTicket(id); }
+function changeTicketStatus(id, val) {
+  const t = TICKETS.find(x => x.id === id); if(t) t.status = val;
+  updateNavBadges();
+}
+function changeTicketPriority(id, val) { const t = TICKETS.find(x=>x.id===id); if(t) t.priority=val; }
+function acceptAITag(ticketId, tagName) {
+  const t = TICKETS.find(x=>x.id===ticketId);
+  const at = t.aiTags.find(x=>x.tag===tagName);
+  if(at) { at.accepted=true; t.tags.push(tagName); }
+  openTicket(ticketId);
+}
+function acceptAllAITags(ticketId) {
+  const t = TICKETS.find(x=>x.id===ticketId);
+  t.aiTags.forEach(at => { if(!at.accepted){ at.accepted=true; t.tags.push(at.tag); } });
+  openTicket(ticketId);
+}
+function prevNextTicket(dir) {
+  const idx = TICKETS.findIndex(t => t.id === CURRENT_TICKET);
+  const next = TICKETS[idx + dir];
+  if (next) openTicket(next.id);
 }
 
 async function aiDraft(id) {
-  const t = DATA.find(x => x.id === id);
+  if (AI_THINKING) return;
+  const t = TICKETS.find(x => x.id === id);
   const el = document.getElementById(`compose-${id}`);
   const th = document.getElementById(`thinking-${id}`);
+  AI_THINKING = true;
   th.classList.add('show');
   el.value = '';
   el.placeholder = 'Drafting…';
   const hist = t.msgs.map(m => `${m.from}: ${m.t}`).join('\n\n');
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514', max_tokens: 300,
-        system: 'You are a professional customer support agent. Draft a concise, helpful reply. Output ONLY the reply — no labels, no preamble.',
+        system: 'You are a professional B2B SaaS support agent. Draft a concise, helpful reply. Output ONLY the reply text — no labels, no preamble.',
         messages: [{ role: 'user', content: `Ticket: ${t.subject}\n\n${hist}\n\nDraft a reply:` }]
       })
     });
     const d = await res.json();
-    el.value = d.content?.find(c => c.type === 'text')?.text || 'Could not generate a draft.';
+    el.value = d.content?.find(c=>c.type==='text')?.text || 'Could not generate a draft.';
   } catch { el.value = 'AI unavailable. Please type your reply.'; }
-  el.placeholder = 'Write a reply, or use AI draft…';
-  th.classList.remove('show');
+  el.placeholder = COMPOSE_TAB==='reply'?'Write a reply or use AI draft…':'Add an internal note…';
+  AI_THINKING = false; th.classList.remove('show');
 }
 
-function send(id) {
+function sendCompose(id) {
   const el = document.getElementById(`compose-${id}`);
-  const txt = el.value.trim();
-  if (!txt) return;
-  const t = DATA.find(x => x.id === id);
-  t.msgs.push({ from: 'Support Agent', r: 'agent', t: txt });
+  const txt = el.value.trim(); if (!txt) return;
+  const t = TICKETS.find(x => x.id === id);
+  t.msgs.push({from: SESSION.name, r: COMPOSE_TAB==='note'?'note':'agent', t: txt, ts: new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})});
   el.value = '';
   const thread = document.getElementById(`thread-${id}`);
   if (thread) {
     const d = document.createElement('div');
-    d.className = 'msg msg-agent';
-    d.innerHTML = `<div class="msg-from">Support Agent</div>${txt}`;
+    d.className = `msg msg-${COMPOSE_TAB==='note'?'note':'agent'}`;
+    d.innerHTML = `<div class="msg-from">${SESSION.name} ${COMPOSE_TAB==='note'?'<span class="note-mark">Note</span>':''}</div>${txt}`;
     thread.appendChild(d);
     thread.scrollTop = thread.scrollHeight;
   }
-  renderList(); updateStats();
 }
 
-function changeStatus(id, val) {
-  const t = DATA.find(x => x.id === id);
-  t.status = val;
-  const b = document.getElementById(`dbadge-${id}`);
-  if (b) { b.className = `tag tag-${val}`; b.textContent = val; }
-  renderList(); updateStats();
+function showNewTicketModal() {
+  const cats = [...new Set(TICKETS.map(t=>t.category))];
+  showModal('New Ticket', `
+    <div class="form-grid">
+      <div class="form-row"><label class="form-label">Customer ID</label><input class="form-input" id="nt-cust" placeholder="M001"/></div>
+      <div class="form-row"><label class="form-label">Category</label>
+        <select class="form-input" id="nt-cat">${cats.map(c=>`<option>${c}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="form-row"><label class="form-label">Subject</label><input class="form-input" id="nt-subj" placeholder="Describe the issue…"/></div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-label">Priority</label>
+        <select class="form-input" id="nt-pri"><option>normal</option><option>high</option><option>urgent</option><option>low</option></select>
+      </div>
+      <div class="form-row"><label class="form-label">Assign to</label>
+        <select class="form-input" id="nt-agent">${AGENTS.map(a=>`<option>${a}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="form-row"><label class="form-label">Message</label><textarea class="form-input" id="nt-msg" placeholder="First message…"></textarea></div>
+  `, () => {
+    const subj = document.getElementById('nt-subj').value.trim();
+    const msg = document.getElementById('nt-msg').value.trim();
+    const custId = document.getElementById('nt-cust').value.trim() || 'M001';
+    if (!subj) return;
+    const newId = 'TK-' + String(TICKETS.length + 1).padStart(3,'0');
+    TICKETS.unshift({id:newId,subject:subj,customerId:custId,status:'open',priority:document.getElementById('nt-pri').value,category:document.getElementById('nt-cat').value,agent:document.getElementById('nt-agent').value,created:new Date().toISOString().slice(0,10),updated:'just now',sla:'ok',tags:[],aiTags:[],csat:null,msgs:msg?[{from:SESSION.name,r:'agent',t:msg,ts:new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}]:[]});
+    closeModal(); renderPage('tickets');
+  }, 'Create Ticket');
 }
 
-async function aiTriage() {
-  const btn = document.getElementById('triage-btn');
-  btn.textContent = 'Triaging…'; btn.disabled = true;
+// ─── Customers ────────────────────────────────────────────────────────────────
+function renderCustomers() {
+  let list = [...CUSTOMERS];
+  const rows = list.map(c => `
+    <tr onclick="openCustomerModal('${c.id}')" style="cursor:pointer">
+      <td class="bold">${c.id}</td>
+      <td style="font-weight:500;color:var(--ink)">${c.first} ${c.last}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3)">${c.username}</td>
+      <td>${c.brand}</td>
+      <td><span class="vip-badge vip-${c.vip.toLowerCase()}">${c.vip}</span></td>
+      <td style="font-family:'DM Mono',monospace;font-size:10px">${c.jurisdiction}</td>
+      <td><span class="tag ${c.consent?'tag-resolved':'tag-gdpr'}">${c.consent?'Yes':'No'}</span></td>
+      <td><span class="tag ${c.kyc==='Verified'?'tag-resolved':'tag-pending'}">${c.kyc}</span></td>
+    </tr>`).join('');
+
+  return `
+    <div class="page">
+      <div class="topbar">
+        <div class="tb-title">Customers</div>
+        <button class="btn btn-sm" onclick="showCSVModal()">CSV Import</button>
+        <button class="btn btn-sm btn-solid" onclick="showNewContactModal()">+ New Contact</button>
+      </div>
+      <div class="filter-bar">
+        <span class="filter-label">Filter</span>
+        <input class="filter-select" placeholder="Search name, username, ID…" style="width:200px" oninput="filterCustomers(this.value)"/>
+        <select class="filter-select"><option>All VIP tiers</option><option>Bronze</option><option>Silver</option><option>Gold</option><option>Platinum</option></select>
+        <select class="filter-select"><option>All brands</option>${[...new Set(CUSTOMERS.map(c=>c.brand))].map(b=>`<option>${b}</option>`).join('')}</select>
+      </div>
+      <div style="flex:1;overflow-y:auto">
+        <table class="tbl">
+          <thead><tr>
+            <th>Member ID</th><th>Name</th><th>Username</th><th>Brand</th><th>VIP</th><th>Jurisdiction</th><th>Consent</th><th>KYC</th>
+          </tr></thead>
+          <tbody id="cust-tbody">${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function filterCustomers(q) {
+  const q2 = q.toLowerCase();
+  const rows = CUSTOMERS.filter(c =>
+    (c.first+' '+c.last+c.username+c.id).toLowerCase().includes(q2)
+  ).map(c => `
+    <tr onclick="openCustomerModal('${c.id}')" style="cursor:pointer">
+      <td class="bold">${c.id}</td>
+      <td style="font-weight:500;color:var(--ink)">${c.first} ${c.last}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3)">${c.username}</td>
+      <td>${c.brand}</td>
+      <td><span class="vip-badge vip-${c.vip.toLowerCase()}">${c.vip}</span></td>
+      <td style="font-family:'DM Mono',monospace;font-size:10px">${c.jurisdiction}</td>
+      <td><span class="tag ${c.consent?'tag-resolved':'tag-gdpr'}">${c.consent?'Yes':'No'}</span></td>
+      <td><span class="tag ${c.kyc==='Verified'?'tag-resolved':'tag-pending'}">${c.kyc}</span></td>
+    </tr>`).join('');
+  const tb = document.getElementById('cust-tbody');
+  if (tb) tb.innerHTML = rows;
+}
+
+function openCustomerModal(id) {
+  const c = CUSTOMERS.find(x => x.id === id);
+  const custTickets = TICKETS.filter(t => t.customerId === id);
+  const avgCSAT = custTickets.filter(t=>t.csat).reduce((a,t)=>a+t.csat,0) / (custTickets.filter(t=>t.csat).length||1);
+  const circumference = 2*Math.PI*18;
+  const csatColor = avgCSAT >= 4 ? '#007744' : avgCSAT >= 3 ? '#0044cc' : '#cc2200';
+  const dash = (Math.round((avgCSAT/5)*100)/100)*circumference;
+
+  showModal(`${c.first} ${c.last} — ${c.id}`, `
+    <div style="display:flex;gap:12px;margin-bottom:16px">
+      <div style="width:44px;height:44px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--w);flex-shrink:0">${c.first[0]}${c.last[0]}</div>
+      <div>
+        <div style="font-size:14px;font-weight:600;color:var(--ink)">${c.first} ${c.last}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:.04em">${c.username} · ${c.email}</div>
+        <div style="margin-top:4px;display:flex;gap:5px">
+          <span class="vip-badge vip-${c.vip.toLowerCase()}">${c.vip}</span>
+          <span class="tag tag-neutral">${c.brand}</span>
+          <span class="tag tag-neutral">${c.jurisdiction}</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+      <div style="background:var(--off);padding:10px;border-radius:var(--r2);text-align:center"><div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:300">${custTickets.length}</div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em">Tickets</div></div>
+      <div style="background:var(--off);padding:10px;border-radius:var(--r2);text-align:center"><div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:300;color:var(--blue)">${custTickets.filter(t=>t.status==='open').length}</div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em">Open</div></div>
+      <div style="background:var(--off);padding:10px;border-radius:var(--r2);text-align:center"><div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:300;color:${csatColor}">${avgCSAT > 0 ? avgCSAT.toFixed(1) : '—'}</div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em">CSAT</div></div>
+      <div style="background:var(--off);padding:10px;border-radius:var(--r2);text-align:center"><div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:300">${c.since.slice(0,7)}</div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em">Since</div></div>
+    </div>
+    <div class="sep"></div>
+    <div class="form-grid">
+      <div><div class="form-label">Mobile</div><div style="font-size:12px;color:var(--ink2)">${c.mobile}</div></div>
+      <div><div class="form-label">KYC Status</div><span class="tag ${c.kyc==='Verified'?'tag-resolved':'tag-pending'}">${c.kyc}</span></div>
+      <div><div class="form-label">Consent</div><span class="tag ${c.consent?'tag-resolved':'tag-gdpr'}">${c.consent?'Given':'Withheld'}</span></div>
+      <div><div class="form-label">Back Office</div><a class="link" href="${c.bo}" target="_blank">Open ↗</a></div>
+    </div>
+    ${CUSTOM_FIELDS.length?`<div class="sep"></div><div class="form-label" style="margin-bottom:8px">Custom Fields</div>
+    <div class="form-grid">${CUSTOM_FIELDS.map(f=>`<div><div class="form-label">${f.label}</div><div style="font-size:12px;color:var(--ink3)">${c.custom[f.id]||'—'}</div></div>`).join('')}</div>`:''}
+    <div class="sep"></div>
+    <div class="form-label" style="margin-bottom:8px">Tickets</div>
+    ${custTickets.map(t=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--rule);cursor:pointer" onclick="closeModal();openTicket('${t.id}')">
+      <span style="font-size:12px;font-weight:500;color:var(--ink)">${t.id} — ${t.subject}</span>
+      <span class="tag tag-${t.status}">${t.status}</span>
+    </div>`).join('')}
+    <div style="margin-top:10px"><button class="btn btn-sm" onclick="closeModal();FILTER_CATEGORY='all';FILTER_PRIORITY='all';renderPage('tickets')">View all in Tickets page →</button></div>
+  `, null, null, true);
+}
+
+function showNewContactModal() {
+  showModal('New Contact', `
+    <div class="form-grid">
+      <div class="form-row"><label class="form-label">First name</label><input class="form-input" id="nc-first"/></div>
+      <div class="form-row"><label class="form-label">Last name</label><input class="form-input" id="nc-last"/></div>
+      <div class="form-row"><label class="form-label">Username</label><input class="form-input" id="nc-user"/></div>
+      <div class="form-row"><label class="form-label">Email</label><input class="form-input" id="nc-email" type="email"/></div>
+      <div class="form-row"><label class="form-label">Mobile</label><input class="form-input" id="nc-mobile"/></div>
+      <div class="form-row"><label class="form-label">Brand</label><input class="form-input" id="nc-brand"/></div>
+      <div class="form-row"><label class="form-label">VIP Tier</label>
+        <select class="form-input" id="nc-vip"><option>Bronze</option><option>Silver</option><option selected>Gold</option><option>Platinum</option></select>
+      </div>
+      <div class="form-row"><label class="form-label">Jurisdiction</label><input class="form-input" id="nc-jur" value="UK"/></div>
+    </div>
+    ${CUSTOM_FIELDS.length?`<div class="sep"></div><div class="form-label" style="margin-bottom:8px">Custom Fields</div>
+    <div class="form-grid">${CUSTOM_FIELDS.map(f=>`<div class="form-row"><label class="form-label">${f.label}</label><input class="form-input" id="nc-cf-${f.id}" type="${f.type}"/></div>`).join('')}</div>`:''}
+  `, () => {
+    const first = document.getElementById('nc-first').value.trim();
+    if (!first) return;
+    const id = 'M' + String(CUSTOMERS.length+1).padStart(3,'0');
+    const custom = {};
+    CUSTOM_FIELDS.forEach(f => { custom[f.id] = document.getElementById(`nc-cf-${f.id}`)?.value||''; });
+    CUSTOMERS.push({id,first,last:document.getElementById('nc-last').value,username:document.getElementById('nc-user').value,email:document.getElementById('nc-email').value,mobile:document.getElementById('nc-mobile').value,brand:document.getElementById('nc-brand').value,vip:document.getElementById('nc-vip').value,jurisdiction:document.getElementById('nc-jur').value,consent:true,kyc:'Pending',since:new Date().toISOString().slice(0,10),bo:'https://backoffice.example.com/'+id,custom});
+    closeModal(); renderPage('customers');
+  }, 'Create Contact');
+}
+
+function showCSVModal() {
+  showModal('CSV Import', `
+    <div style="border:2px dashed var(--rule2);border-radius:var(--r2);padding:32px;text-align:center;margin-bottom:16px;cursor:pointer" onclick="document.getElementById('csv-input').click()">
+      <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px">Drag & drop CSV file here</div>
+      <div style="font-size:11px;color:var(--ink4)">or click to browse</div>
+      <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="previewCSV(this)"/>
+    </div>
+    <div id="csv-preview"></div>
+    <button class="btn btn-sm" onclick="downloadCSVTemplate()">Download template ↓</button>
+  `, null, null);
+}
+
+function previewCSV(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.split('\n').slice(0,4);
+    document.getElementById('csv-preview').innerHTML = `
+      <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);margin-bottom:6px;letter-spacing:.06em;text-transform:uppercase">Preview (first 3 rows)</div>
+      <table class="tbl">${lines.map((l,i)=>`<tr>${l.split(',').map(c=>`<${i===0?'th':'td'}>${c.trim()}</${i===0?'th':'td'}>`).join('')}</tr>`).join('')}</table>
+      <div style="margin-top:10px;color:var(--green);font-size:11px">✓ ${lines.length-1} rows ready to import</div>`;
+  };
+  reader.readAsText(file);
+}
+
+function downloadCSVTemplate() {
+  const header = 'first,last,username,email,mobile,brand,vip,jurisdiction\n';
+  const row = 'Jane,Doe,jdoe,jane@example.com,+44 7700 900000,Acme Corp,Gold,UK\n';
+  const blob = new Blob([header+row], {type:'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'contacts-template.csv'; a.click();
+}
+
+// ─── Reports ──────────────────────────────────────────────────────────────────
+function renderReports() {
+  const tfs = [['7d','7 days'],['30d','30 days'],['90d','90 days'],['year','This year'],['custom','Custom']];
+  const fiscals = ['Q1','Q2','Q3','Q4','H1','H2','Full Year'];
+  const resolved = TICKETS.filter(t=>t.status==='resolved');
+  const avgCSAT = resolved.filter(t=>t.csat).reduce((a,t)=>a+t.csat,0)/(resolved.filter(t=>t.csat).length||1);
+  return `
+    <div class="page">
+      <div class="topbar">
+        <div class="tb-title">Reports & Analytics</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          ${tfs.map(([v,l])=>`<button class="btn btn-sm ${REPORT_TF===v?'btn-solid':''}" onclick="REPORT_TF='${v}';renderPage('reports')">${l}</button>`).join('')}
+        </div>
+      </div>
+      <div class="kpi-bar">
+        <div class="kpi"><div class="kpi-n">${TICKETS.length}</div><div class="kpi-l">Total tickets</div></div>
+        <div class="kpi"><div class="kpi-n c-green">${avgCSAT.toFixed(1)}</div><div class="kpi-l">Avg CSAT</div></div>
+        <div class="kpi"><div class="kpi-n">&lt;4h</div><div class="kpi-l">Avg resolution</div></div>
+        <div class="kpi"><div class="kpi-n c-blue">${Math.round((TICKETS.filter(t=>t.sla==='ok').length/TICKETS.length)*100)}%</div><div class="kpi-l">SLA compliance</div></div>
+      </div>
+      <div class="page-scroll">
+        <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
+          <span class="filter-label" style="align-self:center">Fiscal</span>
+          ${fiscals.map(f=>`<button class="btn btn-sm" onclick="alert('Fiscal period: ${f} (Apr-Mar)')">${f}</button>`).join('')}
+          ${REPORT_TF==='custom'?`<input type="date" class="filter-select" placeholder="From"/><input type="date" class="filter-select" placeholder="To"/>`:''}
+        </div>
+        <div class="dash-grid">
+          <div class="card">
+            <div class="card-title">Ticket volume</div>
+            <div id="vol-chart" class="report-chart"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">CSAT breakdown</div>
+            <div id="csat-chart"></div>
+          </div>
+        </div>
+        <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card">
+            <div class="card-title">By category</div>
+            ${[...new Set(TICKETS.map(t=>t.category))].map(cat=>{
+              const n = TICKETS.filter(t=>t.category===cat).length;
+              const pct = Math.round((n/TICKETS.length)*100);
+              return `<div style="margin-bottom:8px">
+                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span>${cat}</span><span style="font-family:'DM Mono',monospace;font-weight:500">${n}</span></div>
+                <div style="height:4px;background:var(--rule);border-radius:2px"><div style="height:4px;background:var(--ink);border-radius:2px;width:${pct}%"></div></div>
+              </div>`;
+            }).join('')}
+          </div>
+          <div class="card">
+            <div class="card-title">Agent performance</div>
+            ${AGENTS.map(a=>{
+              const n = TICKETS.filter(t=>t.agent===a).length;
+              return `<div class="ts-row"><span class="ts-key">${a}</span><span class="ts-val">${n} tickets</span></div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function drawReportCharts() {
+  const vc = document.getElementById('vol-chart');
+  if (vc) {
+    const data = [12,8,15,10,18,14,9,16,11,7,13,20,10,8,14,9,17,12,15,11,8,14,10,16,13,7,11,9,14,12];
+    const max = Math.max(...data);
+    vc.innerHTML = data.map((v,i) => `<div class="r-bar ${i===data.length-1?'accent':''}" style="height:${Math.round((v/max)*100)}%"></div>`).join('');
+  }
+  const cc = document.getElementById('csat-chart');
+  if (cc) {
+    const stars = [0,1,3,8,12];
+    cc.innerHTML = `<div style="display:flex;flex-direction:column;gap:4px;margin-top:8px">${[5,4,3,2,1].map(s=>{
+      const n = stars[s-1];
+      const pct = Math.round((n/Math.max(...stars))*100);
+      return `<div style="display:flex;align-items:center;gap:8px;font-size:11px">
+        <span style="font-family:'DM Mono',monospace;width:12px">${s}</span>
+        <div style="flex:1;height:12px;background:var(--rule);border-radius:1px">
+          <div style="height:12px;background:var(--amber);border-radius:1px;width:${pct}%"></div>
+        </div>
+        <span style="font-family:'DM Mono',monospace;width:16px;color:var(--ink3)">${n}</span>
+      </div>`;
+    }).join('')}</div>`;
+  }
+}
+
+// ─── AI Intelligence ──────────────────────────────────────────────────────────
+function renderAI() {
+  const prompts = ['What are the most common ticket categories?','Summarise open escalations','Which agent has the most open tickets?','GDPR compliance status this month','Suggest workflow improvements'];
+  return `
+    <div class="page">
+      <div class="topbar"><div class="tb-title">AI Intelligence</div></div>
+      <div class="ai-chat" id="ai-chat">
+        <div class="ai-msg ai-msg-ai">
+          <div class="ai-msg-from">AI · Service Desk</div>
+          Hello ${SESSION?.name?.split(' ')[0]}. I have context on ${TICKETS.length} tickets, ${CUSTOMERS.length} customers, and your current KPIs. What would you like to analyse?
+        </div>
+        ${AI_MESSAGES.map(m=>`
+          <div class="ai-msg ${m.role==='user'?'ai-msg-user':'ai-msg-ai'}">
+            <div class="ai-msg-from">${m.role==='user'?SESSION?.name:'AI · Service Desk'}</div>
+            ${m.text}
+          </div>`).join('')}
+      </div>
+      <div class="prompt-cards">
+        ${prompts.map(p=>`<div class="prompt-card" onclick="sendAIPrompt('${p.replace(/'/g,'\\\'')}')">${p}</div>`).join('')}
+      </div>
+      <div class="ai-input-row">
+        <input class="form-input" id="ai-input" placeholder="Ask about tickets, customers, performance…" style="flex:1" onkeydown="if(event.key==='Enter')sendAIPrompt()"/>
+        <button class="btn btn-solid" onclick="sendAIPrompt()">Send</button>
+      </div>
+    </div>`;
+}
+
+function initAI() {}
+
+async function sendAIPrompt(prompt) {
+  const input = document.getElementById('ai-input');
+  const text = prompt || input?.value?.trim();
+  if (!text) return;
+  if (input) input.value = '';
+  AI_MESSAGES.push({role:'user', text});
+
+  const openCount = TICKETS.filter(t=>t.status==='open').length;
+  const escalated = TICKETS.filter(t=>t.status==='escalated').length;
+  const gdpr = TICKETS.filter(t=>t.status==='gdpr').length;
+  const resolved = TICKETS.filter(t=>t.status==='resolved').length;
+  const context = `Current desk stats: ${TICKETS.length} total tickets, ${openCount} open, ${escalated} escalated, ${gdpr} GDPR, ${resolved} resolved. ${CUSTOMERS.length} customers. Agents: ${AGENTS.join(', ')}.`;
+
+  renderAI();
+  const chat = document.getElementById('ai-chat');
+  if (chat) { const d=document.createElement('div'); d.className='ai-msg ai-msg-ai'; d.innerHTML='<div class="ai-msg-from">AI · Service Desk</div><span style="color:var(--ink3)">Thinking…</span>'; chat.appendChild(d); chat.scrollTop=chat.scrollHeight; }
+
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514', max_tokens: 400,
-        system: 'Triage support tickets. Reply ONLY with valid JSON: [{"id":1,"priority":"urgent"}]. Priorities: urgent, open, pending. Never change resolved tickets.',
-        messages: [{ role: 'user', content: 'Triage:\n' + DATA.map(t => `${t.id}: ${t.subject} (${t.status})`).join('\n') }]
+        model:'claude-sonnet-4-20250514', max_tokens:400,
+        system:`You are an AI analyst for a B2B SaaS support desk. Answer concisely and helpfully. Context: ${context}`,
+        messages:[{role:'user',content:text}]
       })
     });
     const d = await res.json();
-    const raw = d.content?.find(c => c.type === 'text')?.text || '[]';
-    JSON.parse(raw.replace(/```json|```/g, '').trim()).forEach(r => {
-      const t = DATA.find(x => x.id === r.id);
-      if (t && t.status !== 'resolved') t.status = r.priority;
-    });
-    renderList(); updateStats();
-    if (activeId) open_t(activeId);
-  } catch {}
-  btn.textContent = 'AI Triage'; btn.disabled = false;
-}
-
-async function bulkReply() {
-  const pending = DATA.filter(t => t.status !== 'resolved' && t.msgs[t.msgs.length - 1]?.r === 'customer');
-  if (!pending.length) { alert('No unanswered tickets.'); return; }
-  for (const t of pending) {
-    const hist = t.msgs.map(m => `${m.from}: ${m.t}`).join('\n\n');
-    try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 250,
-          system: 'Professional support agent. Write a concise helpful reply. Output ONLY the reply text.',
-          messages: [{ role: 'user', content: `Ticket: ${t.subject}\n\n${hist}\n\nWrite a reply:` }]
-        })
-      });
-      const d = await res.json();
-      const txt = d.content?.find(c => c.type === 'text')?.text;
-      if (txt) { t.msgs.push({ from: 'AI Agent', r: 'ai', t: txt }); aiCount++; }
-    } catch {}
+    const reply = d.content?.find(c=>c.type==='text')?.text || 'Unable to respond.';
+    AI_MESSAGES.push({role:'ai', text: reply});
+  } catch {
+    AI_MESSAGES.push({role:'ai', text:'AI unavailable right now.'});
   }
-  updateStats(); renderList();
-  if (activeId) open_t(activeId);
+  renderAI();
+  const chat2 = document.getElementById('ai-chat');
+  if (chat2) chat2.scrollTop = chat2.scrollHeight;
 }
 
-function filter(val, btn) {
-  filterVal = val;
-  document.querySelectorAll('.fpill').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  renderList();
+// ─── Workflows ────────────────────────────────────────────────────────────────
+function renderWorkflows() {
+  return `
+    <div class="page">
+      <div class="topbar"><div class="tb-title">Workflows</div>
+        ${SESSION?.role==='Admin'?`<button class="btn btn-sm btn-solid">+ New Workflow</button>`:''}
+      </div>
+      <div class="page-scroll">
+        ${WORKFLOWS.map(w=>`
+          <div class="card" style="margin-bottom:10px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+            <div style="flex:1">
+              <div style="font-weight:500;font-size:12.5px;color:var(--ink);margin-bottom:5px">${w.name}</div>
+              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px"><span style="font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink4)">Trigger</span> ${w.trigger}</div>
+              <div style="font-size:11px;color:var(--ink3)"><span style="font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink4)">Action</span> ${w.action}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+              <span class="tag ${w.status==='active'?'tag-resolved':'tag-normal'}">${w.status}</span>
+              ${SESSION?.role==='Admin'?`<button class="btn btn-sm" onclick="toggleWorkflow('${w.id}')">${w.status==='active'?'Pause':'Activate'}</button>`:''}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+function toggleWorkflow(id) {
+  const w = WORKFLOWS.find(x=>x.id===id);
+  if(w) { w.status=w.status==='active'?'inactive':'active'; renderPage('workflows'); }
 }
 
-function setView(view, el) {
-  filterVal = view === 'all' ? 'all' : view;
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  el.classList.add('active');
-  const titles = { all: 'All tickets', open: 'Open', urgent: 'Urgent', resolved: 'Resolved' };
-  document.getElementById('page-title').textContent = titles[view] || 'Tickets';
-  renderList();
+// ─── Tags ─────────────────────────────────────────────────────────────────────
+function renderTags() {
+  return `
+    <div class="page">
+      <div class="topbar"><div class="tb-title">Tag Library</div>
+        ${SESSION?.role!=='Read Only'?`<button class="btn btn-sm btn-solid">+ New Tag</button>`:''}
+      </div>
+      <div style="flex:1;overflow-y:auto">
+        <table class="tbl">
+          <thead><tr><th>Tag</th><th>Type</th><th>Usage</th><th>AI Confidence</th></tr></thead>
+          <tbody>
+            ${TAG_LIBRARY.map(t=>`<tr>
+              <td><span class="tag tag-neutral">${t.tag}</span></td>
+              <td><span class="tag ${t.type==='ai'?'tag-open':'tag-normal'}">${t.type}</span></td>
+              <td style="font-family:'DM Mono',monospace;font-size:11px">${t.count}</td>
+              <td>${t.conf?`<div style="display:flex;align-items:center;gap:6px"><div style="width:80px;height:4px;background:var(--rule);border-radius:2px"><div style="height:4px;background:${t.conf>=90?'var(--green)':t.conf>=70?'var(--amber)':'var(--red)'};border-radius:2px;width:${t.conf}%"></div></div><span style="font-family:'DM Mono',monospace;font-size:10px">${t.conf}%</span></div>`:'—'}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
 }
 
-function addTicket() {
-  const subj = prompt('Subject:'); if (!subj) return;
-  const cust = prompt('Customer name:') || 'New Customer';
-  const init = cust.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-  DATA.unshift({ id: Date.now(), subject: subj, customer: cust, initials: init, status: 'open', channel: 'Manual', age: '0m', msgs: [] });
-  renderList(); updateStats();
+// ─── Roles ────────────────────────────────────────────────────────────────────
+function renderRoles() {
+  if (SESSION?.role !== 'Admin') return `<div class="page"><div class="topbar"><div class="tb-title">Roles & Permissions</div></div><div class="empty-state"><div class="empty-line"></div><div class="empty-txt">Admin access required</div><div class="empty-line"></div></div></div>`;
+  const features = ['tickets','customers','reports','ai','workflows','tags','roles','gdpr'];
+  return `
+    <div class="page">
+      <div class="topbar"><div class="tb-title">Roles & Permissions</div></div>
+      <div class="page-scroll">
+        <div class="card">
+          <table class="tbl">
+            <thead><tr><th>Feature</th>${Object.keys(ROLES_MATRIX).map(r=>`<th>${r}</th>`).join('')}</tr></thead>
+            <tbody>${features.map(f=>`
+              <tr>
+                <td style="font-weight:500;text-transform:capitalize">${f}</td>
+                ${Object.keys(ROLES_MATRIX).map(r=>`<td>
+                  <span style="color:${ROLES_MATRIX[r][f]?'var(--green)':'var(--red)'};font-size:14px">${ROLES_MATRIX[r][f]?'✓':'×'}</span>
+                </td>`).join('')}
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
 }
 
-renderList(); updateStats(); open_t(1);
+// ─── Modal helpers ────────────────────────────────────────────────────────────
+function showModal(title, body, onConfirm, confirmLabel='Save', isLarge=false) {
+  document.getElementById('modal-container').innerHTML = `
+    <div class="modal-bg" onclick="closeModal()">
+      <div class="${isLarge?'modal modal-lg':'modal'}" onclick="event.stopPropagation()">
+        <div class="modal-head">
+          <div class="modal-title">${title}</div>
+          <div class="modal-close" onclick="closeModal()">×</div>
+        </div>
+        <div class="modal-body">${body}</div>
+        ${onConfirm?`<div class="modal-foot">
+          <button class="btn" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-solid" onclick="(${onConfirm.toString()})()">${confirmLabel}</button>
+        </div>`:''}
+      </div>
+    </div>`;
+}
+function closeModal() { document.getElementById('modal-container').innerHTML=''; }
 </script>
 </body>
 </html>
