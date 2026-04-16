@@ -371,6 +371,10 @@ textarea.form-input{resize:vertical;min-height:72px}
           <svg class="sb-icon" viewBox="0 0 13 13" fill="none"><rect x="1" y="7" width="2.5" height="5" rx=".5" fill="currentColor"/><rect x="5" y="4" width="2.5" height="8" rx=".5" fill="currentColor" opacity=".7"/><rect x="9" y="1" width="2.5" height="11" rx=".5" fill="currentColor" opacity=".4"/></svg>
           <span class="sb-lbl">Reports</span>
         </div>
+        <div class="sb-item" onclick="nav('agents',this)">
+          <svg class="sb-icon" viewBox="0 0 13 13" fill="none"><circle cx="4.5" cy="4" r="2" stroke="currentColor" stroke-width="1.1"/><circle cx="9" cy="4" r="2" stroke="currentColor" stroke-width="1.1"/><path d="M1 11c0-1.933 1.567-3.5 3.5-3.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M6.5 11c0-1.933 1.567-3.5 3.5-3.5S13 9.067 13 11" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+          <span class="sb-lbl">Agents</span>
+        </div>
         <div class="sb-item" onclick="nav('ai',this)">
           <svg class="sb-icon" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="2" fill="currentColor" opacity=".8"/><circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1" opacity=".3"/><circle cx="6.5" cy="6.5" r="6" stroke="currentColor" stroke-width=".5" stroke-dasharray="1.5 1.5" opacity=".2"/></svg>
           <span class="sb-lbl">AI Intelligence</span>
@@ -534,6 +538,7 @@ function renderPage(page) {
     tickets:   renderTickets,
     customers: renderCustomers,
     reports:   renderReports,
+    agents:    renderAgents,
     ai:        renderAI,
     workflows: renderWorkflows,
     tags:      renderTags,
@@ -1565,12 +1570,167 @@ function renderReports() {
         ${REPORT_SECTIONS.volume?`<div class="card"><div class="card-title">Ticket volume</div><div id="vol-chart" class="report-chart"></div></div>`:''}
         ${REPORT_SECTIONS.csat?`<div class="card"><div class="card-title">CSAT breakdown</div><div id="csat-chart"></div></div>`:''}
         ${REPORT_SECTIONS.categories?`<div class="card"><div class="card-title">By category</div>${[...new Set(filteredTickets.map(t=>t.category))].map(cat=>{const n=filteredTickets.filter(t=>t.category===cat).length;const pct=Math.round((n/(filteredTickets.length||1))*100);return `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span>${cat}</span><span style="font-family:'DM Mono',monospace;font-weight:500">${n}</span></div><div style="height:4px;background:var(--rule);border-radius:2px"><div style="height:4px;background:var(--ink);border-radius:2px;width:${pct}%"></div></div></div>`;}).join('')}</div>`:''}
-        ${REPORT_SECTIONS.agents?`<div class="card"><div class="card-title">Agent performance</div>${AGENTS.map(a=>{const n=filteredTickets.filter(t=>t.agent===a).length;return `<div class="ts-row"><span class="ts-key">${a}</span><span class="ts-val">${n} tickets</span></div>`;}).join('')}</div>`:''}
+        ${REPORT_SECTIONS.agents?`<div class="card"><div class="card-title">Agent performance</div>${AGENTS.map(a=>{const n=filteredTickets.filter(t=>t.agent===a).length;const res=filteredTickets.filter(t=>t.agent===a&&t.status==='resolved').length;const csat=filteredTickets.filter(t=>t.agent===a&&t.csat);const avg=csat.length?( csat.reduce((s,t)=>s+t.csat,0)/csat.length).toFixed(1):'—';const initials=a.split(' ').map(w=>w[0]).join('');return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--rule);cursor:pointer" onclick="openAgentDetail('${a}')" class="agent-row"><div style="width:28px;height:28px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:var(--w);flex-shrink:0">${initials}</div><div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--ink)">${a}</div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3)">${n} tickets · ${res} resolved · CSAT ${avg}</div></div><div style="display:flex;gap:10px;text-align:right"><div><div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:300;color:var(--blue)">${n}</div><div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em">total</div></div><div><div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:300;color:var(--green)">${res}</div><div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em">resolved</div></div><svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="align-self:center;opacity:.3"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div></div>`;}).join('')}</div>`:''}
         ${REPORT_SECTIONS.sla?`<div class="card"><div class="card-title">SLA compliance</div>${['ok','warn','breach'].map(s=>{const n=filteredTickets.filter(t=>t.sla===s).length;const pct=Math.round((n/(filteredTickets.length||1))*100);return `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span class="sla-${s}" style="text-transform:uppercase;font-family:'DM Mono',monospace;font-size:9px;font-weight:500">${s}</span><span style="font-family:'DM Mono',monospace;font-weight:500">${n}</span></div><div style="height:4px;background:var(--rule);border-radius:2px"><div style="height:4px;background:${s==='ok'?'var(--green)':s==='warn'?'var(--amber)':'var(--red)'};border-radius:2px;width:${pct}%"></div></div></div>`;}).join('')}</div>`:''}
       </div>
     </div>
   </div>`;
 }
+
+// ─── Agents page ──────────────────────────────────────────────────────────────
+function renderAgents() {
+  return `<div class="page">
+    <div class="topbar"><div class="tb-title">Agents</div></div>
+    <div class="kpi-bar" style="grid-template-columns:repeat(4,1fr)">
+      <div class="kpi"><div class="kpi-n">${AGENTS.length}</div><div class="kpi-l">Total agents</div></div>
+      <div class="kpi"><div class="kpi-n c-blue">${TICKETS.filter(t=>t.status==="open"||t.status==="escalated").length}</div><div class="kpi-l">Open tickets</div></div>
+      <div class="kpi"><div class="kpi-n c-green">${TICKETS.filter(t=>t.status==="resolved").length}</div><div class="kpi-l">Resolved</div></div>
+      <div class="kpi"><div class="kpi-n c-amber">${(TICKETS.filter(t=>t.csat).reduce((a,t)=>a+t.csat,0)/(TICKETS.filter(t=>t.csat).length||1)).toFixed(1)}</div><div class="kpi-l">Avg CSAT</div></div>
+    </div>
+    <div style="flex:1;overflow-y:auto">
+      <table class="tbl">
+        <thead><tr><th>Agent</th><th>Open</th><th>Pending</th><th>Escalated</th><th>Resolved</th><th>Total</th><th>Avg CSAT</th><th>SLA breaches</th></tr></thead>
+        <tbody>
+          ${AGENTS.map(a => {
+            const at=TICKETS.filter(t=>t.agent===a);
+            const open=at.filter(t=>t.status==="open").length;
+            const pend=at.filter(t=>t.status==="pending").length;
+            const esc=at.filter(t=>t.status==="escalated").length;
+            const res=at.filter(t=>t.status==="resolved").length;
+            const csatT=at.filter(t=>t.csat);
+            const avg=csatT.length?(csatT.reduce((s,t)=>s+t.csat,0)/csatT.length).toFixed(1):"—";
+            const breach=at.filter(t=>t.sla==="breach").length;
+            const initials=a.split(" ").map(w=>w[0]).join("");
+            return `<tr onclick="openAgentDetail(\'${a}\')" style="cursor:pointer">
+              <td><div style="display:flex;align-items:center;gap:8px">
+                <div style="width:26px;height:26px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:var(--w);flex-shrink:0">${initials}</div>
+                <span style="font-weight:500;color:var(--ink)">${a}</span>
+              </div></td>
+              <td style="font-family:\'DM Mono\',monospace;color:var(--blue);font-weight:500">${open}</td>
+              <td style="font-family:\'DM Mono\',monospace;color:var(--amber)">${pend}</td>
+              <td style="font-family:\'DM Mono\',monospace;color:var(--purple)">${esc}</td>
+              <td style="font-family:\'DM Mono\',monospace;color:var(--green)">${res}</td>
+              <td style="font-family:\'DM Mono\',monospace;font-weight:500">${at.length}</td>
+              <td style="font-family:\'DM Mono\',monospace;color:${parseFloat(avg)>=4?"var(--green)":parseFloat(avg)>=3?"var(--amber)":"var(--red)"}">${avg}</td>
+              <td style="font-family:\'DM Mono\',monospace;color:${breach>0?"var(--red)":"var(--green)"}">${breach}</td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function openAgentDetail(agentName) {
+  const at=TICKETS.filter(t=>t.agent===agentName);
+  const open=at.filter(t=>t.status==="open").length;
+  const pend=at.filter(t=>t.status==="pending").length;
+  const esc=at.filter(t=>t.status==="escalated").length;
+  const res=at.filter(t=>t.status==="resolved").length;
+  const gdpr=at.filter(t=>t.status==="gdpr").length;
+  const csatT=at.filter(t=>t.csat);
+  const avg=csatT.length?(csatT.reduce((s,t)=>s+t.csat,0)/csatT.length):0;
+  const breach=at.filter(t=>t.sla==="breach").length;
+  const warn=at.filter(t=>t.sla==="warn").length;
+  const initials=agentName.split(" ").map(w=>w[0]).join("");
+  const csatColor=avg>=4?"var(--green)":avg>=3?"var(--amber)":"var(--red)";
+  const circumference=2*Math.PI*20;
+  const dash=(avg/5)*circumference;
+  const catBreakdown={};
+  at.forEach(t=>{catBreakdown[t.category]=(catBreakdown[t.category]||0)+1;});
+
+  CURRENT_PAGE="agent-detail";
+  document.getElementById("main-area").innerHTML = `<div class="page">
+    <div class="topbar">
+      <div class="tb-breadcrumb">
+        <span onclick="nav(\'agents\',null)">Agents</span>
+        <span class="tb-sep">/</span>
+        <span style="color:var(--ink);font-weight:500">${agentName}</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:220px 1fr;gap:0;flex:1;overflow:hidden">
+      <div style="border-right:1px solid var(--rule);padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding-bottom:16px;border-bottom:1px solid var(--rule)">
+          <div style="width:52px;height:52px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:var(--w)">${initials}</div>
+          <div style="font-size:14px;font-weight:600;color:var(--ink);text-align:center">${agentName}</div>
+          <span class="tag tag-neutral">Support Agent</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding-bottom:16px;border-bottom:1px solid var(--rule)">
+          <div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px">CSAT score</div>
+          <div style="position:relative;width:52px;height:52px">
+            <svg width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="26" r="20" fill="none" stroke="var(--rule)" stroke-width="4"/><circle cx="26" cy="26" r="20" fill="none" stroke="${csatColor}" stroke-width="4" stroke-dasharray="${dash.toFixed(1)} ${(circumference-dash).toFixed(1)}" stroke-linecap="round" transform="rotate(-90 26 26)"/></svg>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:\'DM Mono\',monospace;font-size:12px;font-weight:500;color:${csatColor}">${avg>0?avg.toFixed(1):"—"}</div>
+          </div>
+          <div style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--ink3)">${csatT.length} rated</div>
+        </div>
+        <div>
+          <div class="ts-heading">Ticket breakdown</div>
+          ${[["Open",open,"var(--blue)"],["Pending",pend,"var(--amber)"],["Escalated",esc,"var(--purple)"],["Resolved",res,"var(--green)"],["GDPR",gdpr,"var(--red)"]].map(([l,n,c])=>`<div class="ts-row"><span class="ts-key">${l}</span><span style="font-family:\'DM Mono\',monospace;font-size:12px;font-weight:500;color:${c}">${n}</span></div>`).join("")}
+        </div>
+        <div>
+          <div class="ts-heading">SLA</div>
+          <div class="ts-row"><span class="ts-key">Breaches</span><span class="sla-breach" style="font-family:\'DM Mono\',monospace;font-size:12px;font-weight:500">${breach}</span></div>
+          <div class="ts-row"><span class="ts-key">Warnings</span><span class="sla-warn" style="font-family:\'DM Mono\',monospace;font-size:12px;font-weight:500">${warn}</span></div>
+        </div>
+        <div>
+          <div class="ts-heading">By category</div>
+          ${Object.entries(catBreakdown).map(([k,v])=>`<div class="ts-row"><span class="ts-key">${k}</span><span class="ts-val">${v}</span></div>`).join("")}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:10px 16px;border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <span style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)">Filter</span>
+          <select class="filter-select" id="agent-status-filter" onchange="filterAgentTickets(\'${agentName}\')">
+            <option value="all">All statuses</option>
+            <option value="open">Open</option><option value="pending">Pending</option>
+            <option value="escalated">Escalated</option><option value="resolved">Resolved</option><option value="gdpr">GDPR</option>
+          </select>
+          <select class="filter-select" id="agent-priority-filter" onchange="filterAgentTickets(\'${agentName}\')">
+            <option value="all">All priorities</option>
+            <option value="urgent">Urgent</option><option value="high">High</option><option value="normal">Normal</option><option value="low">Low</option>
+          </select>
+          <span style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--ink3);margin-left:auto" id="agent-ticket-count">${at.length} tickets</span>
+        </div>
+        <div style="flex:1;overflow-y:auto" id="agent-ticket-table">${renderAgentTicketTable(at)}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderAgentTicketTable(tickets) {
+  if(!tickets.length) return "<div class=\"empty-state\"><div class=\"empty-line\"></div><div class=\"empty-txt\">No tickets</div><div class=\"empty-line\"></div></div>";
+  return `<table class="tbl"><thead><tr>
+    <th>ID</th><th>Subject</th><th>Customer</th><th>Status</th><th>Priority</th><th>Updated</th><th>SLA</th><th>CSAT</th>
+  </tr></thead><tbody>
+    ${tickets.map(t=>{
+      const cust=CUSTOMERS.find(c=>c.id===t.customerId);
+      const stars=t.csat?"★".repeat(t.csat)+"☆".repeat(5-t.csat):"—";
+      return `<tr onclick="openTicket(\'${t.id}\')" style="cursor:pointer">
+        <td class="bold">${t.id}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;color:var(--ink)">${t.subject}</td>
+        <td style="font-size:11px">${cust?cust.first+" "+cust.last:"—"}</td>
+        <td><span class="tag tag-${t.status}">${t.status}</span></td>
+        <td><span class="tag tag-${t.priority}">${t.priority}</span></td>
+        <td style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--ink3)">${t.updated}</td>
+        <td><span class="sla-${t.sla}" style="font-family:\'DM Mono\',monospace;font-size:9px;font-weight:500;text-transform:uppercase">${t.sla}</span></td>
+        <td style="font-size:11px;color:var(--amber)">${stars}</td>
+      </tr>`;
+    }).join("")}
+  </tbody></table>`;
+}
+
+function filterAgentTickets(agentName) {
+  const sf=document.getElementById("agent-status-filter")?.value||"all";
+  const pf=document.getElementById("agent-priority-filter")?.value||"all";
+  let tickets=TICKETS.filter(t=>t.agent===agentName);
+  if(sf!=="all") tickets=tickets.filter(t=>t.status===sf);
+  if(pf!=="all") tickets=tickets.filter(t=>t.priority===pf);
+  const table=document.getElementById("agent-ticket-table");
+  const count=document.getElementById("agent-ticket-count");
+  if(table) table.innerHTML=renderAgentTicketTable(tickets);
+  if(count) count.textContent=tickets.length+" tickets";
+}
+
 
 function showReportCustomise() {
   showModal('Customise report', `
