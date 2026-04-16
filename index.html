@@ -1689,6 +1689,13 @@ function openAgentDetail(agentName) {
             <option value="all">All priorities</option>
             <option value="urgent">Urgent</option><option value="high">High</option><option value="normal">Normal</option><option value="low">Low</option>
           </select>
+          <div style="display:flex;align-items:center;gap:5px;margin-left:4px">
+            <span style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)">From</span>
+            <input type="date" class="filter-select" id="agent-date-from" style="width:130px" onchange="filterAgentTickets(\'${agentName}\')"/>
+            <span style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--ink3)">to</span>
+            <input type="date" class="filter-select" id="agent-date-to" style="width:130px" onchange="filterAgentTickets(\'${agentName}\')"/>
+            <button class="btn btn-sm" onclick="document.getElementById(\'agent-date-from\').value=\'\';document.getElementById(\'agent-date-to\').value=\'\';filterAgentTickets(\'${agentName}\')" style="padding:3px 7px;font-size:9px;color:var(--ink3)">Clear</button>
+          </div>
           <span style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--ink3);margin-left:auto" id="agent-ticket-count">${at.length} tickets</span>
         </div>
         <div style="flex:1;overflow-y:auto" id="agent-ticket-table">${renderAgentTicketTable(at)}</div>
@@ -1722,13 +1729,17 @@ function renderAgentTicketTable(tickets) {
 function filterAgentTickets(agentName) {
   const sf=document.getElementById("agent-status-filter")?.value||"all";
   const pf=document.getElementById("agent-priority-filter")?.value||"all";
+  const df=document.getElementById("agent-date-from")?.value||"";
+  const dt=document.getElementById("agent-date-to")?.value||"";
   let tickets=TICKETS.filter(t=>t.agent===agentName);
   if(sf!=="all") tickets=tickets.filter(t=>t.status===sf);
   if(pf!=="all") tickets=tickets.filter(t=>t.priority===pf);
+  if(df) tickets=tickets.filter(t=>t.created&&t.created>=df);
+  if(dt) tickets=tickets.filter(t=>t.created&&t.created<=dt);
   const table=document.getElementById("agent-ticket-table");
   const count=document.getElementById("agent-ticket-count");
   if(table) table.innerHTML=renderAgentTicketTable(tickets);
-  if(count) count.textContent=tickets.length+" tickets";
+  if(count) count.textContent=tickets.length+" ticket"+(tickets.length!==1?"s":"")+(df||dt?" (filtered)":"");
 }
 
 
