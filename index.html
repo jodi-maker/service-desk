@@ -555,68 +555,6 @@ function updateNavBadges() {
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
-function renderDashboard() {
-  const open = TICKETS.filter(t => t.status === 'open').length;
-  const escalated = TICKETS.filter(t => t.status === 'escalated').length;
-  const resolved = TICKETS.filter(t => t.status === 'resolved');
-  const avgCSAT = resolved.filter(t => t.csat).reduce((a,t) => a + t.csat, 0) / (resolved.filter(t=>t.csat).length || 1);
-  const slaOk = TICKETS.filter(t => t.sla === 'ok').length;
-  const slaTotal = TICKETS.length;
-  const gdpr = TICKETS.filter(t => t.status === 'gdpr').length;
-
-  const cats = {};
-  TICKETS.forEach(t => { cats[t.category] = (cats[t.category]||0)+1; });
-  const catRows = Object.entries(cats).map(([k,v]) => `
-    <div class="ts-row"><span class="ts-key">${k}</span><span class="ts-val">${v}</span></div>`).join('');
-
-  const bars = [3,5,4,7,6,8,5].map((h,i) => {
-    const days = ['M','T','W','T','F','S','S'];
-    const pct = Math.round((h/8)*100);
-    return `<div class="chart-bar-col">
-      <div class="chart-bar" style="height:${pct}%;min-height:3px;background:${i===4?'var(--blue)':'var(--ink)'}"></div>
-      <div class="chart-bar-lbl">${days[i]}</div>
-    </div>`;
-  }).join('');
-
-  return `
-    <div class="page">
-      <div class="topbar"><div class="tb-title">Dashboard</div>
-        <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:.06em;text-transform:uppercase">
-          ${new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}
-        </span>
-      </div>
-      <div class="kpi-bar" style="grid-template-columns:repeat(5,1fr)">
-        <div class="kpi"><div class="kpi-n c-blue">${open}</div><div class="kpi-l">Open</div></div>
-        <div class="kpi"><div class="kpi-n c-red">${escalated}</div><div class="kpi-l">Escalated</div></div>
-        <div class="kpi"><div class="kpi-n c-green">${avgCSAT.toFixed(1)}</div><div class="kpi-l">Avg CSAT</div></div>
-        <div class="kpi"><div class="kpi-n">${Math.round((slaOk/slaTotal)*100)}%</div><div class="kpi-l">SLA Compliance</div></div>
-        <div class="kpi"><div class="kpi-n c-amber">${gdpr}</div><div class="kpi-l">Pending GDPR</div></div>
-      </div>
-      <div class="page-scroll">
-        <div class="dash-grid">
-          <div class="card">
-            <div class="card-title">Weekly ticket volume</div>
-            <div class="chart-bar-wrap">${bars}</div>
-          </div>
-          <div class="card">
-            <div class="card-title">By category</div>
-            ${catRows}
-          </div>
-        </div>
-        <div style="margin-top:16px">
-          <div class="card">
-            <div class="card-title">Recent activity</div>
-            ${TICKETS.slice(0,4).map(t => `
-              <div class="ts-row" style="cursor:pointer" onclick="openTicket('${t.id}')">
-                <span style="font-size:11.5px;font-weight:500;color:var(--ink)">${t.id} — ${t.subject}</span>
-                <span class="tag tag-${t.status}">${t.status}</span>
-              </div>`).join('')}
-          </div>
-        </div>
-      </div>
-    </div>`;
-}
-
 // ─── Tickets ──────────────────────────────────────────────────────────────────
 function renderTickets() {
   const statuses = ['all','open','pending','escalated','gdpr','resolved'];
@@ -768,6 +706,9 @@ function openTicket(id) {
                     <option value="escalated" ${t.status==='escalated'?'selected':''}>Escalated</option>
                     <option value="resolved" ${t.status==='resolved'?'selected':''}>Resolved</option>
                   </select>
+                  <button class="btn btn-sm" onclick="showMacroPanel('${id}')">Macros</button>
+                  <button class="btn btn-sm" onclick="showAttachPanel('${id}')">Attach</button>
+                  <button class="btn btn-sm btn-danger" onclick="showGDPRModal('${id}')">GDPR</button>
                   <div class="thinking" id="thinking-${id}"><span class="dot">·</span><span class="dot">·</span><span class="dot">·</span>&nbsp;drafting</div>
                 </div>
                 <div style="display:flex;gap:6px">
@@ -937,44 +878,6 @@ function showNewTicketModal() {
 }
 
 // ─── Customers ────────────────────────────────────────────────────────────────
-function renderCustomers() {
-  let list = [...CUSTOMERS];
-  const rows = list.map(c => `
-    <tr onclick="openCustomerModal('${c.id}')" style="cursor:pointer">
-      <td class="bold">${c.id}</td>
-      <td style="font-weight:500;color:var(--ink)">${c.first} ${c.last}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3)">${c.username}</td>
-      <td>${c.brand}</td>
-      <td><span class="vip-badge vip-${c.vip.toLowerCase()}">${c.vip}</span></td>
-      <td style="font-family:'DM Mono',monospace;font-size:10px">${c.jurisdiction}</td>
-      <td><span class="tag ${c.consent?'tag-resolved':'tag-gdpr'}">${c.consent?'Yes':'No'}</span></td>
-      <td><span class="tag ${c.kyc==='Verified'?'tag-resolved':'tag-pending'}">${c.kyc}</span></td>
-    </tr>`).join('');
-
-  return `
-    <div class="page">
-      <div class="topbar">
-        <div class="tb-title">Customers</div>
-        <button class="btn btn-sm" onclick="showCSVModal()">CSV Import</button>
-        <button class="btn btn-sm btn-solid" onclick="showNewContactModal()">+ New Contact</button>
-      </div>
-      <div class="filter-bar">
-        <span class="filter-label">Filter</span>
-        <input class="filter-select" placeholder="Search name, username, ID…" style="width:200px" oninput="filterCustomers(this.value)"/>
-        <select class="filter-select"><option>All VIP tiers</option><option>Bronze</option><option>Silver</option><option>Gold</option><option>Platinum</option></select>
-        <select class="filter-select"><option>All brands</option>${[...new Set(CUSTOMERS.map(c=>c.brand))].map(b=>`<option>${b}</option>`).join('')}</select>
-      </div>
-      <div style="flex:1;overflow-y:auto">
-        <table class="tbl">
-          <thead><tr>
-            <th>Member ID</th><th>Name</th><th>Username</th><th>Brand</th><th>VIP</th><th>Jurisdiction</th><th>Consent</th><th>KYC</th>
-          </tr></thead>
-          <tbody id="cust-tbody">${rows}</tbody>
-        </table>
-      </div>
-    </div>`;
-}
-
 function filterCustomers(q) {
   const q2 = q.toLowerCase();
   const rows = CUSTOMERS.filter(c =>
@@ -1100,65 +1003,6 @@ function downloadCSVTemplate() {
 }
 
 // ─── Reports ──────────────────────────────────────────────────────────────────
-function renderReports() {
-  const tfs = [['7d','7 days'],['30d','30 days'],['90d','90 days'],['year','This year'],['custom','Custom']];
-  const fiscals = ['Q1','Q2','Q3','Q4','H1','H2','Full Year'];
-  const resolved = TICKETS.filter(t=>t.status==='resolved');
-  const avgCSAT = resolved.filter(t=>t.csat).reduce((a,t)=>a+t.csat,0)/(resolved.filter(t=>t.csat).length||1);
-  return `
-    <div class="page">
-      <div class="topbar">
-        <div class="tb-title">Reports & Analytics</div>
-        <div style="display:flex;gap:6px;align-items:center">
-          ${tfs.map(([v,l])=>`<button class="btn btn-sm ${REPORT_TF===v?'btn-solid':''}" onclick="REPORT_TF='${v}';renderPage('reports')">${l}</button>`).join('')}
-        </div>
-      </div>
-      <div class="kpi-bar">
-        <div class="kpi"><div class="kpi-n">${TICKETS.length}</div><div class="kpi-l">Total tickets</div></div>
-        <div class="kpi"><div class="kpi-n c-green">${avgCSAT.toFixed(1)}</div><div class="kpi-l">Avg CSAT</div></div>
-        <div class="kpi"><div class="kpi-n">&lt;4h</div><div class="kpi-l">Avg resolution</div></div>
-        <div class="kpi"><div class="kpi-n c-blue">${Math.round((TICKETS.filter(t=>t.sla==='ok').length/TICKETS.length)*100)}%</div><div class="kpi-l">SLA compliance</div></div>
-      </div>
-      <div class="page-scroll">
-        <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
-          <span class="filter-label" style="align-self:center">Fiscal</span>
-          ${fiscals.map(f=>`<button class="btn btn-sm" onclick="alert('Fiscal period: ${f} (Apr-Mar)')">${f}</button>`).join('')}
-          ${REPORT_TF==='custom'?`<input type="date" class="filter-select" placeholder="From"/><input type="date" class="filter-select" placeholder="To"/>`:''}
-        </div>
-        <div class="dash-grid">
-          <div class="card">
-            <div class="card-title">Ticket volume</div>
-            <div id="vol-chart" class="report-chart"></div>
-          </div>
-          <div class="card">
-            <div class="card-title">CSAT breakdown</div>
-            <div id="csat-chart"></div>
-          </div>
-        </div>
-        <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
-          <div class="card">
-            <div class="card-title">By category</div>
-            ${[...new Set(TICKETS.map(t=>t.category))].map(cat=>{
-              const n = TICKETS.filter(t=>t.category===cat).length;
-              const pct = Math.round((n/TICKETS.length)*100);
-              return `<div style="margin-bottom:8px">
-                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span>${cat}</span><span style="font-family:'DM Mono',monospace;font-weight:500">${n}</span></div>
-                <div style="height:4px;background:var(--rule);border-radius:2px"><div style="height:4px;background:var(--ink);border-radius:2px;width:${pct}%"></div></div>
-              </div>`;
-            }).join('')}
-          </div>
-          <div class="card">
-            <div class="card-title">Agent performance</div>
-            ${AGENTS.map(a=>{
-              const n = TICKETS.filter(t=>t.agent===a).length;
-              return `<div class="ts-row"><span class="ts-key">${a}</span><span class="ts-val">${n} tickets</span></div>`;
-            }).join('')}
-          </div>
-        </div>
-      </div>
-    </div>`;
-}
-
 function drawReportCharts() {
   const vc = document.getElementById('vol-chart');
   if (vc) {
@@ -1184,32 +1028,6 @@ function drawReportCharts() {
 }
 
 // ─── AI Intelligence ──────────────────────────────────────────────────────────
-function renderAI() {
-  const prompts = ['What are the most common ticket categories?','Summarise open escalations','Which agent has the most open tickets?','GDPR compliance status this month','Suggest workflow improvements'];
-  return `
-    <div class="page">
-      <div class="topbar"><div class="tb-title">AI Intelligence</div></div>
-      <div class="ai-chat" id="ai-chat">
-        <div class="ai-msg ai-msg-ai">
-          <div class="ai-msg-from">AI · Service Desk</div>
-          Hello ${SESSION?.name?.split(' ')[0]}. I have context on ${TICKETS.length} tickets, ${CUSTOMERS.length} customers, and your current KPIs. What would you like to analyse?
-        </div>
-        ${AI_MESSAGES.map(m=>`
-          <div class="ai-msg ${m.role==='user'?'ai-msg-user':'ai-msg-ai'}">
-            <div class="ai-msg-from">${m.role==='user'?SESSION?.name:'AI · Service Desk'}</div>
-            ${m.text}
-          </div>`).join('')}
-      </div>
-      <div class="prompt-cards">
-        ${prompts.map(p=>`<div class="prompt-card" onclick="sendAIPrompt('${p.replace(/'/g,'\\\'')}')">${p}</div>`).join('')}
-      </div>
-      <div class="ai-input-row">
-        <input class="form-input" id="ai-input" placeholder="Ask about tickets, customers, performance…" style="flex:1" onkeydown="if(event.key==='Enter')sendAIPrompt()"/>
-        <button class="btn btn-solid" onclick="sendAIPrompt()">Send</button>
-      </div>
-    </div>`;
-}
-
 function initAI() {}
 
 async function sendAIPrompt(prompt) {
@@ -2076,38 +1894,44 @@ function removeCustomField(i) {
   if(el) el.innerHTML = renderFieldsList();
 }
 
-// ─── Enhanced composer with macros/redact/attach ────────────────────────────
-// Patch openTicket to add macro/redact/attach buttons and multi-tag filter
-const _origOpenTicket = openTicket;
-function openTicket(id) {
-  _origOpenTicket(id);
-  // Inject extra composer action buttons after render
-  setTimeout(()=>{
-    const foot = document.querySelector('.composer-foot .composer-actions');
-    if(foot && !foot.querySelector('.macro-btn')) {
-      const extras = document.createElement('span');
-      extras.style.display='flex'; extras.style.gap='5px';
-      extras.innerHTML=`
-        <button class="btn btn-sm macro-btn" onclick="showMacroPanel('${id}')">Macros</button>
-        <button class="btn btn-sm" onclick="showAttachPanel('${id}')">Attach</button>
-        <button class="btn btn-sm btn-danger" onclick="showGDPRModal('${id}')">GDPR</button>
-        <button class="btn btn-sm" onclick="redactTicketData('${id}')">Redact</button>`;
-      foot.appendChild(extras);
-    }
-  }, 0);
-}
-
-// ─── Customer page: Manage Fields button ──────────────────────────────────────
-const _origRenderCustomers = renderCustomers;
+// ─── Customer page ──────────────────────────────────────────────────────────
 function renderCustomers() {
-  let html = _origRenderCustomers();
-  return html.replace('CSV Import', 'Manage Fields</button><button class="btn btn-sm" onclick="showCSVModal()">CSV Import');
+  let list = [...CUSTOMERS];
+  const rows = list.map(c => `
+    <tr onclick="openCustomerModal('${c.id}')" style="cursor:pointer">
+      <td class="bold">${c.id}</td>
+      <td style="font-weight:500;color:var(--ink)">${c.first} ${c.last}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3)">${c.username}</td>
+      <td>${c.brand}</td>
+      <td><span class="vip-badge vip-${c.vip.toLowerCase()}">${c.vip}</span></td>
+      <td style="font-family:'DM Mono',monospace;font-size:10px">${c.jurisdiction}</td>
+      <td><span class="tag ${c.consent?'tag-resolved':'tag-gdpr'}">${c.consent?'Yes':'No'}</span></td>
+      <td><span class="tag ${c.kyc==='Verified'?'tag-resolved':'tag-pending'}">${c.kyc}</span></td>
+    </tr>`).join('');
+  return `
+    <div class="page">
+      <div class="topbar">
+        <div class="tb-title">Customers</div>
+        <button class="btn btn-sm" onclick="showManageFieldsModal()">Manage Fields</button>
+        <button class="btn btn-sm" onclick="showCSVModal()">CSV Import</button>
+        <button class="btn btn-sm btn-solid" onclick="showNewContactModal()">+ New Contact</button>
+      </div>
+      <div class="filter-bar">
+        <span class="filter-label">Filter</span>
+        <input class="filter-select" placeholder="Search name, username, ID…" style="width:200px" oninput="filterCustomers(this.value)"/>
+        <select class="filter-select"><option>All VIP tiers</option><option>Bronze</option><option>Silver</option><option>Gold</option><option>Platinum</option></select>
+        <select class="filter-select"><option>All brands</option>${[...new Set(CUSTOMERS.map(c=>c.brand))].map(b=>`<option>${b}</option>`).join('')}</select>
+      </div>
+      <div style="flex:1;overflow-y:auto">
+        <table class="tbl">
+          <thead><tr>
+            <th>Member ID</th><th>Name</th><th>Username</th><th>Brand</th><th>VIP</th><th>Jurisdiction</th><th>Consent</th><th>KYC</th>
+          </tr></thead>
+          <tbody id="cust-tbody">${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
 }
-
-// Fix Manage Fields button injection
-document.addEventListener('click', e => {
-  if(e.target.textContent==='Manage Fields') showManageFieldsModal();
-});
 
 // ─── Modal helpers ─────────────────────────────────────────────────────────────
 function showModal(title, body, onConfirm, confirmLabel='Save', isLarge=false) {
