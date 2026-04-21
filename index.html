@@ -1180,26 +1180,127 @@ function renderTags() {
 // ─── Roles ────────────────────────────────────────────────────────────────────
 function renderRoles() {
   if (SESSION?.role !== 'Admin') return `<div class="page"><div class="topbar"><div class="tb-title">Roles & Permissions</div></div><div class="empty-state"><div class="empty-line"></div><div class="empty-txt">Admin access required</div><div class="empty-line"></div></div></div>`;
+
   const features = ['tickets','customers','reports','ai','workflows','tags','roles','gdpr'];
+  const featureLabels = {tickets:'Tickets',customers:'Customers',reports:'Reports',ai:'AI Intelligence',workflows:'Workflows',tags:'Tags',roles:'Roles & Perms',gdpr:'GDPR Actions'};
+  const featureDescs = {tickets:'View and manage support tickets',customers:'Access customer records and profiles',reports:'View analytics and reports',ai:'Use AI intelligence features',workflows:'Create and edit automation workflows',tags:'Manage tag library',roles:'Manage roles and permissions',gdpr:'Perform GDPR erasure and SAR actions'};
+  const roles = Object.keys(ROLES_MATRIX);
+
+  const cols = roles.map(r => `
+    <th style="min-width:140px">
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
+        <div style="display:flex;align-items:center;gap:6px;justify-content:center">
+          <span style="font-weight:600;color:var(--ink)">${r}</span>
+          ${r !== 'Admin' ? `<button onclick="showEditRoleModal('${r}')" style="background:transparent;border:none;cursor:pointer;color:var(--ink3);padding:2px;border-radius:3px;line-height:1" title="Edit role name">
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M7.5 1.5l2 2L3 10H1V8l6.5-6.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+          </button>` : ''}
+        </div>
+        ${r !== 'Admin' ? `<button onclick="deleteRole('${r}')" class="btn btn-sm btn-danger" style="font-size:10px;padding:2px 8px">Delete</button>` : `<span style="font-size:10px;color:var(--ink3);font-weight:500">Protected</span>`}
+      </div>
+    </th>`).join('');
+
+  const rows = features.map(f => `
+    <tr>
+      <td style="padding:14px 16px">
+        <div style="font-weight:500;color:var(--ink)">${featureLabels[f]}</div>
+        <div style="font-size:12px;color:var(--ink3);margin-top:2px">${featureDescs[f]}</div>
+      </td>
+      ${roles.map(r => `
+        <td style="text-align:center;padding:14px 16px">
+          ${r === 'Admin' ?
+            `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="color:var(--green)"><path d="M3 8l4 4 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>` :
+            `<label class="toggle" style="display:inline-block" title="${ROLES_MATRIX[r][f] ? 'Revoke access' : 'Grant access'}">
+              <input type="checkbox" ${ROLES_MATRIX[r][f] ? 'checked' : ''} onchange="togglePerm('${r}','${f}',this.checked)">
+              <span class="toggle-slider"></span>
+            </label>`
+          }
+        </td>`).join('')}
+    </tr>`).join('');
+
   return `
     <div class="page">
-      <div class="topbar"><div class="tb-title">Roles & Permissions</div></div>
-      <div class="page-scroll">
-        <div class="card">
-          <table class="tbl">
-            <thead><tr><th>Feature</th>${Object.keys(ROLES_MATRIX).map(r=>`<th>${r}</th>`).join('')}</tr></thead>
-            <tbody>${features.map(f=>`
-              <tr>
-                <td style="font-weight:500;text-transform:capitalize">${f}</td>
-                ${Object.keys(ROLES_MATRIX).map(r=>`<td>
-                  <span style="color:${ROLES_MATRIX[r][f]?'var(--green)':'var(--red)'};font-size:14px">${ROLES_MATRIX[r][f]?'✓':'×'}</span>
-                </td>`).join('')}
-              </tr>`).join('')}
-            </tbody>
-          </table>
-        </div>
+      <div class="topbar">
+        <div class="tb-title">Roles & Permissions</div>
+        <button class="btn btn-solid btn-sm" onclick="showNewRoleModal()">+ New Role</button>
+      </div>
+      <div style="padding:12px 20px;border-bottom:1px solid var(--rule);background:var(--off);flex-shrink:0;display:flex;align-items:center;gap:8px">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="color:var(--purple);flex-shrink:0"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/><line x1="7" y1="5" x2="7" y2="7.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="7" cy="9.5" r=".6" fill="currentColor"/></svg>
+        <span style="font-size:12px;color:var(--ink3)">Admin permissions are fixed and cannot be modified. Toggle permissions for other roles — changes apply immediately.</span>
+      </div>
+      <div style="flex:1;overflow:auto">
+        <table class="tbl" style="min-width:600px">
+          <thead style="position:sticky;top:0;background:var(--off);z-index:1">
+            <tr>
+              <th style="min-width:200px;text-align:left">Feature</th>
+              ${cols}
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
       </div>
     </div>`;
+}
+
+function togglePerm(role, feature, val) {
+  if (!ROLES_MATRIX[role]) return;
+  ROLES_MATRIX[role][feature] = val;
+}
+
+function deleteRole(role) {
+  if (role === 'Admin') return;
+  showModal('Delete role', `
+    <p style="font-size:14px;color:var(--ink2);margin-bottom:8px">Are you sure you want to delete the <strong style="color:var(--ink)">${role}</strong> role?</p>
+    <p style="font-size:12px;color:var(--ink3)">This cannot be undone. Any users assigned this role will lose access.</p>
+  `, () => {
+    delete ROLES_MATRIX[role];
+    closeModal();
+    renderPage('roles');
+  }, 'Delete role');
+}
+
+function showNewRoleModal() {
+  const features = ['tickets','customers','reports','ai','workflows','tags','roles','gdpr'];
+  const featureLabels = {tickets:'Tickets',customers:'Customers',reports:'Reports',ai:'AI Intelligence',workflows:'Workflows',tags:'Tags',roles:'Roles & Perms',gdpr:'GDPR Actions'};
+  showModal('New role', `
+    <div class="form-row">
+      <label class="form-label">Role name</label>
+      <input class="form-input" id="new-role-name" placeholder="e.g. Billing Agent"/>
+    </div>
+    <div class="form-label" style="margin-bottom:10px">Permissions</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      ${features.map(f => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border:1px solid var(--rule);border-radius:var(--r);background:var(--off2)">
+          <span style="font-size:13px;font-weight:500;color:var(--ink)">${featureLabels[f]}</span>
+          <label class="toggle"><input type="checkbox" id="nr-${f}"><span class="toggle-slider"></span></label>
+        </div>`).join('')}
+    </div>
+  `, () => {
+    const name = document.getElementById('new-role-name')?.value.trim();
+    if (!name) return;
+    if (ROLES_MATRIX[name]) { alert('A role with that name already exists.'); return; }
+    const perms = {};
+    features.forEach(f => { perms[f] = document.getElementById('nr-'+f)?.checked || false; });
+    ROLES_MATRIX[name] = perms;
+    closeModal();
+    renderPage('roles');
+  }, 'Create role');
+}
+
+function showEditRoleModal(role) {
+  showModal(`Rename role`, `
+    <div class="form-row">
+      <label class="form-label">Role name</label>
+      <input class="form-input" id="edit-role-name" value="${role}"/>
+    </div>
+  `, () => {
+    const newName = document.getElementById('edit-role-name')?.value.trim();
+    if (!newName || newName === role) { closeModal(); return; }
+    if (ROLES_MATRIX[newName]) { alert('A role with that name already exists.'); return; }
+    ROLES_MATRIX[newName] = ROLES_MATRIX[role];
+    delete ROLES_MATRIX[role];
+    closeModal();
+    renderPage('roles');
+  }, 'Save');
 }
 
 // ─── Auth flows ───────────────────────────────────────────────────────────────
