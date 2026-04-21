@@ -22,7 +22,7 @@ html,body{height:100%;overflow:hidden}
   --cyan:#22d3ee;--cyan-lt:rgba(34,211,238,0.1);
   --r:6px;--r2:8px;
 }
-body{font-family:'Inter',sans-serif;background:var(--w);color:var(--ink);font-size:12.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',sans-serif;background:var(--w);color:var(--ink);font-size:13px;line-height:1.55;-webkit-font-smoothing:antialiased}
 /* ── Scrollbars ── */
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:var(--off)}
@@ -32,22 +32,22 @@ body{font-family:'Inter',sans-serif;background:var(--w);color:var(--ink);font-si
 /* ── Sidebar ── */
 .sidebar{width:200px;min-width:200px;border-right:1px solid var(--rule);display:flex;flex-direction:column;background:var(--off);flex-shrink:0}
 .sb-logo{padding:18px 18px 14px;border-bottom:1px solid var(--rule)}
-.sb-word{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:.04em;color:var(--ink)}
-.sb-sub{font-family:'DM Mono',monospace;font-size:9px;font-weight:300;letter-spacing:.08em;color:var(--ink4);text-transform:uppercase;margin-top:2px}
+.sb-word{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--ink)}
+.sb-sub{font-family:'Inter',sans-serif;font-size:10px;font-weight:400;color:var(--ink3);margin-top:3px}
 .sb-user{padding:10px 18px;border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:8px}
-.sb-av{width:24px;height:24px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:var(--w);flex-shrink:0}
-.sb-uname{font-size:11px;font-weight:500;color:var(--ink)}
-.sb-urole{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:.04em}
+.sb-av{width:24px;height:24px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--w);flex-shrink:0}
+.sb-uname{font-size:12px;font-weight:500;color:var(--ink)}
+.sb-urole{font-family:'Inter',sans-serif;font-size:11px;color:var(--ink3)}
 .sb-nav{flex:1;overflow-y:auto;padding:10px 0}
 .sb-section{margin-bottom:16px}
-.sb-heading{padding:0 18px 5px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink4)}
-.sb-item{display:flex;align-items:center;justify-content:space-between;padding:7px 18px;font-size:12px;color:var(--ink2);cursor:pointer;border-left:2px solid transparent;transition:all .1s;gap:6px}
+.sb-heading{padding:0 18px 6px;font-family:'Inter',sans-serif;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+.sb-item{display:flex;align-items:center;justify-content:space-between;padding:8px 18px;font-size:13px;color:var(--ink2);cursor:pointer;border-left:2px solid transparent;transition:all .1s;gap:6px}
 .sb-item:hover{color:var(--ink);background:rgba(139,92,246,0.08)}
 .sb-item.active{color:var(--purple);font-weight:500;border-left-color:var(--purple);background:rgba(139,92,246,0.12)}
 .sb-icon{width:13px;height:13px;flex-shrink:0;opacity:.6}
 .sb-item.active .sb-icon{opacity:1}
 .sb-lbl{flex:1}
-.sb-n{font-family:'DM Mono',monospace;font-size:10px;font-weight:300;color:var(--ink3)}
+.sb-n{font-family:'DM Mono',monospace;font-size:11px;font-weight:400;color:var(--ink3)}
 .sb-item.active .sb-n{color:var(--purple);font-weight:500}
 .sb-foot{padding:12px 18px;border-top:1px solid var(--rule);display:flex;align-items:center;gap:7px;cursor:pointer;background:var(--off)}
 .sb-foot:hover{background:rgba(139,92,246,0.08)}
@@ -56,17 +56,17 @@ body{font-family:'Inter',sans-serif;background:var(--w);color:var(--ink);font-si
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 /* ── Topbar ── */
 .topbar{height:48px;border-bottom:1px solid var(--rule);display:flex;align-items:center;padding:0 20px;gap:10px;flex-shrink:0;background:var(--off)}
-.tb-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);flex:1}
-.tb-breadcrumb{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3);flex:1;display:flex;align-items:center;gap:6px}
+.tb-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--ink);flex:1}
+.tb-breadcrumb{font-family:'Inter',sans-serif;font-size:12px;color:var(--ink3);flex:1;display:flex;align-items:center;gap:6px}
 .tb-breadcrumb span{cursor:pointer;color:var(--ink2)}
 .tb-breadcrumb span:hover{color:var(--ink);text-decoration:underline}
 .tb-sep{color:var(--ink4)}
 /* ── Buttons ── */
-.btn{padding:5px 12px;font-size:11px;font-weight:500;font-family:'Inter',sans-serif;letter-spacing:.03em;border:1px solid var(--rule2);border-radius:var(--r);background:transparent;color:var(--ink2);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.btn{padding:6px 14px;font-size:12px;font-weight:500;font-family:'Inter',sans-serif;letter-spacing:.01em;border:1px solid var(--rule2);border-radius:var(--r);background:transparent;color:var(--ink2);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .btn:hover{border-color:var(--purple);color:var(--purple)}
 .btn-solid{background:var(--purple);border-color:var(--purple);color:#fff}
 .btn-solid:hover{background:#7c3aed;border-color:#7c3aed;color:#fff}
-.btn-sm{padding:3px 9px;font-size:10px}
+.btn-sm{padding:4px 10px;font-size:11px}
 .btn-danger{border-color:var(--red);color:var(--red);background:transparent}
 .btn-danger:hover{background:var(--red-lt);border-color:var(--red)}
 .btn:disabled{opacity:.35;cursor:not-allowed}
@@ -75,13 +75,13 @@ body{font-family:'Inter',sans-serif;background:var(--w);color:var(--ink);font-si
 .page-scroll{flex:1;overflow-y:auto;padding:20px;background:var(--w)}
 /* ── Stats row ── */
 .kpi-bar{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--rule);flex-shrink:0;background:var(--off)}
-.kpi{padding:14px 20px;border-right:1px solid var(--rule);background:var(--off)}
+.kpi{padding:16px 22px;border-right:1px solid var(--rule);background:var(--off)}
 .kpi:last-child{border-right:none}
-.kpi-n{font-family:'DM Mono',monospace;font-size:22px;font-weight:300;letter-spacing:-.02em;line-height:1}
+.kpi-n{font-family:'Syne',sans-serif;font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1}
 .kpi-n.c-blue{color:var(--cyan)}.kpi-n.c-red{color:var(--red)}.kpi-n.c-green{color:var(--green)}.kpi-n.c-amber{color:var(--amber)}.kpi-n.c-purple{color:var(--purple)}
-.kpi-l{font-family:'DM Mono',monospace;font-size:9px;font-weight:300;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-top:3px}
+.kpi-l{font-family:'Inter',sans-serif;font-size:11px;font-weight:400;letter-spacing:.02em;text-transform:uppercase;color:var(--ink3);margin-top:4px}
 /* ── Tags / Pills ── */
-.tag{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:4px;display:inline-flex;align-items:center;gap:3px}
+.tag{font-family:'Inter',sans-serif;font-size:10px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;padding:2px 8px;border-radius:4px;display:inline-flex;align-items:center;gap:3px}
 .tag-open{border:1px solid rgba(34,211,238,.3);color:var(--cyan);background:var(--cyan-lt)}
 .tag-pending{border:1px solid rgba(153,102,0,.3);color:var(--amber);background:var(--amber-lt)}
 .tag-escalated{border:1px solid rgba(139,92,246,.4);color:var(--purple);background:var(--purple-lt)}
@@ -94,23 +94,23 @@ body{font-family:'Inter',sans-serif;background:var(--w);color:var(--ink);font-si
 .tag-neutral{border:1px solid var(--rule);color:var(--ink2);background:var(--off2)}
 /* ── Table ── */
 .tbl{width:100%;border-collapse:collapse}
-.tbl th{font-family:'DM Mono',monospace;font-size:9px;font-weight:400;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);padding:8px 12px;border-bottom:1px solid var(--rule);text-align:left;cursor:pointer;white-space:nowrap;user-select:none}
+.tbl th{font-family:'Inter',sans-serif;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);padding:10px 14px;border-bottom:1px solid var(--rule);text-align:left;cursor:pointer;white-space:nowrap;user-select:none}
 .tbl th:hover{color:var(--ink)}
-.tbl td{padding:9px 12px;border-bottom:1px solid var(--rule);vertical-align:middle;font-size:12px;color:var(--ink2)}
+.tbl td{padding:11px 14px;border-bottom:1px solid var(--rule);vertical-align:middle;font-size:13px;color:var(--ink2)}
 .tbl tr:hover td{background:rgba(139,92,246,0.06)}
 .tbl tr.active td{background:rgba(139,92,246,0.1)}
 .tbl td.bold{font-weight:500;color:var(--ink)}
 /* ── Filter bar ── */
 .filter-bar{display:flex;align-items:center;gap:6px;padding:10px 20px;border-bottom:1px solid var(--rule);flex-wrap:wrap;flex-shrink:0;background:var(--off)}
-.filter-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
-.filter-select{font-family:'DM Mono',monospace;font-size:10px;padding:4px 8px;border:1px solid var(--rule);border-radius:var(--r);background:var(--off2);color:var(--ink2);cursor:pointer;outline:none}
+.filter-label{font-family:'Inter',sans-serif;font-size:11px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3)}
+.filter-select{font-family:'Inter',sans-serif;font-size:11px;padding:5px 10px;border:1px solid var(--rule);border-radius:var(--r);background:var(--off2);color:var(--ink2);cursor:pointer;outline:none}
 .filter-select:focus{border-color:var(--purple)}
-.filter-tag{font-family:'DM Mono',monospace;font-size:9px;padding:2px 7px;border:1px solid var(--rule2);border-radius:1px;display:inline-flex;align-items:center;gap:4px;color:var(--ink2);background:var(--off)}
+.filter-tag{font-family:'Inter',sans-serif;font-size:11px;padding:3px 9px;border:1px solid var(--rule2);border-radius:4px;display:inline-flex;align-items:center;gap:4px;color:var(--ink2);background:var(--off2)}
 .filter-tag .rm{cursor:pointer;color:var(--ink3);font-size:11px;line-height:1}
 .filter-tag .rm:hover{color:var(--red);cursor:pointer}
 /* ── Tab bar ── */
 .tab-bar{display:flex;border-bottom:1px solid var(--rule);padding:0 20px;flex-shrink:0;background:var(--off)}
-.tab{padding:9px 12px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .1s;white-space:nowrap}
+.tab{padding:10px 14px;font-family:'Inter',sans-serif;font-size:11px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;white-space:nowrap}
 .tab:hover{color:var(--purple)}
 .tab.active{color:var(--purple);border-bottom-color:var(--purple)}
 /* ── Modal ── */
@@ -118,15 +118,15 @@ body{font-family:'Inter',sans-serif;background:var(--w);color:var(--ink);font-si
 .modal{background:var(--off);border:1px solid var(--rule2);border-radius:var(--r2);width:520px;max-width:90vw;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 0 40px rgba(139,92,246,0.15)}
 .modal-lg{width:720px}
 .modal-head{padding:16px 20px;border-bottom:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.modal-title{font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-.01em}
+.modal-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
 .modal-close{cursor:pointer;color:var(--ink3);font-size:18px;line-height:1;padding:2px 6px;border-radius:var(--r)}
 .modal-close:hover{color:var(--ink);background:var(--off2)}
 .modal-body{padding:20px;overflow-y:auto;flex:1}
 .modal-foot{padding:12px 20px;border-top:1px solid var(--rule);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0}
 /* ── Form ── */
 .form-row{margin-bottom:14px}
-.form-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:5px;display:block}
-.form-input{width:100%;padding:8px 10px;border:1px solid var(--rule);border-radius:var(--r);font-family:'Inter',sans-serif;font-size:12.5px;color:var(--ink);background:var(--off2);outline:none;transition:border-color .15s}
+.form-label{font-family:'Inter',sans-serif;font-size:11px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px;display:block}
+.form-input{width:100%;padding:9px 12px;border:1px solid var(--rule);border-radius:var(--r);font-family:'Inter',sans-serif;font-size:13px;color:var(--ink);background:var(--off2);outline:none;transition:border-color .15s}
 .form-input:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(139,92,246,0.1)}
 .form-input::placeholder{color:var(--ink4)}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -134,26 +134,26 @@ select.form-input{cursor:pointer}
 textarea.form-input{resize:vertical;min-height:72px}
 /* ── Cards ── */
 .card{background:var(--off);border:1px solid var(--rule);border-radius:var(--r2);padding:16px;transition:border-color .15s}
-.card-title{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);margin-bottom:12px}
+.card-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);margin-bottom:14px}
 /* ── Auth screen ── */
 #auth-screen{position:fixed;inset:0;background:var(--w);display:flex;align-items:center;justify-content:center;z-index:200;background-image:radial-gradient(ellipse at 20% 50%,rgba(139,92,246,0.08) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(34,211,238,0.05) 0%,transparent 50%)}
 .auth-box{width:360px}
 .auth-logo{margin-bottom:28px}
 .auth-logo .sb-word{font-size:14px}
-.auth-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;letter-spacing:-.02em;color:var(--ink);margin-bottom:4px}
-.auth-sub{font-size:12px;color:var(--ink3);margin-bottom:24px}
+.auth-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;letter-spacing:-.03em;color:var(--ink);margin-bottom:6px}
+.auth-sub{font-size:13px;color:var(--ink3);margin-bottom:24px}
 .auth-accounts{margin-top:20px;border-top:1px solid var(--rule);padding-top:16px}
 .auth-account{padding:10px 14px;border:1px solid var(--rule);border-radius:var(--r2);cursor:pointer;margin-bottom:8px;transition:all .2s;display:flex;align-items:center;gap:10px;background:var(--off)}
 .auth-account:hover{border-color:var(--purple);background:rgba(139,92,246,0.08);box-shadow:0 0 20px rgba(139,92,246,0.1)}
 .auth-account-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--purple),#22d3ee);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff}
-.auth-account-name{font-size:12px;font-weight:500;color:var(--ink)}
-.auth-account-role{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:.04em}
+.auth-account-name{font-size:13px;font-weight:600;color:var(--ink)}
+.auth-account-role{font-family:'Inter',sans-serif;font-size:11px;color:var(--ink3)}
 /* ── Dashboard ── */
 .dash-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:16px}
 .chart-bar-wrap{display:flex;align-items:flex-end;gap:6px;height:80px;margin-top:8px}
 .chart-bar-col{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
 .chart-bar{width:100%;background:var(--ink);border-radius:1px 1px 0 0;transition:height .3s}
-.chart-bar-lbl{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink3)}
+.chart-bar-lbl{font-family:'Inter',sans-serif;font-size:10px;color:var(--ink3)}
 .donut-wrap{display:flex;align-items:center;gap:16px;margin-top:8px}
 .donut-legend{flex:1}
 .donut-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:11px}
@@ -163,26 +163,26 @@ textarea.form-input{resize:vertical;min-height:72px}
 .ticket-main{flex:1;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--rule)}
 .ticket-sidebar{width:240px;min-width:240px;overflow-y:auto;padding:16px}
 .thread{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:2px}
-.msg{padding:11px 14px;font-size:12.5px;line-height:1.7;max-width:78%}
+.msg{padding:12px 16px;font-size:13px;line-height:1.7;max-width:78%}
 .msg-customer{background:var(--off2);border-left:2px solid var(--rule2);color:var(--ink2)}
 .msg-agent{background:var(--off);border:1px solid var(--rule);border-left:2px solid var(--purple);align-self:flex-end;color:var(--ink)}
 .msg-ai{background:var(--off);border:1px solid rgba(52,211,153,0.2);border-left:2px solid var(--green);align-self:flex-end;color:var(--ink)}
 .msg-note{background:var(--amber-lt);border-left:2px solid var(--amber);color:var(--amber)}
-.msg-from{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px;display:flex;align-items:center;gap:5px}
+.msg-from{font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--ink3);margin-bottom:5px;display:flex;align-items:center;gap:5px}
 .msg-agent .msg-from{color:var(--purple)}.msg-ai .msg-from{color:var(--green)}.msg-note .msg-from{color:var(--amber)}
 .ai-mark{font-size:8px;padding:0 4px;border:1px solid var(--green);color:var(--green);border-radius:3px;background:rgba(52,211,153,0.1)}
 .note-mark{font-size:8px;padding:0 4px;border:1px solid var(--amber);color:var(--amber);border-radius:1px}
 /* ── Composer ── */
 .composer{border-top:1px solid var(--rule);flex-shrink:0}
 .composer-tabs{display:flex;padding:0 16px;border-bottom:1px solid var(--rule)}
-.ctab{padding:7px 10px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.ctab{padding:9px 12px;font-family:'Inter',sans-serif;font-size:11px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
 .ctab.active{color:var(--purple);border-bottom-color:var(--purple)}
 .composer-body{padding:10px 16px 12px}
-.compose-area{width:100%;font-family:'Inter',sans-serif;font-size:12.5px;line-height:1.6;color:var(--ink);background:var(--off2);border:1px solid var(--rule);border-radius:var(--r);padding:9px 12px;resize:none;outline:none;height:72px}
+.compose-area{width:100%;font-family:'Inter',sans-serif;font-size:13px;line-height:1.6;color:var(--ink);background:var(--off2);border:1px solid var(--rule);border-radius:var(--r);padding:9px 12px;resize:none;outline:none;height:72px}
 .compose-area:focus{border-color:var(--purple);background:var(--off2);box-shadow:0 0 0 3px rgba(139,92,246,0.1)}
 .composer-foot{margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .composer-actions{display:flex;gap:6px;align-items:center}
-.thinking{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--purple);display:none;align-items:center;gap:4px}
+.thinking{font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--purple);display:none;align-items:center;gap:4px}
 .thinking.show{display:flex}
 .dot{display:inline-block;animation:blink 1.2s infinite}
 .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
@@ -190,11 +190,11 @@ textarea.form-input{resize:vertical;min-height:72px}
 /* ── Ticket sidebar ── */
 .ts-section{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--rule)}
 .ts-section:last-child{border-bottom:none}
-.ts-heading{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px}
-.ts-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:11.5px}
+.ts-heading{font-family:'Inter',sans-serif;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px}
+.ts-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;font-size:12.5px}
 .ts-key{color:var(--ink3)}
-.ts-val{font-weight:500;color:var(--ink);font-size:11px}
-.ts-select{font-family:'DM Mono',monospace;font-size:10px;padding:3px 6px;border:1px solid var(--rule);border-radius:var(--r);background:var(--off2);color:var(--ink2);outline:none;width:100%;margin-bottom:6px}
+.ts-val{font-weight:600;color:var(--ink);font-size:12px}
+.ts-select{font-family:'Inter',sans-serif;font-size:12px;padding:5px 8px;border:1px solid var(--rule);border-radius:var(--r);background:var(--off2);color:var(--ink2);outline:none;width:100%;margin-bottom:6px}
 .csat-ring-wrap{display:flex;align-items:center;gap:10px;margin-top:6px}
 .csat-ring{position:relative;width:44px;height:44px;flex-shrink:0}
 .csat-ring svg{transform:rotate(-90deg)}
@@ -205,7 +205,7 @@ textarea.form-input{resize:vertical;min-height:72px}
 .other-ticket-subj{color:var(--ink2);line-height:1.3;margin-bottom:3px}
 /* ── Customer page ── */
 .cust-profile{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.vip-badge{display:inline-flex;align-items:center;gap:4px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:1px}
+.vip-badge{display:inline-flex;align-items:center;gap:4px;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:1px}
 .vip-bronze{border:1px solid rgba(205,127,50,0.5);color:#f59e0b;background:rgba(205,127,50,0.1)}
 .vip-silver{border:1px solid rgba(160,160,180,0.4);color:#a0a0c0;background:rgba(160,160,180,0.1)}
 .vip-gold{border:1px solid rgba(251,191,36,0.5);color:#fbbf24;background:rgba(251,191,36,0.1)}
@@ -216,13 +216,13 @@ textarea.form-input{resize:vertical;min-height:72px}
 .r-bar.accent{background:var(--blue);opacity:1}
 /* ── AI page ── */
 .ai-chat{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px}
-.ai-msg{padding:12px 14px;font-size:12.5px;line-height:1.7;max-width:80%}
+.ai-msg{padding:14px 16px;font-size:13px;line-height:1.75;max-width:80%}
 .ai-msg-user{background:var(--off2);border-left:2px solid var(--rule2);align-self:flex-start}
 .ai-msg-ai{background:var(--purple-lt);border:1px solid rgba(139,92,246,0.2);border-left:2px solid var(--purple);align-self:flex-end;color:var(--ink)}
-.ai-msg-from{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px}
+.ai-msg-from{font-family:'Inter',sans-serif;font-size:11px;font-weight:600;letter-spacing:.03em;color:var(--ink3);margin-bottom:5px}
 .ai-msg-ai .ai-msg-from{color:var(--purple)}
 .prompt-cards{display:flex;gap:8px;flex-wrap:wrap;padding:0 20px 12px;flex-shrink:0}
-.prompt-card{padding:8px 12px;border:1px solid var(--rule);border-radius:var(--r2);cursor:pointer;font-size:11px;color:var(--ink2);background:var(--off);transition:all .15s;max-width:220px}
+.prompt-card{padding:10px 14px;border:1px solid var(--rule);border-radius:var(--r2);cursor:pointer;font-size:12px;color:var(--ink2);background:var(--off);transition:all .15s;max-width:240px}
 .prompt-card:hover{border-color:var(--purple);color:var(--purple);background:rgba(139,92,246,0.08)}
 .ai-input-row{padding:12px 20px;border-top:1px solid var(--rule);display:flex;gap:8px;flex-shrink:0}
 /* ── CSAT stars ── */
@@ -232,13 +232,13 @@ textarea.form-input{resize:vertical;min-height:72px}
 /* ── AI tag chip ── */
 .ai-tag-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border:1px solid var(--rule);border-radius:5px;font-size:10px;background:var(--off2);cursor:pointer;transition:all .15s}
 .ai-tag-chip:hover{border-color:var(--purple);background:var(--purple-lt)}
-.ai-tag-chip .conf{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink3)}
+.ai-tag-chip .conf{font-family:'Inter',sans-serif;font-size:10px;color:var(--ink3)}
 .ai-tag-chip.accepted{border-color:var(--green);background:rgba(52,211,153,0.12);color:var(--green)}
 /* ── Misc ── */
 .sep{height:1px;background:var(--rule);margin:12px 0}
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;gap:8px;color:var(--ink3);background:var(--off)}
 .empty-line{width:32px;height:1px;background:var(--rule2)}
-.empty-txt{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.empty-txt{font-family:'Inter',sans-serif;font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase}
 .sla-ok{color:var(--green);font-weight:500}.sla-warn{color:var(--amber);font-weight:500}.sla-breach{color:var(--red);font-weight:500}
 .link{color:var(--cyan);cursor:pointer;text-decoration:underline}
 .link:hover{color:var(--purple)}
@@ -247,14 +247,14 @@ textarea.form-input{resize:vertical;min-height:72px}
 .dash-widget.dragging{opacity:.5;cursor:grabbing}
 .dash-widget.drag-over{border-color:var(--purple);box-shadow:0 0 0 2px rgba(139,92,246,0.4)}
 .dash-widget-header{padding:10px 14px;border-bottom:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;background:var(--off2)}
-.dash-widget-title{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2)}
+.dash-widget-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)}
 .dash-widget-body{padding:12px 14px}
 /* ── Colour picker ── */
 .accent-swatches{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .1s}
 .swatch.active{border-color:var(--ink);transform:scale(1.15)}
 /* ── Macros ── */
-.macro-item{padding:7px 10px;border:1px solid var(--rule);border-radius:var(--r);cursor:pointer;margin-bottom:5px;font-size:12px;color:var(--ink2);transition:all .1s;display:flex;align-items:center;gap:8px}
+.macro-item{padding:10px 14px;border:1px solid var(--rule);border-radius:var(--r);cursor:pointer;margin-bottom:6px;font-size:13px;color:var(--ink2);transition:all .15s;display:flex;align-items:center;gap:8px}
 .macro-item:hover{border-color:var(--ink);color:var(--ink);background:var(--off)}
 /* ── Toggle switch ── */
 .toggle{position:relative;display:inline-block;width:32px;height:18px;flex-shrink:0}
@@ -264,7 +264,7 @@ textarea.form-input{resize:vertical;min-height:72px}
 .toggle input:checked+.toggle-slider{background:var(--purple)}
 .toggle input:checked+.toggle-slider:before{transform:translateX(14px)}
 /* ── Context source chips ── */
-.source-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--rule);border-radius:var(--r);font-size:11px;color:var(--ink2);background:var(--off)}
+.source-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border:1px solid var(--rule);border-radius:var(--r);font-size:12px;font-weight:500;color:var(--ink2);background:var(--off2)}
 .source-chip.on{border-color:var(--purple);background:var(--purple-lt);color:var(--purple)}
 /* ── Auth flows ── */
 .auth-link{font-size:11px;color:var(--purple);cursor:pointer;text-align:center;margin-top:10px}
@@ -272,7 +272,7 @@ textarea.form-input{resize:vertical;min-height:72px}
 .auth-back{font-size:11px;color:var(--ink2);cursor:pointer;margin-bottom:16px;display:flex;align-items:center;gap:4px}
 .auth-back:hover{color:var(--ink)}
 /* ── Attach zone ── */
-.attach-zone{border:1px dashed var(--rule2);border-radius:var(--r);padding:10px;text-align:center;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);cursor:pointer;transition:all .1s;margin-top:6px}
+.attach-zone{border:1px dashed var(--rule2);border-radius:var(--r);padding:10px;text-align:center;font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);cursor:pointer;transition:all .1s;margin-top:6px}
 .attach-zone:hover{border-color:var(--ink);color:var(--ink)}
 /* ── GDPR modal ── */
 .gdpr-action{padding:14px;border:1px solid var(--rule);border-radius:var(--r2);margin-bottom:8px;background:var(--off2)}
@@ -280,7 +280,7 @@ textarea.form-input{resize:vertical;min-height:72px}
 .gdpr-action-desc{font-size:11px;color:var(--ink3);margin-bottom:10px}
 /* ── Pinned AI responses ── */
 .pinned-response{padding:10px 12px;border:1px solid rgba(251,191,36,0.3);border-radius:var(--r);background:rgba(251,191,36,0.07);margin-bottom:8px}
-.pinned-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);margin-bottom:4px}
+.pinned-label{font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -585,7 +585,7 @@ function renderTickets() {
       <td>${t.category}</td>
       <td>${t.agent}</td>
       <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3)">${t.updated}</td>
-      <td><span class="sla-${t.sla}" style="font-family:'DM Mono',monospace;font-size:9px;font-weight:500;text-transform:uppercase">${t.sla}</span></td>
+      <td><span class="sla-${t.sla}" style="font-family:'Inter',sans-serif;font-size:11px;font-weight:500;text-transform:uppercase">${t.sla}</span></td>
     </tr>`;
   }).join('');
 
@@ -662,7 +662,7 @@ function openTicket(id) {
 
   const msgsHtml = t.msgs.map(m => `
     <div class="msg msg-${m.r}">
-      <div class="msg-from">${m.from} ${m.r==='ai'?'<span class="ai-mark">AI</span>':''} ${m.r==='note'?'<span class="note-mark">Note</span>':''}<span style="margin-left:auto;font-family:\'DM Mono\',monospace;font-size:9px;color:var(--ink3)">${m.ts}</span></div>
+      <div class="msg-from">${m.from} ${m.r==='ai'?'<span class="ai-mark">AI</span>':''} ${m.r==='note'?'<span class="note-mark">Note</span>':''}<span style="margin-left:auto;font-family:\'Inter\',sans-serif;font-size:11px;color:var(--ink3)">${m.ts}</span></div>
       ${m.t}
     </div>`).join('');
 
@@ -681,13 +681,13 @@ function openTicket(id) {
         </div>
       </div>
       <div style="padding:14px 20px 10px;border-bottom:1px solid var(--rule);flex-shrink:0">
-        <div style="font-size:15px;font-weight:600;color:var(--ink);letter-spacing:-.01em;margin-bottom:7px">${t.subject}</div>
+        <div style="font-family:\'Syne\',sans-serif;font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-.02em;margin-bottom:7px">${t.subject}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
           <span class="tag tag-${t.status}">${t.status}</span>
           <span class="tag tag-${t.priority}">${t.priority}</span>
           <span class="tag tag-neutral">${t.category}</span>
           ${t.tags.map(tg=>`<span class="tag tag-neutral">${tg}</span>`).join('')}
-          <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);margin-left:4px">SLA: <span class="sla-${t.sla}">${t.sla.toUpperCase()}</span></span>
+          <span style="font-family:'Inter',sans-serif;font-size:11px;color:var(--ink3);margin-left:4px">SLA: <span class="sla-${t.sla}">${t.sla.toUpperCase()}</span></span>
         </div>
       </div>
       <div class="ticket-layout">
@@ -727,7 +727,7 @@ function openTicket(id) {
             <div class="ts-heading">Customer</div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
               <div style="width:32px;height:32px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--w);flex-shrink:0">${cust.first[0]}${cust.last[0]}</div>
-              <div><div style="font-size:12px;font-weight:500;color:var(--ink)">${cust.first} ${cust.last}</div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3)">${cust.id}</div></div>
+              <div><div style="font-size:12px;font-weight:500;color:var(--ink)">${cust.first} ${cust.last}</div><div style="font-family:'Inter',sans-serif;font-size:11px;color:var(--ink3)">${cust.id}</div></div>
             </div>
             <div class="ts-row"><span class="ts-key">Brand</span><span class="ts-val">${cust.brand}</span></div>
             <div class="ts-row"><span class="ts-key">VIP</span><span class="vip-badge vip-${cust.vip.toLowerCase()}">${cust.vip}</span></div>
@@ -740,7 +740,7 @@ function openTicket(id) {
                 <svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" fill="none" stroke="var(--rule)" stroke-width="4"/><circle cx="22" cy="22" r="18" fill="none" stroke="${csatColor}" stroke-width="4" stroke-dasharray="${dash} ${circumference-dash}" stroke-linecap="round"/></svg>
                 <div class="csat-inner" style="color:${csatColor};font-size:10px">${csatScore>0?csatScore.toFixed(1):'—'}</div>
               </div>
-              <div style="font-size:11px;color:var(--ink2)">Avg score<br/><span style="color:var(--ink3);font-family:'DM Mono',monospace;font-size:9px">${TICKETS.filter(x=>x.customerId===t.customerId&&x.csat).length} rated tickets</span></div>
+              <div style="font-size:11px;color:var(--ink2)">Avg score<br/><span style="color:var(--ink3);font-family:'Inter',sans-serif;font-size:11px">${TICKETS.filter(x=>x.customerId===t.customerId&&x.csat).length} rated tickets</span></div>
             </div>
           </div>
           ${aiTagsHtml}
@@ -912,7 +912,7 @@ function openCustomerModal(id) {
       <div style="width:44px;height:44px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--w);flex-shrink:0">${c.first[0]}${c.last[0]}</div>
       <div>
         <div style="font-size:14px;font-weight:600;color:var(--ink)">${c.first} ${c.last}</div>
-        <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:.04em">${c.username} · ${c.email}</div>
+        <div style="font-family:'Inter',sans-serif;font-size:11px;color:var(--ink3);letter-spacing:.04em">${c.username} · ${c.email}</div>
         <div style="margin-top:4px;display:flex;gap:5px">
           <span class="vip-badge vip-${c.vip.toLowerCase()}">${c.vip}</span>
           <span class="tag tag-neutral">${c.brand}</span>
@@ -921,10 +921,10 @@ function openCustomerModal(id) {
       </div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
-      <div style="background:var(--off);padding:10px;border-radius:var(--r2);text-align:center"><div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:300">${custTickets.length}</div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em">Tickets</div></div>
-      <div style="background:var(--off);padding:10px;border-radius:var(--r2);text-align:center"><div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:300;color:var(--blue)">${custTickets.filter(t=>t.status==='open').length}</div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em">Open</div></div>
-      <div style="background:var(--off);padding:10px;border-radius:var(--r2);text-align:center"><div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:300;color:${csatColor}">${avgCSAT > 0 ? avgCSAT.toFixed(1) : '—'}</div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em">CSAT</div></div>
-      <div style="background:var(--off);padding:10px;border-radius:var(--r2);text-align:center"><div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:300">${c.since.slice(0,7)}</div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em">Since</div></div>
+      <div style="background:var(--off);padding:10px;border-radius:var(--r2);text-align:center"><div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:300">${custTickets.length}</div><div style="font-family:'Inter',sans-serif;font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em">Tickets</div></div>
+      <div style="background:var(--off);padding:10px;border-radius:var(--r2);text-align:center"><div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:300;color:var(--blue)">${custTickets.filter(t=>t.status==='open').length}</div><div style="font-family:'Inter',sans-serif;font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em">Open</div></div>
+      <div style="background:var(--off);padding:10px;border-radius:var(--r2);text-align:center"><div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:300;color:${csatColor}">${avgCSAT > 0 ? avgCSAT.toFixed(1) : '—'}</div><div style="font-family:'Inter',sans-serif;font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em">CSAT</div></div>
+      <div style="background:var(--off);padding:10px;border-radius:var(--r2);text-align:center"><div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:300">${c.since.slice(0,7)}</div><div style="font-family:'Inter',sans-serif;font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em">Since</div></div>
     </div>
     <div class="sep"></div>
     <div class="form-grid">
@@ -990,7 +990,7 @@ function previewCSV(input) {
   reader.onload = e => {
     const lines = e.target.result.split('\n').slice(0,4);
     document.getElementById('csv-preview').innerHTML = `
-      <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);margin-bottom:6px;letter-spacing:.06em;text-transform:uppercase">Preview (first 3 rows)</div>
+      <div style="font-family:'Inter',sans-serif;font-size:11px;color:var(--ink3);margin-bottom:6px;letter-spacing:.06em;text-transform:uppercase">Preview (first 3 rows)</div>
       <table class="tbl">${lines.map((l,i)=>`<tr>${l.split(',').map(c=>`<${i===0?'th':'td'}>${c.trim()}</${i===0?'th':'td'}>`).join('')}</tr>`).join('')}</table>
       <div style="margin-top:10px;color:var(--green);font-size:11px">✓ ${lines.length-1} rows ready to import</div>`;
   };
@@ -1082,8 +1082,8 @@ function renderWorkflows() {
           <div class="card" style="margin-bottom:10px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
             <div style="flex:1">
               <div style="font-weight:500;font-size:12.5px;color:var(--ink);margin-bottom:5px">${w.name}</div>
-              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px"><span style="font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink4)">Trigger</span> ${w.trigger}</div>
-              <div style="font-size:11px;color:var(--ink3)"><span style="font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink4)">Action</span> ${w.action}</div>
+              <div style="font-size:11px;color:var(--ink3);margin-bottom:3px"><span style="font-family:'Inter',sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink4)">Trigger</span> ${w.trigger}</div>
+              <div style="font-size:11px;color:var(--ink3)"><span style="font-family:'Inter',sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink4)">Action</span> ${w.action}</div>
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
               <span class="tag ${w.status==='active'?'tag-resolved':'tag-normal'}">${w.status}</span>
@@ -1232,7 +1232,7 @@ function renderDashboard() {
     volume:`<div class="dash-widget" draggable="true" data-widget="volume" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropWidget(event)"><div class="dash-widget-header"><span class="dash-widget-title">Weekly volume</span></div><div class="dash-widget-body"><div class="chart-bar-wrap">${bars}</div></div></div>`,
     categories:`<div class="dash-widget" draggable="true" data-widget="categories" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropWidget(event)"><div class="dash-widget-header"><span class="dash-widget-title">By category</span></div><div class="dash-widget-body">${catRows}</div></div>`,
     recent:`<div class="dash-widget" draggable="true" data-widget="recent" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropWidget(event)"><div class="dash-widget-header"><span class="dash-widget-title">Recent activity</span></div><div class="dash-widget-body">${TICKETS.slice(0,4).map(t=>`<div class="ts-row" style="cursor:pointer" onclick="openTicket('${t.id}')"><span style="font-size:11.5px;font-weight:500;color:var(--ink)">${t.id} — ${t.subject}</span><span class="tag tag-${t.status}">${t.status}</span></div>`).join('')}</div></div>`,
-    sla:`<div class="dash-widget" draggable="true" data-widget="sla" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropWidget(event)"><div class="dash-widget-header"><span class="dash-widget-title">SLA status</span></div><div class="dash-widget-body">${TICKETS.map(t=>`<div class="ts-row"><span class="ts-key" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.id}</span><span class="sla-${t.sla}" style="font-family:'DM Mono',monospace;font-size:9px;font-weight:500;text-transform:uppercase">${t.sla}</span></div>`).join('')}</div></div>`
+    sla:`<div class="dash-widget" draggable="true" data-widget="sla" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dropWidget(event)"><div class="dash-widget-header"><span class="dash-widget-title">SLA status</span></div><div class="dash-widget-body">${TICKETS.map(t=>`<div class="ts-row"><span class="ts-key" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.id}</span><span class="sla-${t.sla}" style="font-family:'Inter',sans-serif;font-size:11px;font-weight:500;text-transform:uppercase">${t.sla}</span></div>`).join('')}</div></div>`
   };
 
   const grid = DASH_LAYOUT==='2col'
@@ -1242,7 +1242,7 @@ function renderDashboard() {
   return `<div class="page">
     <div class="topbar"><div class="tb-title">Dashboard</div>
       <button class="btn btn-sm" onclick="showDashCustomise()">Customise</button>
-      <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:.06em;text-transform:uppercase">${new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</span>
+      <span style="font-family:'Inter',sans-serif;font-size:11px;color:var(--ink3);letter-spacing:.06em;text-transform:uppercase">${new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</span>
     </div>
 
     <!-- Visual KPI strip -->
@@ -1250,7 +1250,7 @@ function renderDashboard() {
 
       <!-- 1. Ticket status donut -->
       <div style="padding:14px 16px;border-right:1px solid var(--rule);display:flex;flex-direction:column;gap:0">
-        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Ticket status</div>
+        <div style="font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Ticket status</div>
         <div style="display:flex;align-items:center;gap:10px">
           <svg width="72" height="72" viewBox="0 0 72 72" style="flex-shrink:0">
             ${donutSegs}
@@ -1260,8 +1260,8 @@ function renderDashboard() {
           <div style="display:flex;flex-direction:column;gap:3px">
             ${statusData.filter(d=>d.n>0).map(d=>`<div style="display:flex;align-items:center;gap:4px">
               <div style="width:6px;height:6px;border-radius:50%;background:${d.c};flex-shrink:0"></div>
-              <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3)">${d.l}</span>
-              <span style="font-family:'DM Mono',monospace;font-size:9px;font-weight:500;color:var(--ink);margin-left:auto">${d.n}</span>
+              <span style="font-family:'Inter',sans-serif;font-size:11px;color:var(--ink3)">${d.l}</span>
+              <span style="font-family:'Inter',sans-serif;font-size:11px;font-weight:500;color:var(--ink);margin-left:auto">${d.n}</span>
             </div>`).join('')}
           </div>
         </div>
@@ -1269,7 +1269,7 @@ function renderDashboard() {
 
       <!-- 2. CSAT half-gauge -->
       <div style="padding:14px 16px;border-right:1px solid var(--rule)">
-        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Avg CSAT</div>
+        <div style="font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Avg CSAT</div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
           <div style="position:relative;width:72px;height:38px;overflow:hidden">
             <svg width="72" height="72" viewBox="0 0 72 72">
@@ -1281,8 +1281,8 @@ function renderDashboard() {
             </svg>
           </div>
           <div style="display:flex;justify-content:space-between;width:72px">
-            <span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--ink3)">0</span>
-            <span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--ink3)">5</span>
+            <span style="font-family:'Inter',sans-serif;font-size:10px;color:var(--ink3)">0</span>
+            <span style="font-family:'Inter',sans-serif;font-size:10px;color:var(--ink3)">5</span>
           </div>
           <div style="display:flex;gap:2px;margin-top:2px">
             ${Array.from({length:5},(_,i)=>`<span style="font-size:11px;color:${avgCSAT>i?'var(--amber)':'var(--rule2)'}">★</span>`).join('')}
@@ -1292,47 +1292,47 @@ function renderDashboard() {
 
       <!-- 3. SLA sparkline -->
       <div style="padding:14px 16px;border-right:1px solid var(--rule)">
-        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">SLA compliance</div>
+        <div style="font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">SLA compliance</div>
         <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:6px">
           <span style="font-family:'DM Mono',monospace;font-size:22px;font-weight:300;color:${slaOkPct>=90?'var(--green)':slaOkPct>=70?'var(--amber)':'var(--red)'}">${slaOkPct}%</span>
-          <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3)">14d avg</span>
+          <span style="font-family:'Inter',sans-serif;font-size:11px;color:var(--ink3)">14d avg</span>
         </div>
         <svg width="120" height="32" viewBox="0 0 120 32" style="display:block">
           <polyline points="${sparkPts}" fill="none" stroke="${slaOkPct>=90?'var(--green)':'var(--amber)'}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
           <circle cx="${sparkW}" cy="${Math.round(sparkH-((slaOkPct-80)/20)*sparkH)}" r="2.5" fill="${slaOkPct>=90?'var(--green)':'var(--amber)'}"/>
         </svg>
         <div style="display:flex;gap:8px;margin-top:4px">
-          <span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--amber)">${slaWarn} warn</span>
-          <span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--red)">${slaBreach} breach</span>
+          <span style="font-family:'Inter',sans-serif;font-size:10px;color:var(--amber)">${slaWarn} warn</span>
+          <span style="font-family:'Inter',sans-serif;font-size:10px;color:var(--red)">${slaBreach} breach</span>
         </div>
       </div>
 
       <!-- 4. Response time trend bars -->
       <div style="padding:14px 16px;border-right:1px solid var(--rule)">
-        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Avg response time</div>
+        <div style="font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Avg response time</div>
         <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:8px">
           <span style="font-family:'DM Mono',monospace;font-size:22px;font-weight:300;color:var(--ink)">${respTimes[respTimes.length-1].toFixed(1)}</span>
-          <span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3)">hrs</span>
-          <span style="font-family:'DM Mono',monospace;font-size:8px;color:var(--green);margin-left:4px">↓${((respTimes[0]-respTimes[respTimes.length-1])/respTimes[0]*100).toFixed(0)}%</span>
+          <span style="font-family:'Inter',sans-serif;font-size:11px;color:var(--ink3)">hrs</span>
+          <span style="font-family:'Inter',sans-serif;font-size:10px;color:var(--green);margin-left:4px">↓${((respTimes[0]-respTimes[respTimes.length-1])/respTimes[0]*100).toFixed(0)}%</span>
         </div>
         <div style="display:flex;align-items:flex-end;gap:3px;height:28px">
           ${respTimes.map((v,i)=>`<div style="flex:1;border-radius:1px 1px 0 0;background:${i===respTimes.length-1?DASH_ACCENT:'var(--rule)'};height:${Math.round((v/respMax)*100)}%;min-height:2px"></div>`).join('')}
         </div>
-        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--ink3);margin-top:3px">7-day trend</div>
+        <div style="font-family:'Inter',sans-serif;font-size:10px;color:var(--ink3);margin-top:3px">7-day trend</div>
       </div>
 
       <!-- 5. GDPR + open escalations stacked -->
       <div style="padding:14px 16px">
-        <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Needs attention</div>
+        <div style="font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Needs attention</div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid rgba(204,34,0,.2);border-radius:var(--r);background:var(--red-lt);cursor:pointer" onclick="setStatusFilter('gdpr');nav('tickets',document.querySelector('.sb-item[onclick*=tickets]'))">
             <div style="font-family:'DM Mono',monospace;font-size:20px;font-weight:300;color:var(--red);line-height:1">${gdpr}</div>
-            <div><div style="font-family:'DM Mono',monospace;font-size:9px;font-weight:500;color:var(--red)">GDPR</div><div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--red);opacity:.7">pending</div></div>
+            <div><div style="font-family:'Inter',sans-serif;font-size:11px;font-weight:500;color:var(--red)">GDPR</div><div style="font-family:'Inter',sans-serif;font-size:10px;color:var(--red);opacity:.7">pending</div></div>
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="margin-left:auto;opacity:.4"><path d="M3 2l4 3-4 3" stroke="var(--red)" stroke-width="1.5" stroke-linecap="round"/></svg>
           </div>
           <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid rgba(102,0,204,.2);border-radius:var(--r);background:var(--purple-lt);cursor:pointer" onclick="setStatusFilter('escalated');nav('tickets',document.querySelector('.sb-item[onclick*=tickets]'))">
             <div style="font-family:'DM Mono',monospace;font-size:20px;font-weight:300;color:var(--purple);line-height:1">${escalated}</div>
-            <div><div style="font-family:'DM Mono',monospace;font-size:9px;font-weight:500;color:var(--purple)">Escalated</div><div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--purple);opacity:.7">tickets</div></div>
+            <div><div style="font-family:'Inter',sans-serif;font-size:11px;font-weight:500;color:var(--purple)">Escalated</div><div style="font-family:'Inter',sans-serif;font-size:10px;color:var(--purple);opacity:.7">tickets</div></div>
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="margin-left:auto;opacity:.4"><path d="M3 2l4 3-4 3" stroke="var(--purple)" stroke-width="1.5" stroke-linecap="round"/></svg>
           </div>
         </div>
@@ -1397,7 +1397,7 @@ const MACROS = [
 
 function showMacroPanel(ticketId) {
   showModal('Macros', `
-    <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-bottom:10px">Click a macro to insert into reply</div>
+    <div style="font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-bottom:10px">Click a macro to insert into reply</div>
     ${MACROS.map(m=>`<div class="macro-item" onclick="insertMacro('${ticketId}','${m.id}')">
       <div style="flex:1"><div style="font-weight:500;font-size:12px;color:var(--ink);margin-bottom:2px">${m.name}</div><div style="font-size:11px;color:var(--ink3);overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${m.text.slice(0,60)}…</div></div>
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
@@ -1429,7 +1429,7 @@ function showAttachPanel(ticketId) {
       <input type="file" id="attach-file-input" style="display:none" onchange="handleAttach('${ticketId}',this)"/>
     </div>
     <div id="attach-list" style="margin-top:10px">
-      ${(ATTACHMENTS[ticketId]||[]).map(f=>`<div style="font-size:11px;padding:5px 0;border-bottom:1px solid var(--rule);color:var(--ink2);display:flex;justify-content:space-between"><span>${f.name}</span><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3)">${f.size}</span></div>`).join('')}
+      ${(ATTACHMENTS[ticketId]||[]).map(f=>`<div style="font-size:11px;padding:5px 0;border-bottom:1px solid var(--rule);color:var(--ink2);display:flex;justify-content:space-between"><span>${f.name}</span><span style="font-family:'Inter',sans-serif;font-size:11px;color:var(--ink3)">${f.size}</span></div>`).join('')}
     </div>
   `, null, null);
 }
@@ -1440,7 +1440,7 @@ function handleAttach(ticketId, input) {
   const size = file.size < 1024 ? file.size+'B' : file.size<1048576 ? Math.round(file.size/1024)+'KB' : (file.size/1048576).toFixed(1)+'MB';
   ATTACHMENTS[ticketId].push({name:file.name,size});
   const list = document.getElementById('attach-list');
-  if(list) list.innerHTML = ATTACHMENTS[ticketId].map(f=>`<div style="font-size:11px;padding:5px 0;border-bottom:1px solid var(--rule);color:var(--ink2);display:flex;justify-content:space-between"><span>${f.name}</span><span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3)">${f.size}</span></div>`).join('');
+  if(list) list.innerHTML = ATTACHMENTS[ticketId].map(f=>`<div style="font-size:11px;padding:5px 0;border-bottom:1px solid var(--rule);color:var(--ink2);display:flex;justify-content:space-between"><span>${f.name}</span><span style="font-family:'Inter',sans-serif;font-size:11px;color:var(--ink3)">${f.size}</span></div>`).join('');
 }
 
 // ─── GDPR full modal ───────────────────────────────────────────────────────────
@@ -1523,8 +1523,8 @@ function renderReports() {
         ${REPORT_SECTIONS.volume?`<div class="card"><div class="card-title">Ticket volume</div><div id="vol-chart" class="report-chart"></div></div>`:''}
         ${REPORT_SECTIONS.csat?`<div class="card"><div class="card-title">CSAT breakdown</div><div id="csat-chart"></div></div>`:''}
         ${REPORT_SECTIONS.categories?`<div class="card"><div class="card-title">By category</div>${[...new Set(filteredTickets.map(t=>t.category))].map(cat=>{const n=filteredTickets.filter(t=>t.category===cat).length;const pct=Math.round((n/(filteredTickets.length||1))*100);return `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span>${cat}</span><span style="font-family:'DM Mono',monospace;font-weight:500">${n}</span></div><div style="height:4px;background:var(--rule);border-radius:2px"><div style="height:4px;background:var(--ink);border-radius:2px;width:${pct}%"></div></div></div>`;}).join('')}</div>`:''}
-        ${REPORT_SECTIONS.agents?`<div class="card"><div class="card-title">Agent performance</div>${AGENTS.map(a=>{const n=filteredTickets.filter(t=>t.agent===a).length;const res=filteredTickets.filter(t=>t.agent===a&&t.status==='resolved').length;const csat=filteredTickets.filter(t=>t.agent===a&&t.csat);const avg=csat.length?( csat.reduce((s,t)=>s+t.csat,0)/csat.length).toFixed(1):'—';const initials=a.split(' ').map(w=>w[0]).join('');return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--rule);cursor:pointer" onclick="openAgentDetail('${a}')" class="agent-row"><div style="width:28px;height:28px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:var(--w);flex-shrink:0">${initials}</div><div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--ink)">${a}</div><div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3)">${n} tickets · ${res} resolved · CSAT ${avg}</div></div><div style="display:flex;gap:10px;text-align:right"><div><div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:300;color:var(--blue)">${n}</div><div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em">total</div></div><div><div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:300;color:var(--green)">${res}</div><div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em">resolved</div></div><svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="align-self:center;opacity:.3"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div></div>`;}).join('')}</div>`:''}
-        ${REPORT_SECTIONS.sla?`<div class="card"><div class="card-title">SLA compliance</div>${['ok','warn','breach'].map(s=>{const n=filteredTickets.filter(t=>t.sla===s).length;const pct=Math.round((n/(filteredTickets.length||1))*100);return `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span class="sla-${s}" style="text-transform:uppercase;font-family:'DM Mono',monospace;font-size:9px;font-weight:500">${s}</span><span style="font-family:'DM Mono',monospace;font-weight:500">${n}</span></div><div style="height:4px;background:var(--rule);border-radius:2px"><div style="height:4px;background:${s==='ok'?'var(--green)':s==='warn'?'var(--amber)':'var(--red)'};border-radius:2px;width:${pct}%"></div></div></div>`;}).join('')}</div>`:''}
+        ${REPORT_SECTIONS.agents?`<div class="card"><div class="card-title">Agent performance</div>${AGENTS.map(a=>{const n=filteredTickets.filter(t=>t.agent===a).length;const res=filteredTickets.filter(t=>t.agent===a&&t.status==='resolved').length;const csat=filteredTickets.filter(t=>t.agent===a&&t.csat);const avg=csat.length?( csat.reduce((s,t)=>s+t.csat,0)/csat.length).toFixed(1):'—';const initials=a.split(' ').map(w=>w[0]).join('');return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--rule);cursor:pointer" onclick="openAgentDetail('${a}')" class="agent-row"><div style="width:28px;height:28px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--w);flex-shrink:0">${initials}</div><div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--ink)">${a}</div><div style="font-family:'Inter',sans-serif;font-size:11px;color:var(--ink3)">${n} tickets · ${res} resolved · CSAT ${avg}</div></div><div style="display:flex;gap:10px;text-align:right"><div><div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:300;color:var(--blue)">${n}</div><div style="font-family:'Inter',sans-serif;font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em">total</div></div><div><div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:300;color:var(--green)">${res}</div><div style="font-family:'Inter',sans-serif;font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em">resolved</div></div><svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="align-self:center;opacity:.3"><path d="M4 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div></div>`;}).join('')}</div>`:''}
+        ${REPORT_SECTIONS.sla?`<div class="card"><div class="card-title">SLA compliance</div>${['ok','warn','breach'].map(s=>{const n=filteredTickets.filter(t=>t.sla===s).length;const pct=Math.round((n/(filteredTickets.length||1))*100);return `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span class="sla-${s}" style="text-transform:uppercase;font-family:'Inter',sans-serif;font-size:11px;font-weight:500">${s}</span><span style="font-family:'DM Mono',monospace;font-weight:500">${n}</span></div><div style="height:4px;background:var(--rule);border-radius:2px"><div style="height:4px;background:${s==='ok'?'var(--green)':s==='warn'?'var(--amber)':'var(--red)'};border-radius:2px;width:${pct}%"></div></div></div>`;}).join('')}</div>`:''}
       </div>
     </div>
   </div>`;
@@ -1556,7 +1556,7 @@ function renderAgents() {
             const initials=a.split(" ").map(w=>w[0]).join("");
             return `<tr onclick="openAgentDetail(\'${a}\')" style="cursor:pointer">
               <td><div style="display:flex;align-items:center;gap:8px">
-                <div style="width:26px;height:26px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:var(--w);flex-shrink:0">${initials}</div>
+                <div style="width:26px;height:26px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--w);flex-shrink:0">${initials}</div>
                 <span style="font-weight:500;color:var(--ink)">${a}</span>
               </div></td>
               <td style="font-family:\'DM Mono\',monospace;color:var(--blue);font-weight:500">${open}</td>
@@ -1609,62 +1609,62 @@ function openAgentDetail(agentName) {
           <span class="tag tag-neutral">Support Agent</span>
         </div>
         <div style="padding-bottom:16px;border-bottom:1px solid var(--rule)">
-          <div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:10px;text-align:center">CSAT score</div>
+          <div style="font-family:\'Inter\',sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:10px;text-align:center">CSAT score</div>
           <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
             <div style="position:relative;width:64px;height:64px">
               <svg width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="none" stroke="var(--rule)" stroke-width="5"/><circle cx="32" cy="32" r="26" fill="none" stroke="${csatColor}" stroke-width="5" stroke-dasharray="${((avg/5)*2*Math.PI*26).toFixed(1)} ${((1-avg/5)*2*Math.PI*26).toFixed(1)}" stroke-linecap="round" transform="rotate(-90 32 32)"/></svg>
               <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
                 <div style="font-family:\'DM Mono\',monospace;font-size:14px;font-weight:500;color:${csatColor};line-height:1">${avg>0?avg.toFixed(1):"—"}</div>
-                <div style="font-family:\'DM Mono\',monospace;font-size:8px;color:var(--ink3);margin-top:1px">/ 5.0</div>
+                <div style="font-family:\'Inter\',sans-serif;font-size:10px;color:var(--ink3);margin-top:1px">/ 5.0</div>
               </div>
             </div>
             <div style="display:flex;gap:2px">${csatT.length?Array.from({length:5},(_,i)=>`<span style="font-size:11px;color:${(csatT.reduce((s,t)=>s+t.csat,0)/csatT.length)>i?"var(--amber)":"var(--rule2)"}">★</span>`).join(""):"<span style='font-size:10px;color:var(--ink4)'>no ratings</span>"}</div>
-            <div style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--ink3)">${csatT.length} rated tickets</div>
+            <div style="font-family:\'Inter\',sans-serif;font-size:11px;color:var(--ink3)">${csatT.length} rated tickets</div>
           </div>
 
           <div style="margin-top:14px">
-            <div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Resolution rate</div>
+            <div style="font-family:\'Inter\',sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Resolution rate</div>
             <div style="display:flex;align-items:center;gap:6px">
               <div style="flex:1;height:6px;background:var(--rule);border-radius:3px;overflow:hidden">
                 <div style="height:6px;border-radius:3px;background:var(--green);width:${at.length?Math.round((res/at.length)*100):0}%;transition:width .4s"></div>
               </div>
               <span style="font-family:\'DM Mono\',monospace;font-size:10px;font-weight:500;color:var(--green);min-width:30px;text-align:right">${at.length?Math.round((res/at.length)*100):0}%</span>
             </div>
-            <div style="font-family:\'DM Mono\',monospace;font-size:8px;color:var(--ink3);margin-top:3px">${res} of ${at.length} tickets resolved</div>
+            <div style="font-family:\'Inter\',sans-serif;font-size:10px;color:var(--ink3);margin-top:3px">${res} of ${at.length} tickets resolved</div>
           </div>
 
           <div style="margin-top:14px">
-            <div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">SLA compliance</div>
+            <div style="font-family:\'Inter\',sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">SLA compliance</div>
             <div style="display:flex;align-items:center;gap:6px">
               <div style="flex:1;height:6px;background:var(--rule);border-radius:3px;overflow:hidden">
                 <div style="height:6px;border-radius:3px;background:${at.length&&(breach/at.length)>0.2?"var(--red)":"var(--blue)"};width:${at.length?Math.round(((at.length-breach)/at.length)*100):100}%;transition:width .4s"></div>
               </div>
               <span style="font-family:\'DM Mono\',monospace;font-size:10px;font-weight:500;color:${at.length&&(breach/at.length)>0.2?"var(--red)":"var(--blue)"};min-width:30px;text-align:right">${at.length?Math.round(((at.length-breach)/at.length)*100):100}%</span>
             </div>
-            <div style="font-family:\'DM Mono\',monospace;font-size:8px;color:var(--ink3);margin-top:3px">${breach} breach${breach!==1?"es":""} · ${warn} warning${warn!==1?"s":""}</div>
+            <div style="font-family:\'Inter\',sans-serif;font-size:10px;color:var(--ink3);margin-top:3px">${breach} breach${breach!==1?"es":""} · ${warn} warning${warn!==1?"s":""}</div>
           </div>
 
           <div style="margin-top:14px">
-            <div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Avg response time</div>
+            <div style="font-family:\'Inter\',sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Avg response time</div>
             <div style="display:flex;align-items:baseline;gap:4px">
-              <span style="font-family:\'DM Mono\',monospace;font-size:20px;font-weight:300;color:var(--ink)">${(1.5+Math.random()*3).toFixed(1)}</span>
-              <span style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--ink3)">hrs</span>
+              <span style="font-family:\'Syne\',sans-serif;font-size:24px;font-weight:700;color:var(--ink)">${(1.5+Math.random()*3).toFixed(1)}</span>
+              <span style="font-family:\'Inter\',sans-serif;font-size:11px;color:var(--ink3)">hrs</span>
             </div>
-            <div style="font-family:\'DM Mono\',monospace;font-size:8px;color:var(--ink3);margin-top:1px">first reply</div>
+            <div style="font-family:\'Inter\',sans-serif;font-size:10px;color:var(--ink3);margin-top:1px">first reply</div>
           </div>
 
           <div style="margin-top:14px">
-            <div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Ticket trend (7d)</div>
+            <div style="font-family:\'Inter\',sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Ticket trend (7d)</div>
             <div style="display:flex;align-items:flex-end;gap:3px;height:32px">
               ${Array.from({length:7},()=>Math.floor(Math.random()*4)+1).map((h,i)=>`<div style="flex:1;background:${i===6?"var(--blue)":"var(--rule)"};border-radius:1px 1px 0 0;height:${Math.round((h/5)*100)}%;min-height:3px"></div>`).join("")}
             </div>
             <div style="display:flex;justify-content:space-between;margin-top:3px">
-              ${["M","T","W","T","F","S","S"].map(d=>`<span style="font-family:\'DM Mono\',monospace;font-size:8px;color:var(--ink3);flex:1;text-align:center">${d}</span>`).join("")}
+              ${["M","T","W","T","F","S","S"].map(d=>`<span style="font-family:\'Inter\',sans-serif;font-size:10px;color:var(--ink3);flex:1;text-align:center">${d}</span>`).join("")}
             </div>
           </div>
 
           <div style="margin-top:14px">
-            <div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px">Priority mix</div>
+            <div style="font-family:\'Inter\',sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px">Priority mix</div>
             <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:1px">
               ${(()=>{
                 const urgent=at.filter(t=>t.priority==="urgent").length;
@@ -1687,7 +1687,7 @@ function openAgentDetail(agentName) {
                   [at.filter(t=>t.priority==="high").length,"var(--amber)","high"],
                   [at.filter(t=>t.priority==="normal").length,"var(--blue)","normal"],
                   [at.filter(t=>t.priority==="low").length,"var(--rule2)","low"]
-                ].filter(([n])=>n>0).map(([n,c,l])=>`<div style="display:flex;align-items:center;gap:3px"><div style="width:6px;height:6px;border-radius:50%;background:${c}"></div><span style="font-family:\'DM Mono\',monospace;font-size:8px;color:var(--ink3)">${l} ${n}</span></div>`).join("");
+                ].filter(([n])=>n>0).map(([n,c,l])=>`<div style="display:flex;align-items:center;gap:3px"><div style="width:6px;height:6px;border-radius:50%;background:${c}"></div><span style="font-family:\'Inter\',sans-serif;font-size:10px;color:var(--ink3)">${l} ${n}</span></div>`).join("");
               })()}
             </div>
           </div>
@@ -1709,7 +1709,7 @@ function openAgentDetail(agentName) {
       </div>
       <div style="display:flex;flex-direction:column;overflow:hidden">
         <div style="padding:10px 16px;border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:8px;flex-shrink:0">
-          <span style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)">Filter</span>
+          <span style="font-family:\'Inter\',sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)">Filter</span>
           <select class="filter-select" id="agent-status-filter" onchange="filterAgentTickets(\'${agentName}\')">
             <option value="all">All statuses</option>
             <option value="open">Open</option><option value="pending">Pending</option>
@@ -1720,13 +1720,13 @@ function openAgentDetail(agentName) {
             <option value="urgent">Urgent</option><option value="high">High</option><option value="normal">Normal</option><option value="low">Low</option>
           </select>
           <div style="display:flex;align-items:center;gap:5px;margin-left:4px">
-            <span style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)">From</span>
+            <span style="font-family:\'Inter\',sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)">From</span>
             <input type="date" class="filter-select" id="agent-date-from" style="width:130px" onchange="filterAgentTickets(\'${agentName}\')"/>
-            <span style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--ink3)">to</span>
+            <span style="font-family:\'Inter\',sans-serif;font-size:11px;color:var(--ink3)">to</span>
             <input type="date" class="filter-select" id="agent-date-to" style="width:130px" onchange="filterAgentTickets(\'${agentName}\')"/>
             <button class="btn btn-sm" onclick="document.getElementById(\'agent-date-from\').value=\'\';document.getElementById(\'agent-date-to\').value=\'\';filterAgentTickets(\'${agentName}\')" style="padding:3px 7px;font-size:9px;color:var(--ink3)">Clear</button>
           </div>
-          <span style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--ink3);margin-left:auto" id="agent-ticket-count">${at.length} tickets</span>
+          <span style="font-family:\'Inter\',sans-serif;font-size:11px;color:var(--ink3);margin-left:auto" id="agent-ticket-count">${at.length} tickets</span>
         </div>
         <div style="flex:1;overflow-y:auto" id="agent-ticket-table">${renderAgentTicketTable(at)}</div>
       </div>
@@ -1748,8 +1748,8 @@ function renderAgentTicketTable(tickets) {
         <td style="font-size:11px">${cust?cust.first+" "+cust.last:"—"}</td>
         <td><span class="tag tag-${t.status}">${t.status}</span></td>
         <td><span class="tag tag-${t.priority}">${t.priority}</span></td>
-        <td style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--ink3)">${t.updated}</td>
-        <td><span class="sla-${t.sla}" style="font-family:\'DM Mono\',monospace;font-size:9px;font-weight:500;text-transform:uppercase">${t.sla}</span></td>
+        <td style="font-family:\'Inter\',sans-serif;font-size:11px;color:var(--ink3)">${t.updated}</td>
+        <td><span class="sla-${t.sla}" style="font-family:\'Inter\',sans-serif;font-size:11px;font-weight:500;text-transform:uppercase">${t.sla}</span></td>
         <td style="font-size:11px;color:var(--amber)">${stars}</td>
       </tr>`;
     }).join("")}
@@ -1803,7 +1803,7 @@ function renderAI() {
   }).join('');
 
   const pinnedHtml = AI_PINNED.length ? '<div style="padding:10px 20px;border-bottom:1px solid var(--rule);flex-shrink:0;background:var(--amber-lt)">' +
-    '<div style="font-family:\'DM Mono\',monospace;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);margin-bottom:6px">Pinned responses</div>' +
+    '<div style="font-family:\'Inter\',sans-serif;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--amber);margin-bottom:6px">Pinned responses</div>' +
     AI_PINNED.map(function(p, i) {
       return '<div class="pinned-response">' + p + '<span style="cursor:pointer;float:right;color:var(--ink3)" onclick="AI_PINNED.splice(' + i + ',1);renderPage(\'ai\')">×</span></div>';
     }).join('') + '</div>' : '';
