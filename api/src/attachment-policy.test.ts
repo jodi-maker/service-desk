@@ -21,6 +21,17 @@ describe('sanitizeFilename', () => {
     expect(sanitizeFilename('...hidden')).toBe('hidden');
     expect(Array.from(sanitizeFilename('😀'.repeat(400) + '.png')).length).toBe(150);
   });
+
+  it('KEEPS the extension when truncating — the deny-list keys on it', () => {
+    const long = 'a'.repeat(400) + '.exe';
+    const safe = sanitizeFilename(long);
+    expect(safe.endsWith('.exe')).toBe(true);
+    expect(Array.from(safe).length).toBe(150);
+    // …so an over-long executable name is still rejected rather than sailing
+    // through as an extension-less unknown.
+    expect(classifyAttachment(safe, 'application/octet-stream', TEXT, MAX)).toEqual({ ok: false, reason: 'blocked type' });
+    expect(sanitizeFilename('😀'.repeat(400) + '.svg').endsWith('.svg')).toBe(true);
+  });
 });
 
 describe('fileExtension', () => {
