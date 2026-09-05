@@ -414,7 +414,7 @@ export function openTicket(id) {
     // plain-text mail, and any message being shown as a translation or as the
     // agent's pre-translation original) keeps the escaped-text rendering.
     const showRich = !!m.html && bodyText === m.t;
-    const bodyHtml = showRich ? renderMessageBody(m, bodyText, id, i, plainBody) : plainBody;
+    const bodyHtml = showRich ? renderMessageBody(m, id, i, plainBody) : plainBody;
     const attachHtml = renderAttachmentChips(m.attachments);
     const sentimentBadge = m.r === 'customer' ? renderSentimentBadge(m.sentiment) : '';
     return `
@@ -663,10 +663,16 @@ export function openTicket(id) {
   // Show the most recent reply on open: scroll to the bottom, unless we're
   // restoring a scrolled-up reader's position from an in-place re-render.
   const thread = document.getElementById('thread-' + id);
-  // Formatted bodies live in iframes, which have no intrinsic height — grow
-  // each to its content before the scroll position is applied.
-  if (thread) sizeMessageFrames(thread);
-  if (thread) thread.scrollTop = keepScroll === null ? thread.scrollHeight : keepScroll;
+  // Formatted bodies live in iframes, which have no intrinsic height. Sizing
+  // them is asynchronous and changes the thread's scrollHeight, so re-apply
+  // the scroll position after each frame settles — otherwise "scrolled to the
+  // newest message" silently becomes "scrolled to wherever it was".
+  const applyScroll = () => {
+    if (!thread) return;
+    thread.scrollTop = keepScroll === null ? thread.scrollHeight : keepScroll;
+  };
+  if (thread) sizeMessageFrames(thread, applyScroll);
+  applyScroll();
 
   // Mount the rich editor for the reply tab and repaint the pending-upload
   // chips. Fire-and-forget: the composer falls back to plain text if the

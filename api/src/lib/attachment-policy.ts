@@ -22,6 +22,12 @@ export const MAX_UPLOAD_FILE_BYTES = 10 * 1024 * 1024;
 // base64 overhead (≈ ×1.37), so 7 MB raw ≈ 9.6 MB on the wire.
 export const MAX_REPLY_ATTACHMENT_BYTES = 7 * 1024 * 1024;
 export const MAX_FILENAME_CHARS = 150;
+// Files kept from ONE inbound email. Postmark's own 35 MB cap bounds the bytes;
+// this bounds the fan-out (uploads + rows) a single message can cost us.
+export const MAX_INBOUND_FILE_COUNT = 25;
+// Images pasted into ONE rich reply. The agent's request waits on these
+// uploads, so the fan-out is bounded; more than a handful belongs as files.
+export const MAX_INLINE_IMAGES = 10;
 
 // Postmark's blocked-attachment list (it would reject these on send) + formats
 // a browser or shell could execute if ever opened from a download.
@@ -80,9 +86,17 @@ export function sanitizeFilename(name: string | null | undefined): string {
     .replace(/[\x00-\x1f\x7f]+/g, ' ')
     .replace(/[<>:"|?*]/g, '_')
     .replace(/\s+/g, ' ')
-    .trim();
-  const capped = Array.from(base).slice(0, MAX_FILENAME_CHARS).join('').replace(/^\.+/, '');
-  return capped || 'file';
+    .trim()
+    .replace(/^\.+/, '');
+  const chars = Array.from(base);
+  if (chars.length <= MAX_FILENAME_CHARS) return base || 'file';
+  // Truncating a long name must NOT drop its extension: the deny-list keys on
+  // the extension, so `<200 chars>.exe` shortened to `<150 chars>` would sail
+  // straight through as an unknown type. Keep the extension, shorten the stem.
+  const ext = fileExtension(base);
+  const suffix = ext ? `.${ext}` : '';
+  const stem = chars.slice(0, Math.max(1, MAX_FILENAME_CHARS - Array.from(suffix).length)).join('');
+  return (stem + suffix) || 'file';
 }
 
 export function fileExtension(name: string): string {

@@ -19,7 +19,7 @@ import {
   loadAttachmentsForTicket, loadOutboundFiles, storeUpload,
 } from '../lib/message-attachments.js';
 import {
-  MAX_REPLY_ATTACHMENT_BYTES, MAX_UPLOAD_FILE_BYTES,
+  MAX_INLINE_IMAGES, MAX_REPLY_ATTACHMENT_BYTES, MAX_UPLOAD_FILE_BYTES,
 } from '../lib/attachment-policy.js';
 import { extractDataImages, sanitizeEmailHtml } from '../lib/email-html.js';
 import { htmlToText } from '../lib/html-text.js';
@@ -475,6 +475,12 @@ tickets.post('/:id/messages', async (c) => {
       if (!isAttachmentsStorageConfigured()) {
         return c.json({ error: 'Attachment storage is not configured on this server' }, 503);
       }
+      // Bounded: a paste-happy editor (or a crafted request) must not turn one
+      // reply into an unbounded upload loop held open by the agent's request.
+      if (extracted.images.length > MAX_INLINE_IMAGES) {
+        return c.json({ error: `Too many embedded images (max ${MAX_INLINE_IMAGES}); attach the rest as files instead` }, 400);
+      }
+      let html = bodyHtml ?? '';
       for (const img of extracted.images) {
         try {
           const stored = await storeUpload(sql, {
@@ -484,13 +490,14 @@ tickets.post('/:id/messages', async (c) => {
           }, {});
           if (!stored.ok) return c.json({ error: `Cannot embed a pasted image: ${stored.reason}` }, 400);
           // storeUpload mints its own id; point the HTML at that one.
-          bodyHtml = bodyHtml!.replace(`cid:${img.id}`, `cid:${stored.row.id}`);
+          html = html.replace(`cid:${img.id}`, `cid:${stored.row.id}`);
           inlineIds.push(stored.row.id);
         } catch (err) {
           console.error('[attachments] inline image upload failed:', err instanceof Error ? err.message : err);
           return c.json({ error: 'Could not store a pasted image' }, 500);
         }
       }
+      bodyHtml = html || null;
     }
   }
   // The text part: what the agent typed, or a readable rendering of their HTML

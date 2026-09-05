@@ -151,6 +151,24 @@ runDbTests('inbound attachments + HTML body (DB-backed)', () => {
     expect(msg.body_html).toBe(`<p>pic</p><img src="cid:${row.id}" />`);
   });
 
+  it('caps how many files one email can leave behind', async () => {
+    const fake = fakeStore();
+    const { MAX_INBOUND_FILE_COUNT } = await import('./lib/attachment-policy.js');
+    const many = Array.from({ length: MAX_INBOUND_FILE_COUNT + 3 }, (_, i) => ({
+      Name: `f${i}.pdf`, Content: PDF_B64, ContentType: 'application/pdf',
+    }));
+    const res = await processInboundEmail({
+      workspaceId: ctx.ws,
+      payload: payload({ Subject: 'Too many files', Attachments: many }),
+      deps: { attachments: { store: fake.store } },
+    });
+    expect(fake.puts).toHaveLength(MAX_INBOUND_FILE_COUNT);
+    const [{ n }] = await sql<{ n: number }[]>`select count(*)::int as n from ticket_attachments where ticket_id = ${res.ticket_id}`;
+    expect(n).toBe(MAX_INBOUND_FILE_COUNT);
+    const [msg] = await sql<{ body: string }[]>`select body from ticket_messages where ticket_id = ${res.ticket_id} and role = 'customer'`;
+    expect(msg.body).toContain('over the 25-file limit');
+  });
+
   it('does not re-upload on a Postmark redelivery (dedup)', async () => {
     const fake = fakeStore();
     const [msg] = await sql<{ external_message_id: string }[]>`select external_message_id from ticket_messages where id = ${ctx.msgId}`;

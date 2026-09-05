@@ -21,7 +21,7 @@ import { getDb } from './db.js';
 import { attachmentsStore, contentDispositionFor, isAttachmentsStorageConfigured, type R2Store } from './r2.js';
 import {
   classifyAttachment, fileExtension, formatSkipNote, DENY_EXT,
-  MAX_INBOUND_FILE_BYTES, sanitizeFilename,
+  MAX_INBOUND_FILE_BYTES, MAX_INBOUND_FILE_COUNT, sanitizeFilename,
 } from './attachment-policy.js';
 import { normaliseCid, rewriteCidsToUrls } from './email-html.js';
 import { drainObjectDeletions, enqueueObjectDeletions } from './object-outbox.js';
@@ -122,7 +122,10 @@ export async function uploadInboundAttachments(
   // Cheap rejections first: extension and declared size need no decode.
   type Candidate = { filename: string; bytes: Uint8Array; mime: string; disposition: 'inline' | 'attachment'; contentId: string | null };
   const candidates: Candidate[] = [];
-  for (const a of list) {
+  for (const a of list.slice(MAX_INBOUND_FILE_COUNT)) {
+    result.skipped.push(formatSkipNote(sanitizeFilename(a.Name), `over the ${MAX_INBOUND_FILE_COUNT}-file limit for one email`));
+  }
+  for (const a of list.slice(0, MAX_INBOUND_FILE_COUNT)) {
     const filename = sanitizeFilename(a.Name);
     if (DENY_EXT.has(fileExtension(filename))) { result.skipped.push(formatSkipNote(filename, 'blocked type')); continue; }
     const declaredSize = a.ContentLength ?? base64Bytes(a.Content);
