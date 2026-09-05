@@ -18,8 +18,22 @@ export type DeleteObjectsFn = (keys: string[]) => Promise<void>;
 // Default deleter — the PRIVATE attachments bucket. Injectable in tests.
 export const deleteAttachmentObjects: DeleteObjectsFn = (keys) => attachmentsStore().deleteKeys(keys);
 
-// How many object deletes run at once during a post-commit drain / sweep.
+// How many object deletes are in flight at once during a drain. Each call
+// deletes ONE key so a failure can be attributed to it (the store's own
+// batching can't tell us which key of a batch failed).
 const CONCURRENCY = 8;
+
+// A drain runs inline in the request/cron that triggered it, so it must not run
+// forever: with R2 timing out at 10 s per object, a large backlog would other-
+// wise hold the retention cron open past the platform's request ceiling. When
+// the budget is spent the remaining keys simply stay in the outbox for the next
+// run — the whole point of having one.
+const DEFAULT_BUDGET_MS = 20_000;
+
+// After this many failed attempts a key is treated as stuck (a permanent
+// problem — deleted bucket, revoked token, malformed key) and reported so an
+// operator hears about it instead of it retrying silently forever.
+export const STUCK_ATTEMPTS = 5;
 
 // Truncate an error for the last_error column.
 function errText(err: unknown): string {
@@ -43,6 +57,8 @@ export async function enqueueObjectDeletions(
 export interface DrainResult {
   deleted: string[];
   failed: string[];
+  // Keys not attempted because the time budget ran out; still in the outbox.
+  deferred: string[];
 }
 
 /**
@@ -54,12 +70,20 @@ export interface DrainResult {
 export async function drainObjectDeletions(
   keys: string[],
   deleteObjects: DeleteObjectsFn = deleteAttachmentObjects,
+  opts: { budgetMs?: number } = {},
 ): Promise<DrainResult> {
   const sql = getDb();
   const deleted: string[] = [];
   const failed: Array<{ key: string; error: string }> = [];
+  const deadline = Date.now() + Math.max(1, opts.budgetMs ?? DEFAULT_BUDGET_MS);
+  let deferred: string[] = [];
 
   for (let i = 0; i < keys.length; i += CONCURRENCY) {
+    if (Date.now() > deadline) {
+      deferred = keys.slice(i);
+      console.warn(`[object-outbox] time budget spent — ${deferred.length} key(s) left for the next run`);
+      break;
+    }
     const slice = keys.slice(i, i + CONCURRENCY);
     const settled = await Promise.allSettled(slice.map((key) => deleteObjects([key])));
     settled.forEach((r, idx) => {
@@ -85,7 +109,7 @@ export async function drainObjectDeletions(
     console.warn('[object-outbox] bookkeeping failed:', errText(err));
   }
 
-  return { deleted, failed: failed.map((f) => f.key) };
+  return { deleted, failed: failed.map((f) => f.key), deferred };
 }
 
 /**
@@ -96,14 +120,36 @@ export async function drainObjectDeletions(
 export async function sweepPendingObjectDeletions(
   limit = 200,
   deleteObjects: DeleteObjectsFn = deleteAttachmentObjects,
-): Promise<DrainResult & { swept: number }> {
+  opts: { budgetMs?: number } = {},
+): Promise<DrainResult & { swept: number; stuck: StuckKey[] }> {
   const sql = getDb();
   const rows = await sql<{ storage_key: string }[]>`
     select storage_key from pending_object_deletions
     order by attempts asc, created_at asc
     limit ${Math.max(1, limit)}
   `;
-  if (rows.length === 0) return { swept: 0, deleted: [], failed: [] };
-  const res = await drainObjectDeletions(rows.map((r) => r.storage_key), deleteObjects);
-  return { swept: rows.length, ...res };
+  if (rows.length === 0) return { swept: 0, deleted: [], failed: [], deferred: [], stuck: [] };
+  const res = await drainObjectDeletions(rows.map((r) => r.storage_key), deleteObjects, opts);
+  return { swept: rows.length, ...res, stuck: await listStuckKeys() };
+}
+
+export interface StuckKey {
+  storage_key: string;
+  attempts: number;
+  last_error: string | null;
+}
+
+/**
+ * Outbox rows that have failed enough times to be a standing problem rather
+ * than a blip. Reported by the retention cron so an operator is told about
+ * files that can never be deleted (revoked token, wrong bucket, bad key).
+ */
+export async function listStuckKeys(limit = 20): Promise<StuckKey[]> {
+  const sql = getDb();
+  return sql<StuckKey[]>`
+    select storage_key, attempts, last_error from pending_object_deletions
+    where attempts >= ${STUCK_ATTEMPTS}
+    order by attempts desc, created_at asc
+    limit ${Math.max(1, limit)}
+  `;
 }
