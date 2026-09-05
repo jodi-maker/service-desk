@@ -7,6 +7,7 @@ import { getDb } from './db.js';
 import { processPendingDeliveries } from './outgoing-webhooks.js';
 import { purgeExpiredTickets } from './retention.js';
 import { retryPendingObjectDeletions } from './gdpr-erasure.js';
+import { STUCK_ATTEMPTS } from './object-outbox.js';
 import { verifyAuditChains } from './audit-verify.js';
 import { sweepEmailDomains } from './email-domains.js';
 import { sendOpsAlert } from './alert.js';
@@ -78,7 +79,7 @@ export interface RetentionJobResult {
   objectsDeleted: number;
   objectsFailed: number;
   audit?: { checked: number; tampered: number; full: boolean };
-  objectRetry?: { swept: number; cleared: number; parkedKeysDeleted: number };
+  objectRetry?: { swept: number; cleared: number; parkedKeysDeleted: number; stuck: number };
   emailDomains?: Awaited<ReturnType<typeof sweepEmailDomains>>;
 }
 
@@ -135,8 +136,24 @@ export async function runRetentionJob(): Promise<RetentionJobResult> {
   // legacy gdpr_erasures.pending_object_keys). Best-effort — a failure here
   // must not fail the purge result.
   try {
-    const { swept, cleared, parkedKeysDeleted } = await retryPendingObjectDeletions();
-    result.objectRetry = { swept, cleared, parkedKeysDeleted };
+    const { swept, cleared, parkedKeysDeleted, stuck } = await retryPendingObjectDeletions();
+    result.objectRetry = { swept, cleared, parkedKeysDeleted, stuck: stuck.length };
+    // A key that has failed repeatedly is a standing problem (revoked token,
+    // wrong bucket, bad key), not a blip: the file is still in storage and no
+    // amount of retrying will remove it, so page rather than log. Deduped by
+    // signature inside sendOpsAlert.
+    if (stuck.length) {
+      await sendOpsAlert({
+        signature: 'object-outbox-stuck-keys',
+        severity: 'critical',
+        title: 'Attachment deletion is stuck',
+        detail:
+          `${stuck.length} attachment object(s) have failed deletion at least ${STUCK_ATTEMPTS} times and are still ` +
+          `in storage after their rows were removed (GDPR erasure / retention purge). Check R2_ATTACHMENTS_BUCKET ` +
+          `and the R2 token's permissions.\n` +
+          stuck.map((k) => `  • ${k.storage_key} (${k.attempts} attempts) — ${k.last_error ?? 'no error recorded'}`).join('\n'),
+      }).catch(() => {});
+    }
   } catch (err) {
     await alertCronFailure('gdpr-object-retry', err);
   }

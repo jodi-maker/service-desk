@@ -249,16 +249,22 @@ export async function eraseCustomer(args: {
 export async function retryPendingObjectDeletions(
   limit = 100,
   deps: EraseDeps = {},
-): Promise<{ swept: number; cleared: number; keysDeleted: number; parkedKeysDeleted: number }> {
+): Promise<{
+  swept: number; cleared: number; keysDeleted: number; parkedKeysDeleted: number;
+  // Outbox keys that keep failing — the caller alerts on these.
+  stuck: Array<{ storage_key: string; attempts: number; last_error: string | null }>;
+}> {
   const deleteObjects = deps.deleteObjects ?? deleteAttachmentObjects;
   const sql = getDb();
   // The outbox (pending_object_deletions) — written by erasure AND the
   // retention purge. Per-key isolation inside the sweep: one stuck object
   // accrues attempts, everything else drains.
   let parkedKeysDeleted = 0;
+  let stuck: Awaited<ReturnType<typeof sweepPendingObjectDeletions>>['stuck'] = [];
   try {
     const swept = await sweepPendingObjectDeletions(Math.max(1, limit), deleteObjects);
     parkedKeysDeleted = swept.deleted.length;
+    stuck = swept.stuck;
     if (swept.failed.length) {
       console.warn(`[object-outbox] ${swept.failed.length} parked object deletion(s) still failing`);
     }
@@ -285,5 +291,5 @@ export async function retryPendingObjectDeletions(
       console.warn(`[gdpr-erase] retry still failing for erasure ${row.id}:`, err instanceof Error ? err.message : err);
     }
   }
-  return { swept: rows.length, cleared, keysDeleted, parkedKeysDeleted };
+  return { swept: rows.length, cleared, keysDeleted, parkedKeysDeleted, stuck };
 }

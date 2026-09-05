@@ -176,6 +176,42 @@ runDbTests('data retention (DB-backed)', () => {
     await sql`delete from workspaces where id = ${wsP}`;
   });
 
+  it('stops draining when the time budget is spent and leaves the rest in the outbox', async () => {
+    const { drainObjectDeletions } = await import('./lib/object-outbox.js');
+    const keys = Array.from({ length: 40 }, (_, i) => `att/${ctx.wsId}/budget/${i}.pdf`);
+    await sql`insert into pending_object_deletions (storage_key, reason) select k, 'retention' from unnest(${keys}::text[]) as k`;
+    // A 1 ms budget with a deleter that sleeps: the first batch runs (the
+    // deadline is only checked between batches), everything after it is
+    // deferred. Deterministic under load — a slow machine only defers sooner.
+    const res = await drainObjectDeletions(keys, async () => { await new Promise((r) => setTimeout(r, 5)); }, { budgetMs: 1 });
+    expect(res.deferred.length).toBeGreaterThan(0);
+    expect(res.deleted.length).toBeLessThan(keys.length);
+    expect(res.deleted.length + res.failed.length + res.deferred.length).toBe(keys.length);
+    // Deferred keys are still queued for the next run.
+    const [{ n }] = await sql<{ n: number }[]>`select count(*)::int as n from pending_object_deletions where storage_key = any(${res.deferred})`;
+    expect(n).toBe(res.deferred.length);
+    await sql`delete from pending_object_deletions where storage_key = any(${keys})`;
+  });
+
+  it('reports keys that keep failing so the cron can alert instead of retrying forever', async () => {
+    const { listStuckKeys, sweepPendingObjectDeletions, STUCK_ATTEMPTS } = await import('./lib/object-outbox.js');
+    const key = `att/${ctx.wsId}/stuck/never.pdf`;
+    await sql`insert into pending_object_deletions (storage_key, reason) values (${key}, 'retention')`;
+    for (let i = 0; i < STUCK_ATTEMPTS; i++) {
+      await sweepPendingObjectDeletions(50, async () => { throw new Error('403 forbidden'); });
+    }
+    const stuck = await listStuckKeys();
+    const mine = stuck.find((s) => s.storage_key === key);
+    expect(mine).toBeTruthy();
+    expect(mine!.attempts).toBeGreaterThanOrEqual(STUCK_ATTEMPTS);
+    expect(mine!.last_error).toBe('403 forbidden');
+    // Still deletable once storage recovers.
+    const ok = await sweepPendingObjectDeletions(50, async () => {});
+    expect(ok.deleted).toContain(key);
+    const [{ n }] = await sql<{ n: number }[]>`select count(*)::int as n from pending_object_deletions where storage_key = ${key}`;
+    expect(n).toBe(0);
+  });
+
   it('never purges a workspace with retention disabled (NULL)', async () => {
     await purgeExpiredTickets();
     const [{ n }] = await sql<{ n: number }[]>`select count(*)::int as n from tickets where id = ${ctx.held}`;
