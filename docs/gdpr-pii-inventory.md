@@ -46,14 +46,19 @@ so no attachment PII is stored today. The handling is nonetheless implemented so
 correct the day upload ships:
 
 - **Erasure** — `gdpr-erasure.ts` deletes the `ticket_attachments` rows for the customer's
-  tickets (in-transaction) and the R2 objects they point to via `storage_key` (after
-  commit). A failed object delete parks the keys on `gdpr_erasures.pending_object_keys`;
-  `retryPendingObjectDeletions()` (run from the retention cron) retries until they're gone,
-  so a transient R2 outage self-heals. ✅ implemented.
-- **Retention** — the purge (`lib/retention.ts`) gathers the `storage_key`s of every
-  expiring ticket inside the delete transaction and deletes the R2 objects after commit.
-  A failed object delete is parked in `pending_object_deletions`;
-  `retryPendingObjectDeletions()` sweeps that table too. ✅ implemented.
+  tickets (in-transaction), writes their `storage_key`s to the `pending_object_deletions`
+  OUTBOX in that same transaction, and deletes the R2 objects after commit — clearing each
+  key as it succeeds. A crash or R2 outage therefore always leaves a durable pointer, and
+  `retryPendingObjectDeletions()` (run from the retention cron) finishes the job, so the
+  outage self-heals. Erasures written before the outbox existed still carry their keys on
+  `gdpr_erasures.pending_object_keys`; the same sweep drains that column too.
+  ✅ implemented.
+- **Retention** — the purge (`lib/retention.ts`) does exactly the same: `storage_key`s of
+  every expiring ticket go to the outbox inside the delete transaction, objects are deleted
+  after commit, and the cron retries whatever is left. ✅ implemented.
+- **Stuck keys are visible** — each outbox row counts `attempts` and records `last_error`;
+  the retention cron raises a critical ops alert when a key keeps failing, so a file that
+  can never be deleted (bad token, wrong bucket) is not silently retained forever.
 - **Storage** — attachments live in a separate PRIVATE bucket (`R2_ATTACHMENTS_BUCKET`)
   and are served only via short-lived presigned URLs minted inside authenticated ticket
   responses. Never the public brand-assets bucket.
