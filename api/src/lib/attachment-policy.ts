@@ -25,6 +25,9 @@ export const MAX_FILENAME_CHARS = 150;
 // Files kept from ONE inbound email. Postmark's own 35 MB cap bounds the bytes;
 // this bounds the fan-out (uploads + rows) a single message can cost us.
 export const MAX_INBOUND_FILE_COUNT = 25;
+// Images pasted into ONE rich reply. The agent's request waits on these
+// uploads, so the fan-out is bounded; more than a handful belongs as files.
+export const MAX_INLINE_IMAGES = 10;
 
 // Postmark's blocked-attachment list (it would reject these on send) + formats
 // a browser or shell could execute if ever opened from a download.
