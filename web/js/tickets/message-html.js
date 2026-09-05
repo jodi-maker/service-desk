@@ -29,10 +29,13 @@ export function remoteImagesKey(ticketId, idx) { return `${ticketId}:${idx}`; }
 export function remoteImagesEnabled(ticketId, idx) { return REMOTE_IMAGES_ON.has(remoteImagesKey(ticketId, idx)); }
 export function enableRemoteImages(ticketId, idx) { REMOTE_IMAGES_ON.add(remoteImagesKey(ticketId, idx)); }
 
-// Does this body pull anything from the network? (Attachment images are
-// same-message and already allowed; these are the third-party ones.)
+// Does this body pull anything from the network? Covers <img src> AND CSS
+// `url(...)` in style attributes (background images are the other common
+// tracking-pixel carrier), so the "images blocked" notice matches what the
+// frame CSP actually blocks. Attachment images are same-message and allowed.
 export function hasRemoteImages(html) {
-  return /<img\b[^>]*\bsrc\s*=\s*["']https?:/i.test(html || '');
+  const s = html || '';
+  return /<img\b[^>]*\bsrc\s*=\s*["']https?:/i.test(s) || /url\(\s*["']?https?:/i.test(s);
 }
 
 // The origins this message's own attachments live on (the presigned R2 host),
@@ -75,12 +78,11 @@ function frameDocument(html, imgOrigins, remote) {
  * Body markup for a message. Falls back to the escaped plain text when the
  * message has no HTML (notes, older messages, plain-text mail).
  * @param {object} m mapped message ({ html, attachments, … })
- * @param {string} bodyText already-chosen text body (translation aware)
  * @param {string} ticketId
  * @param {number} idx message index within the thread
  * @param {string} fallbackHtml what to render when there is no `m.html`
  */
-export function renderMessageBody(m, bodyText, ticketId, idx, fallbackHtml) {
+export function renderMessageBody(m, ticketId, idx, fallbackHtml) {
   if (!m.html) return fallbackHtml;
   const remote = remoteImagesEnabled(ticketId, idx);
   const doc = frameDocument(m.html, attachmentOrigins(m.attachments), remote);
@@ -98,16 +100,25 @@ export function renderMessageBody(m, bodyText, ticketId, idx, fallbackHtml) {
 // Grow each frame to its content once it loads. Called after the thread is
 // written to the DOM. Capped so a runaway newsletter scrolls inside its own
 // frame instead of pushing the composer off-screen.
+//
+// Sizing is asynchronous (a frame may still be parsing), and every resize
+// changes the thread's scrollHeight — so the caller's "scroll to the newest
+// message" would be undone by a frame that grows a moment later. `onResize`
+// lets the thread re-pin itself after each change.
 const MAX_FRAME_PX = 1200;
-export function sizeMessageFrames(root) {
-  const frames = (root || document).querySelectorAll ? (root || document).querySelectorAll('iframe[data-msg-frame]') : [];
+export function sizeMessageFrames(root, onResize) {
+  const host = root || document;
+  const frames = typeof host.querySelectorAll === 'function' ? host.querySelectorAll('iframe[data-msg-frame]') : [];
   for (const frame of frames) {
     const fit = () => {
       try {
         const doc = frame.contentDocument;
         if (!doc || !doc.body) return;
         const h = Math.min(Math.max(doc.body.scrollHeight, 24), MAX_FRAME_PX);
-        frame.style.height = `${h}px`;
+        const next = `${h}px`;
+        if (frame.style.height === next) return;
+        frame.style.height = next;
+        if (typeof onResize === 'function') onResize();
       } catch { /* cross-origin or torn down mid-render — leave the default height */ }
     };
     frame.addEventListener('load', fit);
