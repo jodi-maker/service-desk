@@ -504,7 +504,10 @@ tickets.post('/:id/messages', async (c) => {
   // for plain-text mail clients, search and the AI context.
   const bodyText = (input.body?.trim() || (bodyHtml ? htmlToText(bodyHtml) : '')) || '(empty message)';
 
-  const claimIds = [...(input.attachment_ids ?? []), ...inlineIds];
+  // Deduped: a client that sends the same id twice means one file, and the
+  // claim asserts rows-updated === ids-requested — without this it would fail
+  // with a misleading "1 attachment is unknown or already sent".
+  const claimIds = [...new Set([...(input.attachment_ids ?? []), ...inlineIds])];
   // Postmark rejects a message over 10 MB including base64 overhead; refuse
   // before the row exists so the agent can drop a file and retry.
   if (claimIds.length) {
