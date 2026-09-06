@@ -167,6 +167,10 @@ export function rewriteCidsToUrls(html: string, urlByAttachmentId: Map<string, s
  *
  * Only the raster types the sanitiser allows are extracted; anything else has
  * already lost its src by the time this runs.
+ *
+ * The double-quoted `src="…"` shape is not an assumption about the client: this
+ * only ever runs on sanitizeEmailHtml's OUTPUT, and sanitize-html re-serialises
+ * every attribute with double quotes whatever the input used.
  */
 export function extractDataImages(html: string): { html: string; images: Array<{ id: string; mime: string; bytes: Uint8Array }> } {
   const images: Array<{ id: string; mime: string; bytes: Uint8Array }> = [];

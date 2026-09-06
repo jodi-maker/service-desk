@@ -122,6 +122,39 @@ describe('sanitizeEmailHtml — data: images', () => {
   });
 });
 
+describe('extractDataImages', () => {
+  const PNG_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVR4nGNiAAAABgADNjd8qAAAAABJRU5ErkJggg==';
+
+  it('pulls a pasted image out of sanitised HTML and leaves a cid token', async () => {
+    const { extractDataImages } = await import('./lib/email-html.js');
+    // Single-quoted on the way IN — the sanitiser re-serialises to double
+    // quotes, which is the only shape extractDataImages ever sees.
+    const sanitised = sanitizeEmailHtml(`<p>hi</p><img src='data:image/png;base64,${PNG_B64}'>`, { allowDataImages: true }).html;
+    expect(sanitised).toContain('src="data:image/png;base64,');
+    const { html, images } = extractDataImages(sanitised);
+    expect(images).toHaveLength(1);
+    expect(images[0].mime).toBe('image/png');
+    expect(images[0].bytes.length).toBeGreaterThan(8);
+    expect(html).toBe(`<p>hi</p><img src="cid:${images[0].id}" />`);
+    expect(html).not.toContain('data:');
+  });
+
+  it('normalises jpg to image/jpeg and handles several images', async () => {
+    const { extractDataImages } = await import('./lib/email-html.js');
+    const src = `<img src="data:image/jpg;base64,${PNG_B64}"><img src="data:image/gif;base64,${PNG_B64}">`;
+    const { html, images } = extractDataImages(sanitizeEmailHtml(src, { allowDataImages: true }).html);
+    expect(images.map((i) => i.mime)).toEqual(['image/jpeg', 'image/gif']);
+    expect(new Set(images.map((i) => i.id)).size).toBe(2);   // distinct tokens
+    expect(html.match(/cid:/g)).toHaveLength(2);
+  });
+
+  it('is a no-op for HTML with no data: images', async () => {
+    const { extractDataImages } = await import('./lib/email-html.js');
+    const html = '<p>plain</p><img src="https://cdn.test/a.png" />';
+    expect(extractDataImages(html)).toEqual({ html, images: [] });
+  });
+});
+
 describe('normaliseCid', () => {
   it('is the one canonical form both sides of the cid map use', async () => {
     const { normaliseCid } = await import('./lib/email-html.js');
