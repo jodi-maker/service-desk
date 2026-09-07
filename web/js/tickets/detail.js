@@ -112,6 +112,7 @@ function renderSentimentBadge(sentiment) {
 
 export function openTicket(id) {
   const layout = captureTicketLayout(id);
+  if (CURRENT_TICKET !== id) setComposeTabValue('reply');
   setCurrentTicket(id);
   const t = TICKETS.find(x => x.id === id);
   // Bad ticket IDs can reach here from stale notifications, deep-links
@@ -532,7 +533,7 @@ export function openTicket(id) {
             <div class="composer-launcher">
               <button class="btn btn-sm btn-solid" data-action="td.setComposeTab" data-ticket-id="${window.escAttr(id)}" data-tab="reply" data-compose-launch aria-controls="composer-body-${id}" aria-expanded="${layout.mode !== 'read'}">Reply${loadDraft(id, 'reply') ? ' · draft' : ''}</button>
               <button class="btn btn-sm" data-action="td.setComposeTab" data-ticket-id="${window.escAttr(id)}" data-tab="note" data-compose-launch aria-controls="composer-body-${id}" aria-expanded="${layout.mode !== 'read'}">Internal note${loadDraft(id, 'note') ? ' · draft' : ''}</button>
-              <span class="composer-launch-hint">${pendingAttachmentIds(id).length ? `${pendingAttachmentIds(id).length} ${pendingAttachmentIds(id).length === 1 ? 'attachment' : 'attachments'} ready` : 'Write a reply…'}</span>
+              <span class="composer-launch-hint">${pendingAttachmentIds(id).length ? `${pendingAttachmentIds(id).length} ${pendingAttachmentIds(id).length === 1 ? 'attachment' : 'attachments'} ready` : ''}</span>
             </div>
             <div class="composer-tabs">
               <button class="ctab ${COMPOSE_TAB==='reply'?'active':''}" aria-pressed="${COMPOSE_TAB==='reply'}" data-action="td.setComposeTab" data-ticket-id="${window.escAttr(id)}" data-tab="reply">Reply</button>
