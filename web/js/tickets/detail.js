@@ -685,16 +685,10 @@ export function openTicket(id) {
   // Show the most recent reply on open: scroll to the bottom, unless we're
   // restoring a scrolled-up reader's position from an in-place re-render.
   const thread = document.getElementById('thread-' + id);
-  // Formatted bodies live in iframes, which have no intrinsic height. Sizing
-  // them is asynchronous and changes the thread's scrollHeight, so re-apply
-  // the scroll position after each frame settles — otherwise "scrolled to the
-  // newest message" silently becomes "scrolled to wherever it was".
-  const applyScroll = () => {
-    if (!thread) return;
+  if (thread) {
     thread.scrollTop = keepScroll === null ? thread.scrollHeight : keepScroll;
-  };
-  if (thread) sizeMessageFrames(thread, applyScroll);
-  applyScroll();
+    sizeMessageFrames(thread, keepScroll);
+  }
 
   // Mount the rich editor for the reply tab and repaint the pending-upload
   // chips. Fire-and-forget: the composer falls back to plain text if the

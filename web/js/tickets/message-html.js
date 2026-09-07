@@ -53,7 +53,8 @@ function attachmentOrigins(attachments) {
 // measured from this document, so no margins of our own.
 const FRAME_CSS = `
 html,body{margin:0;padding:0;background:transparent}
-body{font:14px/1.65 'Inter',system-ui,sans-serif;color:#130e30;word-break:break-word;overflow-x:auto}
+html{overflow-y:auto}
+body{font:14px/1.65 'Inter',system-ui,sans-serif;color:#130e30;word-break:break-word;overflow-x:auto;display:flow-root}
 img{max-width:100%;height:auto}
 table{max-width:100%}
 a{color:#130e30}
@@ -97,31 +98,125 @@ export function renderMessageBody(m, ticketId, idx, fallbackHtml) {
       srcdoc="${window.escAttr(doc)}"></iframe>`;
 }
 
-// Grow each frame to its content once it loads. Called after the thread is
-// written to the DOM. Capped so a runaway newsletter scrolls inside its own
-// frame instead of pushing the composer off-screen.
-//
-// Sizing is asynchronous (a frame may still be parsing), and every resize
-// changes the thread's scrollHeight — so the caller's "scroll to the newest
-// message" would be undone by a frame that grows a moment later. `onResize`
-// lets the thread re-pin itself after each change.
-const MAX_FRAME_PX = 1200;
-export function sizeMessageFrames(root, onResize) {
-  const host = root || document;
-  const frames = typeof host.querySelectorAll === 'function' ? host.querySelectorAll('iframe[data-msg-frame]') : [];
-  for (const frame of frames) {
-    const fit = () => {
+let disposeSizing = () => {};
+
+// The thread owns vertical scrolling. Size frames to their intrinsic content,
+// including late images and width changes, rather than capping long emails.
+export function sizeMessageFrames(root, initialScrollTop = null) {
+  disposeSizing();
+  if (!root?.querySelectorAll || !root.isConnected) return;
+  const frames = [...root.querySelectorAll('iframe[data-msg-frame]')];
+  if (!frames.length) return;
+  const observers = new Map();
+  const loaded = new Set();
+  const settled = new Set();
+  let restoreInitial = true;
+  let disposed = false;
+  let scheduled = 0;
+
+  const userReading = () => { restoreInitial = false; };
+  const fit = () => {
+    scheduled = 0;
+    if (disposed || !root.isConnected) return;
+    const pinned = root.scrollHeight - root.clientHeight - root.scrollTop < 40;
+    const top = root.getBoundingClientRect().top;
+    const anchor = [...root.children].find(el => el.getBoundingClientRect().bottom > top);
+    const anchorTop = anchor?.getBoundingClientRect().top;
+    let changed = false;
+    for (const frame of frames) {
+      try {
+        const body = frame.contentDocument?.body;
+        if (!body || !loaded.has(frame)) continue;
+        // flow-root contains paragraph margins and floated images. Unlike the
+        // documentElement, this height is not floored by the iframe viewport,
+        // so a frame can shrink again when the reading column gets wider.
+        const height = Math.ceil(Math.max(body.scrollHeight, body.getBoundingClientRect().height, 24));
+        const next = `${height}px`;
+        if (frame.style.height !== next) { frame.style.height = next; changed = true; }
+      } catch { /* a followed link can make a frame cross-origin */ }
+    }
+    if (restoreInitial) {
+      root.scrollTop = initialScrollTop === null ? root.scrollHeight : initialScrollTop;
+      if (settled.size === frames.length) restoreInitial = false;
+    } else if (changed) {
+      if (pinned) root.scrollTop = root.scrollHeight;
+      else if (anchor?.isConnected) root.scrollTop += anchor.getBoundingClientRect().top - anchorTop;
+    }
+  };
+  const schedule = () => {
+    if (!disposed && !scheduled) scheduled = requestAnimationFrame(fit);
+  };
+  const watch = frame => {
+    observers.get(frame)?.disconnect();
+    try {
+      const doc = frame.contentDocument;
+      if (!doc?.body || doc.URL !== 'about:srcdoc') return;
+      loaded.add(frame);
+      if (doc.readyState === 'complete') settled.add(frame);
+      // Some emails bring their own fixed-height scrolling divs. Expand only
+      // explicit scrolling containers; leave intentionally hidden content alone.
+      for (const el of doc.body.querySelectorAll('[style]')) {
+        const computed = doc.defaultView.getComputedStyle(el);
+        // Viewport-height units otherwise create feedback: growing the frame
+        // grows its content again. Freeze resolved lengths before observing.
+        // Only layout properties are considered, never URLs or CSS strings.
+        for (const property of [...el.style]) {
+          if (!/^(height|min-height|max-height|width|min-width|max-width|font-size|line-height|padding.*|margin.*|top|bottom|left|right|inset.*|gap|row-gap|column-gap|transform)$/.test(property)) continue;
+          if (!/\d(?:s|l|d)?v(?:h|b|min|max)\b/i.test(el.style.getPropertyValue(property))) continue;
+          el.style.setProperty(property, computed.getPropertyValue(property), 'important');
+        }
+        if (!/\b(auto|scroll)\b/.test(el.style.overflowY || el.style.overflow)) continue;
+        const overflow = computed.overflowY;
+        if (overflow !== 'auto' && overflow !== 'scroll') continue;
+        el.style.setProperty('height', 'auto', 'important');
+        el.style.setProperty('max-height', 'none', 'important');
+        el.style.setProperty('overflow', 'visible', 'important');
+      }
+      const observer = new ResizeObserver(schedule);
+      observer.observe(doc.body);
+      observers.set(frame, observer);
+      // Wheel events inside srcdoc do not bubble into the parent document.
+      doc.addEventListener('wheel', userReading, { passive: true });
+      doc.addEventListener('touchstart', userReading, { passive: true });
+      doc.addEventListener('keydown', userReading);
+      doc.addEventListener('load', schedule, true);
+      schedule();
+    } catch { /* cross-origin or removed during navigation */ }
+  };
+  const loads = frames.map(frame => {
+    const onLoad = () => watch(frame);
+    frame.addEventListener('load', onLoad);
+    watch(frame);
+    return () => frame.removeEventListener('load', onLoad);
+  });
+  root.addEventListener('wheel', userReading, { passive: true });
+  root.addEventListener('touchstart', userReading, { passive: true });
+  root.addEventListener('pointerdown', userReading);
+  root.addEventListener('keydown', userReading);
+  // Navigation replaces the entire ticket subtree. Disconnect promptly so
+  // observers never retain detached emails or continue resizing old frames.
+  const removal = new MutationObserver(() => { if (!root.isConnected) cleanup(); });
+  const cleanup = () => {
+    disposed = true;
+    cancelAnimationFrame(scheduled);
+    removal.disconnect();
+    observers.forEach(observer => observer.disconnect());
+    loads.forEach(remove => remove());
+    root.removeEventListener('wheel', userReading);
+    root.removeEventListener('touchstart', userReading);
+    root.removeEventListener('pointerdown', userReading);
+    root.removeEventListener('keydown', userReading);
+    for (const frame of frames) {
       try {
         const doc = frame.contentDocument;
-        if (!doc || !doc.body) return;
-        const h = Math.min(Math.max(doc.body.scrollHeight, 24), MAX_FRAME_PX);
-        const next = `${h}px`;
-        if (frame.style.height === next) return;
-        frame.style.height = next;
-        if (typeof onResize === 'function') onResize();
-      } catch { /* cross-origin or torn down mid-render — leave the default height */ }
-    };
-    frame.addEventListener('load', fit);
-    fit();   // srcdoc frames can already be parsed by the time we get here
-  }
+        doc?.removeEventListener('wheel', userReading);
+        doc?.removeEventListener('touchstart', userReading);
+        doc?.removeEventListener('keydown', userReading);
+        doc?.removeEventListener('load', schedule, true);
+      } catch { /* navigated frame */ }
+    }
+    if (disposeSizing === cleanup) disposeSizing = () => {};
+  };
+  removal.observe(root.closest('#main-area') || document.body, { childList: true, subtree: true });
+  disposeSizing = cleanup;
 }
