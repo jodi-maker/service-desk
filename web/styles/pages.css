@@ -152,6 +152,16 @@ mark{background:rgba(255,226,40,0.55);color:var(--ink);padding:0 2px;border-radi
 .msg-note{background:var(--amber-lt);border-left:2px solid var(--amber);color:var(--amber)}
 .msg-from{font-family:var(--font-sans);font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--ink3);margin-bottom:5px;display:flex;align-items:center;gap:5px}
 .msg-agent .msg-from{color:var(--purple)}.msg-ai .msg-from{color:var(--green)}.msg-note .msg-from{color:var(--amber)}
+/* Formatted (HTML) email bodies render in a script-less sandboxed iframe;
+   height is set from the frame content by tickets/message-html.js. */
+.msg-frame{display:block;width:100%;border:0;height:60px;background:transparent;color-scheme:light}
+.msg-remote-note{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;padding:6px 9px;border:1px dashed var(--rule2);border-radius:var(--r);background:var(--off2);font-size:11px;color:var(--ink3)}
+/* Attachment chips under a message. */
+.att-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.att-chip{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:5px 10px;border:1px solid var(--rule);border-radius:var(--r-pill);background:var(--w);color:var(--ink);font-size:12px;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.att-chip:hover{border-color:var(--rule3);background:var(--off)}
+.att-chip-dead{opacity:.6;cursor:default}
+.att-size{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3)}
 .ai-mark{font-size:8px;padding:0 6px;border:1px solid var(--green);color:var(--green);border-radius:var(--r-pill);background:var(--green-lt)}
 .note-mark{font-size:8px;padding:0 6px;border:1px solid var(--amber);color:var(--amber);border-radius:var(--r-pill)}
 .ts-stale-badge{font-weight:400;text-transform:none;letter-spacing:0;color:var(--amber);font-size:10px;font-style:italic;margin-left:6px}

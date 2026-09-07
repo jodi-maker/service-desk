@@ -45,6 +45,8 @@ import { loadDraft, saveDraft, clearDraft, clearAllDrafts } from './drafts.js';
 import { logTicketEvent, getTicketEvents } from '../core/activity-log.js';
 import { showMacroPanel, showApplyMacroModal } from './macros.js';
 import { showAttachPanel } from './attachments.js';
+import { renderAttachmentChips } from './attachment-chips.js';
+import { enableRemoteImages, renderMessageBody, sizeMessageFrames } from './message-html.js';
 import { fireWebhook, ticketPayload } from '../webhooks/index.js';
 import { loadTicketDetail } from '../core/bootstrap.js';
 import { apiPatch, apiPost, apiDelete } from '../core/api-client.js';
@@ -400,14 +402,21 @@ export function openTicket(id) {
       bodyNote = `<div style="margin-top:6px;font-size:10px;color:var(--ink3);font-style:italic">→ Sent to customer in ${window.escHtml(m.translatedTo || 'their language')} · <span class="link" data-action="td.showSentText" data-ticket-id="${window.escAttr(id)}" data-msg-idx="${i}">view sent text</span></div>`;
     }
 
-    const bodyHtml = m.r === 'note'
+    const plainBody = m.r === 'note'
       ? renderTextWithMentions(bodyText)
       : window.escHtml(bodyText).replace(/\n/g, '<br>');
+    // A formatted email renders in a sandboxed frame; everything else (notes,
+    // plain-text mail, and any message being shown as a translation or as the
+    // agent's pre-translation original) keeps the escaped-text rendering.
+    const showRich = !!m.html && bodyText === m.t;
+    const bodyHtml = showRich ? renderMessageBody(m, id, i, plainBody) : plainBody;
+    const attachHtml = renderAttachmentChips(m.attachments);
     const sentimentBadge = m.r === 'customer' ? renderSentimentBadge(m.sentiment) : '';
     return `
     <div class="msg msg-${m.r}">
       <div class="msg-from">${window.escHtml(m.from)} ${m.r==='ai'?'<span class="ai-mark">AI</span>':''} ${m.r==='note'?'<span class="note-mark">Note</span>':''}${sentimentBadge}<span style="margin-left:auto;font-family:'Inter',sans-serif;font-size:11px;color:var(--ink3)">${window.escHtml(m.ts)}</span></div>
       ${bodyHtml}
+      ${attachHtml}
       ${bodyNote}
       ${translateBlock}
     </div>`;
@@ -644,7 +653,16 @@ export function openTicket(id) {
   // Show the most recent reply on open: scroll to the bottom, unless we're
   // restoring a scrolled-up reader's position from an in-place re-render.
   const thread = document.getElementById('thread-' + id);
-  if (thread) thread.scrollTop = keepScroll === null ? thread.scrollHeight : keepScroll;
+  // Formatted bodies live in iframes, which have no intrinsic height. Sizing
+  // them is asynchronous and changes the thread's scrollHeight, so re-apply
+  // the scroll position after each frame settles — otherwise "scrolled to the
+  // newest message" silently becomes "scrolled to wherever it was".
+  const applyScroll = () => {
+    if (!thread) return;
+    thread.scrollTop = keepScroll === null ? thread.scrollHeight : keepScroll;
+  };
+  if (thread) sizeMessageFrames(thread, applyScroll);
+  applyScroll();
 }
 
 function setComposeTab(tab, id) { setComposeTabValue(tab); openTicket(id); }
@@ -1147,6 +1165,7 @@ registerActions({
   'td.hideTranslation':(ds) => hideMessageTranslation(ds.ticketId, parseInt(ds.msgIdx, 10)),
   'td.translateMsg':   (ds) => translateMessage(ds.ticketId, parseInt(ds.msgIdx, 10)),
   'td.showSentText':   (ds) => showSentTextModal(ds.ticketId, parseInt(ds.msgIdx, 10)),
+  'td.showRemoteImages': (ds) => { enableRemoteImages(ds.ticketId, parseInt(ds.msgIdx, 10)); openTicket(ds.ticketId); },
   // Compose area
   'td.setComposeTab':  (ds) => setComposeTab(ds.tab, ds.ticketId),
   'td.insertVar':      (ds) => insertVar(ds.ticketId, ds.token),
