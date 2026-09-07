@@ -7,15 +7,14 @@
 //   SpamComplaint / SpamNotification            → state = 'spam'
 //   SoftBounce / Transient / DMARCPolicy / *    → state = 'soft'
 //
-// We denormalise the summary onto customers — single row update per
-// event, with email_bounce_count incremented atomically via the .rpc()
-// pattern. History (full per-event audit) is deferred until a
+// State belongs to each contact address; the primary summary is mirrored to
+// customers in the same transaction. History (full per-event audit) is deferred until a
 // follow-up; if you need it for compliance, run from Postmark's own
 // event log in the dashboard.
 
 import { z } from 'zod';
 import { getDb } from './db.js';
-import { resolveCustomerByContact } from './customer-contacts.js';
+import { resolveCustomerByContact, syncPrimaryMirror } from './customer-contacts.js';
 
 export const PostmarkBounce = z
   .object({
@@ -114,52 +113,37 @@ export async function processBounceEvent(args: {
       return { ok: true, matched: false, workspaceId, customerId: null, state };
     }
 
-    // Only escalate state, never downgrade — once undeliverable, stay
-    // undeliverable (Postmark replay order isn't guaranteed).
-    const rank = (s: string) => ({ none: 0, soft: 1, hard: 2, spam: 2 }[s] ?? 0);
     const bouncedAt = payload.BouncedAt || new Date().toISOString();
-
-    // Per-address state on the contact row (PR 7 moves the suppression READ
-    // here; writing it from day one means no second backfill later).
-    const [row] = await sql<{ id: string; bounce_state: string; bounce_count: number }[]>`
-      select id, bounce_state, bounce_count from customer_contacts
-      where workspace_id = ${workspaceId} and customer_id = ${holder.id} and kind = 'email'
-        and value = ${recipient} and deleted_at is null
-    `;
-    if (row) {
-      const next = rank(state) >= rank(row.bounce_state || 'none') ? state : row.bounce_state;
-      await sql`
+    // Serialize with contact edits/resets using the same customer-first lock
+    // order. Escalation and the increment use the current row, not a stale
+    // read, so concurrent events cannot lose counts or unsuppress an address.
+    const matched = await sql.begin(async (tx) => {
+      const [customer] = await tx`
+        select id from customers
+        where id = ${holder.id} and workspace_id = ${workspaceId} and deleted_at is null
+          and erased_at is null and merged_into_customer_id is null
+        for update
+      `;
+      if (!customer) return false;
+      const rows = await tx`
         update customer_contacts set
           bounce_last_type = ${payload.Type},
           bounce_last_at   = ${bouncedAt},
-          bounce_count     = ${(row.bounce_count || 0) + 1},
-          bounce_state     = ${next}
-        where id = ${row.id}
+          bounce_count     = bounce_count + 1,
+          bounce_state     = case
+            when bounce_state = 'spam' or ${state} = 'spam' then 'spam'
+            when bounce_state = 'hard' or ${state} = 'hard' then 'hard'
+            else 'soft' end
+        where workspace_id = ${workspaceId} and customer_id = ${holder.id}
+          and kind = 'email' and value = ${recipient} and deleted_at is null
+          and created_at <= ${bouncedAt}::timestamptz
+        returning id
       `;
-    }
-
-    // The customer-level summary the SPA and the suppression list still read
-    // is unchanged in meaning — it describes the PRIMARY address (the mirror),
-    // so it only moves when the bounced address IS the primary.
-    const [customer] = await sql<{ id: string; email_bounce_count: number; email_bounce_state: string | null }[]>`
-      select id, email_bounce_count, email_bounce_state from customers
-      where id = ${holder.id} and workspace_id = ${workspaceId} and email = ${recipient} and deleted_at is null
-    `;
-    if (customer) {
-      const nextState = rank(state) >= rank(customer.email_bounce_state || 'none')
-        ? state
-        : customer.email_bounce_state;
-      await sql`
-        update customers set
-          email_last_bounce_type = ${payload.Type},
-          email_last_bounce_at   = ${bouncedAt},
-          email_bounce_count     = ${(customer.email_bounce_count || 0) + 1},
-          email_bounce_state     = ${nextState}
-        where id = ${customer.id}
-      `;
-    }
-
-    return { ok: true, matched: true, workspaceId, customerId: holder.id, state };
+      if (!rows.length) return false;
+      await syncPrimaryMirror(tx, workspaceId, holder.id);
+      return true;
+    });
+    return { ok: true, matched, workspaceId, customerId: matched ? holder.id : null, state };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }

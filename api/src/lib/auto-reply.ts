@@ -1,6 +1,7 @@
 import type { TriageOutput } from './triage.js';
 import { env } from './env.js';
 import { getDb } from './db.js';
+import { resolveTicketRecipient } from './ticket-recipient.js';
 
 // Migration to Neon — Step 3 (tickets megabatch). DB via getDb().
 // postmark-outbound is external HTTP.
@@ -131,6 +132,7 @@ export type PostAutoReplyResult =
       | 'already_auto_replied'
       | 'postmark_not_configured'
       | 'customer_email_missing'
+      | 'email_suppressed'
       | 'send_failed';
       detail?: string };
 
@@ -177,6 +179,7 @@ export async function postAutoReply(args: PostAutoReplyArgs): Promise<PostAutoRe
   if (!sendContext.customerEmail) {
     return { posted: false, reason: 'customer_email_missing' };
   }
+  if (sendContext.suppressed) return { posted: false, reason: 'email_suppressed' };
 
   // 4. Send via Postmark. From identity: brand-owned verified domain with
   //    platform fallback + rejection safety net (send-branded-email.ts). On
@@ -251,6 +254,7 @@ export async function postAutoReply(args: PostAutoReplyArgs): Promise<PostAutoRe
 
 interface SendContext {
   customerEmail: string | null;
+  suppressed: boolean;
   subject: string;
   lastCustomerMessageId: string | null;   // RFC Message-ID for threading
 }
@@ -260,10 +264,9 @@ async function loadSendContext(
   workspaceId: string,
 ): Promise<SendContext> {
   const sql = getDb();
-  const [ticket] = await sql<{ subject: string; email: string | null }[]>`
-    select t.subject, c.email
-    from tickets t left join customers c on c.id = t.customer_id
-    where t.id = ${ticketId} and t.workspace_id = ${workspaceId}
+  const [ticket] = await sql<{ subject: string }[]>`
+    select subject from tickets
+    where id = ${ticketId} and workspace_id = ${workspaceId} and deleted_at is null
   `;
   if (!ticket) throw new Error('Ticket lookup for send failed: not found');
 
@@ -276,8 +279,10 @@ async function loadSendContext(
     limit 1
   `;
 
+  const recipient = await resolveTicketRecipient(workspaceId, ticketId);
   return {
-    customerEmail: ticket.email ?? null,
+    customerEmail: recipient?.email ?? null,
+    suppressed: recipient?.suppressed ?? false,
     subject: ticket.subject,
     lastCustomerMessageId: lastMsg?.external_message_id ?? null,
   };

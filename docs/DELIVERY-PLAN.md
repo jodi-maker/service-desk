@@ -10,9 +10,10 @@ code review and the repository's Octopus 4+/5 gate before merge.
 - [ ] Make Cloudflare respect the origin's browser cache headers for the app.
   Verify the public JavaScript and CSS responses; already-cached browsers may
   still need a hard refresh. Do not change unrelated zone settings.
-- [ ] Return PostgreSQL DATE values as YYYY-MM-DD strings, preserving timestamp
+- [x] Return PostgreSQL DATE values as YYYY-MM-DD strings, preserving timestamp
   behaviour. Cover out-of-office assignment boundaries, agent API responses,
   customer dates and holiday arrays with database-backed regression tests.
+  PR #472 merged; deployment reported complete by Jodi on 7 September 2026.
 
 ## 2. Finish the email journey and profile contact routing
 

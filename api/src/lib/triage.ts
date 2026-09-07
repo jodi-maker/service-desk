@@ -233,6 +233,7 @@ export interface TriageResult {
       | 'already_auto_replied'
       | 'postmark_not_configured'
       | 'customer_email_missing'
+      | 'email_suppressed'
       | 'send_failed'
       | 'unknown_error';
     not_posted_detail?: string;      // free-form context (e.g. Postmark error body)
