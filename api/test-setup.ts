@@ -52,3 +52,12 @@ process.env.SLACK_ALERT_WEBHOOK_URL = '';
 // deterministic regardless of file order. Keep in sync with cors.test's
 // APP_ORIGIN constant.
 process.env.APP_BASE_URL ||= 'https://app.respovia.com';
+// Storage must read as UNconfigured in tests: r2-presign.test.ts asserts the
+// "attachments bucket not configured" contract, and a dev api/.env with real
+// R2 credentials + R2_ATTACHMENTS_BUCKET would otherwise turn that unit test
+// into a real signed PUT against the private bucket. Hard assignment, not ||=.
+process.env.R2_ACCOUNT_ID = '';
+process.env.R2_ACCESS_KEY_ID = '';
+process.env.R2_SECRET_ACCESS_KEY = '';
+process.env.R2_ATTACHMENTS_BUCKET = '';
+process.env.R2_PUBLIC_BASE_URL = '';

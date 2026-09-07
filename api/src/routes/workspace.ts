@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { requireAuth } from '../middleware/auth.js';
 import { getDb } from '../lib/db.js';
 import { requireWorkspaceAdmin } from '../lib/authz.js';
-import { putObject, listKeys, deleteKeys, publicUrl } from '../lib/r2.js';
+import { brandAssetsStore, publicUrl } from '../lib/r2.js';
 import { sniffImageMime } from '../lib/image-sniff.js';
 
 // Migration to Neon — Step 3 (DB access on getDb(), admin gate via
@@ -82,7 +82,7 @@ workspace.post('/branding/logo', async (c) => {
   // uploads in the same millisecond can't collide (#19).
   const key = `${workspaceId}/logo-${Date.now()}-${crypto.randomUUID()}.${extByMime[mime]}`;
   try {
-    await putObject(key, bytes, mime);
+    await brandAssetsStore().putObject(key, bytes, { contentType: mime, contentDisposition: 'attachment' });
   } catch (err) {
     // Log the detail server-side (it can include the R2/S3 error body, which
     // may echo signing internals); return a generic message to the client.
@@ -92,8 +92,9 @@ workspace.post('/branding/logo', async (c) => {
 
   // Best-effort cleanup of older files under this workspace's prefix.
   try {
-    const stale = (await listKeys(`${workspaceId}/`)).filter((k) => k !== key);
-    await deleteKeys(stale);
+    const store = brandAssetsStore();
+    const stale = (await store.listKeys(`${workspaceId}/`)).filter((k) => k !== key);
+    await store.deleteKeys(stale);
   } catch (err) {
     console.warn('[workspace-branding] cleanup failed:', err instanceof Error ? err.message : err);
   }

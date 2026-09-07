@@ -239,22 +239,41 @@ runDbTests('GDPR erasure (DB-backed)', () => {
     const rows = await sql<{ n: number }[]>`select count(*)::int as n from ticket_attachments where ticket_id = ${tk.id}`;
     expect(rows[0].n).toBe(0);
 
-    // The un-deleted key is parked on the erasure row for the retry sweep.
-    const [era] = await sql<{ pending_object_keys: string[] }[]>`
-      select pending_object_keys from gdpr_erasures where customer_id = ${cust.id}
+    // The un-deleted key stays in the outbox (written in the erase transaction)
+    // with the failed attempt recorded.
+    const parked = await sql<{ reason: string; attempts: number; last_error: string | null }[]>`
+      select reason, attempts, last_error from pending_object_deletions where storage_key = ${'att/' + slug + '/x.pdf'}
     `;
-    expect(era.pending_object_keys).toEqual([`att/${slug}/x.pdf`]);
+    expect(parked).toHaveLength(1);
+    expect(parked[0].reason).toBe('erasure');
+    expect(parked[0].attempts).toBe(1);
+    expect(parked[0].last_error).toBe('R2 unavailable');
 
-    // The retry sweep, given a working deleter, clears the parked keys.
+    // The retry sweep, given a working deleter, deletes the object and clears the row.
     const { retryPendingObjectDeletions } = await import('./lib/gdpr-erasure.js');
     const retried: string[] = [];
     const res = await retryPendingObjectDeletions(100, { deleteObjects: async (k) => { retried.push(...k); } });
     expect(retried).toContain(`att/${slug}/x.pdf`);
-    expect(res.cleared).toBeGreaterThanOrEqual(1);
-    const [after] = await sql<{ pending_object_keys: string[] | null }[]>`
-      select pending_object_keys from gdpr_erasures where customer_id = ${cust.id}
+    expect(res.parkedKeysDeleted).toBeGreaterThanOrEqual(1);
+    const after = await sql<{ n: number }[]>`select count(*)::int as n from pending_object_deletions where storage_key = ${'att/' + slug + '/x.pdf'}`;
+    expect(after[0].n).toBe(0);                                // cleared
+  });
+
+  it('retry sweep isolates a permanently failing key from the rest of the page', async () => {
+    const { retryPendingObjectDeletions } = await import('./lib/gdpr-erasure.js');
+    const bad = `att/${slug}/bad.pdf`;
+    const good = `att/${slug}/good.pdf`;
+    await sql`insert into pending_object_deletions (storage_key, reason) values (${bad}, 'retention'), (${good}, 'retention')`;
+    const res = await retryPendingObjectDeletions(100, {
+      deleteObjects: async (k) => { if (k.includes(bad)) throw new Error('403 forbidden'); },
+    });
+    expect(res.parkedKeysDeleted).toBeGreaterThanOrEqual(1);
+    const left = await sql<{ storage_key: string; attempts: number }[]>`
+      select storage_key, attempts from pending_object_deletions where storage_key in (${bad}, ${good})
     `;
-    expect(after.pending_object_keys).toBeNull();             // cleared
+    expect(left.map((r) => r.storage_key)).toEqual([bad]);    // good cleared, bad kept
+    expect(left[0].attempts).toBe(1);
+    await sql`delete from pending_object_deletions where storage_key = ${bad}`;
   });
 
   it('is idempotent — a second erase reports alreadyErased and adds no audit row', async () => {

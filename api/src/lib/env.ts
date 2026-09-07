@@ -75,6 +75,11 @@ const Env = z.object({
   R2_SECRET_ACCESS_KEY: z.string().default(''),
   R2_BUCKET: z.string().default('brand-assets'),
   R2_PUBLIC_BASE_URL: z.string().default(''),
+  // PRIVATE bucket for ticket attachments (customer files, inline email images).
+  // Separate from R2_BUCKET on purpose: that one is public-read for logos and
+  // must never hold customer data. Empty = attachment features report "not
+  // configured"; everything else keeps working.
+  R2_ATTACHMENTS_BUCKET: z.string().default(''),
   // Pubby realtime (migration — Step 5). Pusher-compatible push for live
   // ticket/message updates. All optional: when unset, lib/pubby.ts no-ops and
   // the SPA falls back to polling, so realtime is purely additive.

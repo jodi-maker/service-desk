@@ -63,6 +63,7 @@ CRON_SECRET=<openssl rand -base64 32>              # REQUIRED — the GitHub Act
 # Cloudflare R2 (brand-asset/logo uploads):
 R2_ACCOUNT_ID=…  R2_ACCESS_KEY_ID=…  R2_SECRET_ACCESS_KEY=…
 R2_BUCKET=brand-assets  R2_PUBLIC_BASE_URL=https://<pub-…r2.dev or custom domain>
+R2_ATTACHMENTS_BUCKET=respovia-attachments   # a SECOND, PRIVATE bucket (no public URL) for ticket attachments; same API token
 # Maestro Connect (app "Service Desk"). Sign-in needs the first two; the headless
 # player-context worker needs the last two. Leave a pair empty to disable that half.
 MAESTRO_CLIENT_ID=…  MAESTRO_CLIENT_SECRET=…

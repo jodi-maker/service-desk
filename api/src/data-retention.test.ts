@@ -90,12 +90,26 @@ runDbTests('data retention (DB-backed)', () => {
     await sql`delete from workspaces where id = ${fresh}`;
   });
 
-  it('purges only expired resolved tickets, cascading their children', async () => {
+  it('purges only expired resolved tickets, cascading their children and deleting their R2 objects', async () => {
     const before = await sql<{ n: number }[]>`select count(*)::int as n from ticket_messages where ticket_id = ${ctx.expired}`;
     expect(before[0].n).toBe(1);
+    // An attachment on the expiring ticket and one on a surviving ticket: only
+    // the former's object key must reach the deleter.
+    const expiredKey = `att/${ctx.wsId}/${ctx.expired}/k1/old.pdf`;
+    const keptKey = `att/${ctx.wsId}/${ctx.recent}/k2/new.pdf`;
+    await sql`insert into ticket_attachments (workspace_id, ticket_id, filename, storage_key) values (${ctx.wsId}, ${ctx.expired}, 'old.pdf', ${expiredKey})`;
+    await sql`insert into ticket_attachments (workspace_id, ticket_id, filename, storage_key) values (${ctx.wsId}, ${ctx.recent}, 'new.pdf', ${keptKey})`;
+    const deleted: string[] = [];
 
-    const { purgedTickets } = await purgeExpiredTickets();
+    const { purgedTickets, objectsDeleted, objectsFailed } = await purgeExpiredTickets(500, { deleteObjects: async (keys) => { deleted.push(...keys); } });
     expect(purgedTickets).toBeGreaterThanOrEqual(1);
+    expect(deleted).toContain(expiredKey);
+    expect(deleted).not.toContain(keptKey);
+    expect(objectsDeleted).toBeGreaterThanOrEqual(1);
+    expect(objectsFailed).toBe(0);
+    // Successful deletes leave nothing in the outbox.
+    const outbox = await sql<{ n: number }[]>`select count(*)::int as n from pending_object_deletions where storage_key = ${expiredKey}`;
+    expect(outbox[0].n).toBe(0);
 
     const survivors = await sql<{ id: string }[]>`select id from tickets where workspace_id = ${ctx.wsId}`;
     const ids = survivors.map((r) => r.id);
@@ -126,6 +140,76 @@ runDbTests('data retention (DB-backed)', () => {
     expect(after[0].n).toBe(0);
 
     await sql`delete from workspaces where id = ${wsB}`;
+  });
+
+  it('parks object keys when storage is down and the retry sweep clears them', async () => {
+    const pslug = `ret-park-${RUN}`;
+    const [{ provision_brand: wsP }] = await sql<{ provision_brand: string }[]>`select provision_brand(${pslug}, ${pslug}) as provision_brand`;
+    await sql`update workspaces set retention_days = 365 where id = ${wsP}`;
+    const daysAgo = (d: number) => new Date(Date.now() - d * 86_400_000).toISOString();
+    const tid = await seedTicket(wsP, `TK-park-${pslug}`, daysAgo(800));
+    const key = `att/${wsP}/${tid}/k3/park.pdf`;
+    await sql`insert into ticket_attachments (workspace_id, ticket_id, filename, storage_key) values (${wsP}, ${tid}, 'park.pdf', ${key})`;
+
+    // Storage unavailable: rows are still purged, the key stays in the outbox
+    // with the attempt recorded.
+    const { objectsFailed } = await purgeExpiredTickets(500, { deleteObjects: async () => { throw new Error('R2 unavailable'); } });
+    expect(objectsFailed).toBeGreaterThanOrEqual(1);
+    const [{ n: ticketsLeft }] = await sql<{ n: number }[]>`select count(*)::int as n from tickets where id = ${tid}`;
+    expect(ticketsLeft).toBe(0);
+    const parked = await sql<{ storage_key: string; attempts: number; last_error: string | null }[]>`
+      select storage_key, attempts, last_error from pending_object_deletions where storage_key = ${key}
+    `;
+    expect(parked).toHaveLength(1);
+    expect(parked[0].attempts).toBe(1);
+    expect(parked[0].last_error).toBe('R2 unavailable');
+
+    // The retention-cron retry sweep deletes the parked object and clears the row.
+    const { retryPendingObjectDeletions } = await import('./lib/gdpr-erasure.js');
+    const retried: string[] = [];
+    const res = await retryPendingObjectDeletions(100, { deleteObjects: async (keys) => { retried.push(...keys); } });
+    expect(retried).toContain(key);
+    expect(res.parkedKeysDeleted).toBeGreaterThanOrEqual(1);
+    const after = await sql<{ storage_key: string }[]>`select storage_key from pending_object_deletions where storage_key = ${key}`;
+    expect(after).toHaveLength(0);
+
+    await sql`delete from workspaces where id = ${wsP}`;
+  });
+
+  it('stops draining when the time budget is spent and leaves the rest in the outbox', async () => {
+    const { drainObjectDeletions } = await import('./lib/object-outbox.js');
+    const keys = Array.from({ length: 40 }, (_, i) => `att/${ctx.wsId}/budget/${i}.pdf`);
+    await sql`insert into pending_object_deletions (storage_key, reason) select k, 'retention' from unnest(${keys}::text[]) as k`;
+    // A 1 ms budget with a deleter that sleeps: the first batch runs (the
+    // deadline is only checked between batches), everything after it is
+    // deferred. Deterministic under load — a slow machine only defers sooner.
+    const res = await drainObjectDeletions(keys, async () => { await new Promise((r) => setTimeout(r, 5)); }, { budgetMs: 1 });
+    expect(res.deferred.length).toBeGreaterThan(0);
+    expect(res.deleted.length).toBeLessThan(keys.length);
+    expect(res.deleted.length + res.failed.length + res.deferred.length).toBe(keys.length);
+    // Deferred keys are still queued for the next run.
+    const [{ n }] = await sql<{ n: number }[]>`select count(*)::int as n from pending_object_deletions where storage_key = any(${res.deferred})`;
+    expect(n).toBe(res.deferred.length);
+    await sql`delete from pending_object_deletions where storage_key = any(${keys})`;
+  });
+
+  it('reports keys that keep failing so the cron can alert instead of retrying forever', async () => {
+    const { listStuckKeys, sweepPendingObjectDeletions, STUCK_ATTEMPTS } = await import('./lib/object-outbox.js');
+    const key = `att/${ctx.wsId}/stuck/never.pdf`;
+    await sql`insert into pending_object_deletions (storage_key, reason) values (${key}, 'retention')`;
+    for (let i = 0; i < STUCK_ATTEMPTS; i++) {
+      await sweepPendingObjectDeletions(50, async () => { throw new Error('403 forbidden'); });
+    }
+    const stuck = await listStuckKeys();
+    const mine = stuck.find((s) => s.storage_key === key);
+    expect(mine).toBeTruthy();
+    expect(mine!.attempts).toBeGreaterThanOrEqual(STUCK_ATTEMPTS);
+    expect(mine!.last_error).toBe('403 forbidden');
+    // Still deletable once storage recovers.
+    const ok = await sweepPendingObjectDeletions(50, async () => {});
+    expect(ok.deleted).toContain(key);
+    const [{ n }] = await sql<{ n: number }[]>`select count(*)::int as n from pending_object_deletions where storage_key = ${key}`;
+    expect(n).toBe(0);
   });
 
   it('never purges a workspace with retention disabled (NULL)', async () => {
