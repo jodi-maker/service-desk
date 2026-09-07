@@ -492,12 +492,23 @@ async function attachReplyToTicket(args: {
   // the data-retention cron. Guarded on 'resolved' so other statuses are
   // untouched.
   // Unlike channel defaults, the reply address follows each accepted inbound
-  // message. Outbound verifies that this is still the customer's live contact.
+  // message from one of this customer's own addresses. Do not persist a third
+  // party's address on their ticket (that party's erasure cannot reach it).
+  // Outbound checks ownership again in case the address has since been removed.
   await sql`
     update tickets set
       last_inbound_email = case when exists (
         select 1 from customers c where c.id = tickets.customer_id
           and c.workspace_id = ${workspaceId} and c.erased_at is null and c.deleted_at is null
+          and (
+            exists (select 1 from customer_contacts cc
+              where cc.customer_id = c.id and cc.workspace_id = ${workspaceId}
+                and cc.kind = 'email' and cc.value = ${email} and cc.deleted_at is null)
+            or (c.email = ${email} and not exists (
+              select 1 from customer_contacts cc where cc.customer_id = c.id
+                and cc.workspace_id = ${workspaceId} and cc.kind = 'email' and cc.deleted_at is null
+            ))
+          )
       ) then ${email} else null end,
       resolved_at = case when status_key = 'resolved' then null else resolved_at end,
       status_key = case when status_key = 'resolved' then 'open' else status_key end

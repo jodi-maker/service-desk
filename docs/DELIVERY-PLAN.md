@@ -20,6 +20,8 @@ code review and the repository's Octopus 4+/5 gate before merge.
 - [ ] Reply to the customer's address used by the thread, falling back to their
   primary address only when appropriate. Track bounces per contact address.
   Recheck removed addresses, merges/unmerges and workspace isolation.
+  Implemented in PR #473; review and deployment pending. Acceptance evidence:
+  [CONTACT-ROUTING-VALIDATION.md](CONTACT-ROUTING-VALIDATION.md).
 - [ ] Verify an incoming formatted email and attachment through customer/thread
   matching, agent reply and recipient download. Include multiple addresses and
   a bounced address. Use a designated test account/recipient for real emails.

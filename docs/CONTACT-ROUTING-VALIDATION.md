@@ -16,7 +16,7 @@ clears it. Phone numbers and existing compatibility columns are retained.
 
 - Fresh PostgreSQL 17 database: all 84 migrations applied through Node/tsx;
   rerunning with Bun was a no-op.
-- Backend typecheck and all 542 tests passed. New coverage includes agent/AI/CSAT
+- Backend typecheck and all 544 tests passed after the Octopus follow-up. New coverage includes agent/AI/CSAT
   recipients, per-address suppression, removed/reassigned addresses, merge/unmerge,
   export/erasure, cross-workspace denial, concurrent bounce counts, stale events,
   inbound address refresh and retry deduplication.
@@ -39,6 +39,12 @@ compatibility and erasure/export coverage. Findings corrected before PR creation
 - Serialize bounce/reset writes with contact edits; increment from current rows
   and prevent delayed soft events from downgrading suppression.
 - Ignore bounce timestamps predating the contact's ownership of an address.
+
+Octopus first review: 4/5. Its erasure note prompted an additional guard: a
+third-party reply cannot populate last_inbound_email on another customer's ticket.
+The existing message history is unchanged. Its legacy-healing concern was checked:
+resolveCustomerByContact(..., { heal: true }) already backfills contacts before the
+bounce update. An explicit regression test now covers that path and mobile mirrors.
 
 No new dependencies or credentials. Gitleaks and Semgrep are unavailable in this
 environment; this is a focused manual review and regression test pass, not a

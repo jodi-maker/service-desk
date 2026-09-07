@@ -333,6 +333,21 @@ runDbTests('customer contacts (DB-backed)', () => {
 
   // ─── Bounce dual-write ────────────────────────────────────────────────────
 
+  it('a bounce heals a legacy customer with no contact rows before updating suppression', async () => {
+    const cid = await mkCustomer('legacy-bounce', { mobile: '+447700901111' });
+    expect(await rowsFor(cid)).toHaveLength(0);
+    const { processBounceEvent } = await import('./lib/postmark-bounce.js');
+    const result = await processBounceEvent({ fromDomain: DOMAIN, payload: {
+      RecordType: 'Bounce', Type: 'HardBounce', Email: emailOf('legacy-bounce'), From: `support@${DOMAIN}`,
+    } });
+    expect(result.ok && result.matched).toBe(true);
+    const rows = await rowsFor(cid);
+    expect(rows.find((r) => r.kind === 'email')?.bounce_state).toBe('hard');
+    expect(rows.find((r) => r.kind === 'mobile')?.value).toBe('+447700901111');
+    expect((await scalars(cid)).email_bounce_state).toBe('hard');
+    expect((await scalars(cid)).mobile).toBe('+447700901111');
+  });
+
   it('bounce: a secondary address updates its contact row only; the primary updates both; reset clears the primary row only', async () => {
     const { processBounceEvent } = await import('./lib/postmark-bounce.js');
     const cid = await mkCustomer('bounce');
