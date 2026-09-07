@@ -4,7 +4,7 @@
 // This module asks the Maestro gateway for the player behind the address that
 // wrote in and, on an exact match, stores the player's stable ids on the
 // customers row (maestro_user_id = the global Maestro id, maestro_member_id =
-// the per-brand member number) and fills username / VIP tier / country ONLY
+// the per-brand member number) and fills username / VIP / country / brand / mobile
 // where the contact has none — an agent's value is never overwritten, and a
 // contact that already has a maestro_user_id is never re-pointed.
 //
@@ -25,27 +25,39 @@ import { workerFetch, workerMaestroConfigured, MaestroError, memberNotFound, str
 import { maestroBrandIdForWorkspace } from './maestro-workspace.js';
 import { writeAudit } from '../middleware/platform-admin.js';
 import type { PlayerAccessCategory } from './player-audit.js';
+import { ensurePrimaryContacts, syncPrimaryMirror } from './customer-contacts.js';
 
 export { memberNotFound };
 
 type Db = postgres.Sql<{}> | postgres.TransactionSql<{}>;
 type Member = Record<string, unknown>;
 
-export type LinkReason = 'inbound_email' | 'portal' | 'contact_edit' | 'backfill';
+export type LinkReason = 'inbound_email' | 'portal' | 'contact_edit' | 'backfill' | 'profile_open';
 
 export type LinkOutcome =
   | 'linked'          // ids written (and blanks filled)
   | 'not_found'       // gateway knows no player with this email; lookup stamped
   | 'email_mismatch'  // gateway matched a USERNAME, not the email; stamped, nothing written
+  | 'identity_mismatch' // linked player lookup returned a different account
   | 'rejected'        // gateway refused THIS address (400/422); stamped, nothing written
   | 'no_player_id'    // member record carries no userId — nothing stable to link to; stamped
   | 'unconfigured'    // no MAESTRO_API_TOKEN
   | 'no_brand'        // workspace is not a Maestro brand (unrouted bucket, legacy tenant)
-  | 'skipped'         // erased / merged-away / no email / already linked / checked recently
+  | 'skipped'         // erased / merged-away / complete / checked recently
   | 'failed';         // gateway or DB error (logged, NOT stamped — retried next time)
 
-/** How long a not-found / mismatch answer is trusted before we ask again. */
+/** Minimum interval between completed account lookups, including partial data. */
 export const LOOKUP_TTL_MS = 24 * 60 * 60 * 1000;
+
+/** Shared by profile repair and new customers created from a player lookup. */
+export function playerProfileFields(member: Member, brandName: string | null) {
+  return {
+    username: str(member.username),
+    vip_tier: str(member.vipLevel) ?? str(member.vipTier) ?? str(member.tier),
+    jurisdiction: str(member.country),
+    brand: str(brandName),
+  };
+}
 
 /**
  * Audit categories for what a link PERSISTS onto the contact (mirrors the
@@ -55,42 +67,66 @@ export const LOOKUP_TTL_MS = 24 * 60 * 60 * 1000;
  */
 export function linkedCategories(member: Member): PlayerAccessCategory[] {
   const accessed: PlayerAccessCategory[] = ['contact'];
-  if (str(member.vipLevel) ?? str(member.vipTier)) accessed.push('vip');
+  if (playerProfileFields(member, null).vip_tier) accessed.push('vip');
   return accessed;
 }
 
 /**
- * Write a player's identity onto an UNLINKED customer. The WHERE clause is the
- * whole safety story: a contact that already carries a maestro_user_id is never
- * re-pointed (two agents looking up different players who share an address,
- * or a stale secondary), and a concurrent duplicate link sees 0 rows instead of
- * writing twice. username / vip_tier / jurisdiction only fill a blank. Erased
- * profiles are never touched. A member record without a userId has nothing
- * stable to link to and writes nothing. Returns true when the contact was
- * linked by THIS call. Shared by the automatic linker and POST
- * /customers/from-player so the field mapping (vipLevel → vip_tier, country →
- * jurisdiction) can't drift between them.
+ * Fill blanks from the same account, never change an existing identity.
+ * Hold the customer lock while maintaining contacts and their scalar mirrors,
+ * matching the lock order used by contact edits, merges and erasure.
  */
 export async function applyPlayerToCustomer(
-  sql: Db,
+  sql: postgres.Sql<{}>,
   args: { workspaceId: string; customerId: string; member: Member },
 ): Promise<boolean> {
   const m = args.member;
   const userId = str(m.userId);
   if (!userId) return false;
-  const rows = await sql<{ id: string }[]>`
-    update customers set
-      maestro_user_id   = ${userId},
-      maestro_member_id = ${str(m.memberId)},
-      username          = coalesce(username, ${str(m.username)}),
-      vip_tier          = coalesce(vip_tier, ${str(m.vipLevel) ?? str(m.vipTier)}),
-      jurisdiction      = coalesce(jurisdiction, ${str(m.country)}),
-      player_lookup_at  = now()
-    where id = ${args.customerId} and workspace_id = ${args.workspaceId}
-      and maestro_user_id is null and erased_at is null and deleted_at is null
-    returning id
-  `;
-  return rows.length > 0;
+  return sql.begin(async (tx) => {
+    const [current] = await tx<Record<string, unknown>[]>`
+      select c.maestro_user_id, c.maestro_member_id, c.username, c.vip_tier,
+             c.jurisdiction, c.brand, c.email, c.mobile, w.name as workspace_name
+      from customers c join workspaces w on w.id = c.workspace_id
+      where c.id = ${args.customerId} and c.workspace_id = ${args.workspaceId}
+        and c.erased_at is null and c.deleted_at is null and c.merged_into_customer_id is null
+        and w.deleted_at is null and w.maestro_brand_id is not null
+        and (c.maestro_user_id is null or c.maestro_user_id = ${userId})
+      for update of c
+    `;
+    if (!current) return false;
+    const fields = {
+      maestro_user_id: userId,
+      maestro_member_id: str(m.memberId),
+      ...playerProfileFields(m, str(current.workspace_name)),
+    };
+    const updates: Record<string, string> = {};
+    for (const [key, value] of Object.entries(fields)) {
+      if (!str(current[key]) && value) updates[key] = value;
+    }
+    // Heal legacy contacts first so a saved mobile always wins. Only add the
+    // account mobile when no live mobile contact exists.
+    await ensurePrimaryContacts(tx, {
+      workspaceId: args.workspaceId, customerId: args.customerId,
+      email: str(current.email), mobile: str(current.mobile),
+    });
+    const [existingMobile] = await tx`
+      select 1 from customer_contacts
+      where workspace_id = ${args.workspaceId} and customer_id = ${args.customerId}
+        and kind = 'mobile' and deleted_at is null
+    `;
+    const mobile = !existingMobile && !str(current.mobile) ? str(m.mobile) : null;
+    if (mobile) {
+      await ensurePrimaryContacts(tx, { workspaceId: args.workspaceId, customerId: args.customerId, mobile });
+      await syncPrimaryMirror(tx, args.workspaceId, args.customerId);
+    }
+    if (!Object.keys(updates).length && !mobile) return false;
+    await tx`
+      update customers set ${tx({ ...updates, player_lookup_at: new Date() })}
+      where id = ${args.customerId} and workspace_id = ${args.workspaceId}
+    `;
+    return true;
+  });
 }
 
 export interface LinkArgs {
@@ -113,10 +149,22 @@ export interface LinkArgs {
 }
 
 /**
- * Link one contact to its Maestro player by email. Never throws — every
+ * Link by email or refresh the already-linked Maestro ID. Never throws — every
  * failure path logs and resolves to an outcome, so callers can `void` it.
  */
+const activeLinks = new Map<string, Promise<LinkOutcome>>();
+
 export async function linkCustomerToPlayer(args: LinkArgs): Promise<LinkOutcome> {
+  const key = `${args.workspaceId}:${args.customerId}:${args.email ?? ''}`;
+  const active = activeLinks.get(key);
+  if (active) return active;
+  const pending = runLink(args);
+  activeLinks.set(key, pending);
+  try { return await pending; }
+  finally { activeLinks.delete(key); }
+}
+
+async function runLink(args: LinkArgs): Promise<LinkOutcome> {
   try {
     return await link(args);
   } catch (err) {
@@ -147,6 +195,11 @@ interface CustomerRow {
   player_lookup_at: Date | string | null;
   erased_at: Date | string | null;
   merged_into_customer_id: string | null;
+  username: string | null;
+  vip_tier: string | null;
+  jurisdiction: string | null;
+  brand: string | null;
+  mobile: string | null;
 }
 
 async function link(args: LinkArgs): Promise<LinkOutcome> {
@@ -154,13 +207,15 @@ async function link(args: LinkArgs): Promise<LinkOutcome> {
   const sql = getDb();
 
   const [c] = await sql<CustomerRow[]>`
-    select email, maestro_user_id, player_lookup_at, erased_at, merged_into_customer_id
+    select email, maestro_user_id, player_lookup_at, erased_at, merged_into_customer_id,
+           username, vip_tier, jurisdiction, brand, mobile
     from customers
     where id = ${args.customerId} and workspace_id = ${args.workspaceId} and deleted_at is null
   `;
-  if (!c || c.erased_at || c.merged_into_customer_id || c.maestro_user_id) return 'skipped';
+  if (!c || c.erased_at || c.merged_into_customer_id) return 'skipped';
+  if (c.maestro_user_id && [c.username, c.vip_tier, c.jurisdiction, c.brand, c.mobile].every(str)) return 'skipped';
   const email = str(args.email) ?? c.email;
-  if (!email) return 'skipped';
+  if (!c.maestro_user_id && !email) return 'skipped';
   if (c.player_lookup_at && Date.now() - new Date(c.player_lookup_at).getTime() < LOOKUP_TTL_MS) return 'skipped';
 
   const brandId = await maestroBrandIdForWorkspace(args.workspaceId);
@@ -180,7 +235,7 @@ async function link(args: LinkArgs): Promise<LinkOutcome> {
   try {
     const res = await workerFetch<Member>('/api/v1/proxy/member/lookup', {
       brandId,
-      query: { email },
+      query: c.maestro_user_id ? { maestroUserId: c.maestro_user_id } : { email },
     });
     member = memberNotFound(res) ? null : res;
   } catch (err) {
@@ -200,7 +255,7 @@ async function link(args: LinkArgs): Promise<LinkOutcome> {
   // happens to equal some OTHER player's username would otherwise be linked to
   // that player — so only an exact (case-insensitive) email match counts.
   const memberEmail = str(member.email);
-  if (!memberEmail || memberEmail.toLowerCase() !== email.toLowerCase()) {
+  if (!c.maestro_user_id && (!memberEmail || memberEmail.toLowerCase() !== email!.toLowerCase())) {
     await stampLookup(sql, args);
     return 'email_mismatch';
   }
@@ -211,7 +266,13 @@ async function link(args: LinkArgs): Promise<LinkOutcome> {
     return 'no_player_id';
   }
 
+  if (c.maestro_user_id && str(member.userId) !== c.maestro_user_id) {
+    await stampLookup(sql, args);
+    return 'identity_mismatch';
+  }
+
   const linked = await applyPlayerToCustomer(sql, { workspaceId: args.workspaceId, customerId: args.customerId, member });
+  await stampLookup(sql, args);
   if (!linked) return 'skipped';   // a concurrent link won, or the row changed under us
 
   // Same shape as 'player.viewed' (routes/maestro.ts): categories, never
@@ -220,7 +281,7 @@ async function link(args: LinkArgs): Promise<LinkOutcome> {
   await writeAudit({
     workspaceId: args.workspaceId,
     actorUserId: args.actorUserId ?? null,
-    action: 'customer.player_linked',
+    action: c.maestro_user_id ? 'customer.player_refreshed' : 'customer.player_linked',
     targetType: 'customer',
     targetId: args.customerId,
     metadata: { brand_id: brandId, reason: args.reason, accessed: linkedCategories(member) },
@@ -232,6 +293,7 @@ async function stampLookup(sql: Db, args: { workspaceId: string; customerId: str
   await sql`
     update customers set player_lookup_at = now()
     where id = ${args.customerId} and workspace_id = ${args.workspaceId}
+      and erased_at is null and deleted_at is null and merged_into_customer_id is null
   `;
 }
 

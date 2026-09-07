@@ -6,7 +6,7 @@ import { getDb } from '../lib/db.js';
 import { nextDisplayId } from '../lib/display-id.js';
 import { workerFetch, workerMaestroConfigured, MaestroError, memberNotFound, str } from '../lib/maestro.js';
 import { agentBrandWorkspaceId } from '../lib/maestro-workspace.js';
-import { applyPlayerToCustomer, linkedCategories, scheduleLink } from '../lib/player-identity.js';
+import { applyPlayerToCustomer, linkedCategories, scheduleLink, linkCustomerToPlayer, playerProfileFields } from '../lib/player-identity.js';
 import { requireWorkspaceAdmin, requireDeletePermission } from '../lib/authz.js';
 import { eraseCustomer, CUSTOMER_PII_FIELDS } from '../lib/gdpr-erasure.js';
 import { exportCustomer } from '../lib/gdpr-export.js';
@@ -104,17 +104,17 @@ customers.post('/from-player', async (c) => {
   const existing = await resolveCustomerByContact(sql, workspaceId, 'email', email, { heal: true });
   if (existing) {
     const existingId = existing.merged_into_customer_id || existing.id;
-    // A stub contact (created by inbound mail before any lookup) gains the
-    // player's ids now — we already hold the authoritative record, and this
-    // is the same write the automatic linker performs: UNLINKED rows only (a
-    // contact already tied to a player is never re-pointed), blanks only for
-    // username / VIP / country. Audited like the linker, but as the agent.
+    // Repair blanks for the same player, including an already-linked contact.
+    // The shared writer refuses to re-point another player's identity.
+    const [before] = await sql<{ maestro_user_id: string | null }[]>`
+      select maestro_user_id from customers where id = ${existingId} and workspace_id = ${workspaceId}
+    `;
     const linked = await applyPlayerToCustomer(sql, { workspaceId, customerId: existingId, member: m });
     if (linked) {
       await writeAudit({
         workspaceId,
         actorUserId: c.get('userId'),
-        action: 'customer.player_linked',
+        action: before?.maestro_user_id ? 'customer.player_refreshed' : 'customer.player_linked',
         targetType: 'customer',
         targetId: existingId,
         metadata: { brand_id: brandId, reason: 'from_player', accessed: linkedCategories(m) },
@@ -127,13 +127,15 @@ customers.post('/from-player', async (c) => {
     // Customer row + its primary contacts land together (mirror invariant).
     const createdId = await sql.begin(async (tx) => {
       const displayId = await nextDisplayId(tx, workspaceId, 'customer');
+      const [workspace] = await tx<{ name: string }[]>`select name from workspaces where id = ${workspaceId}`;
+      const fields = playerProfileFields(m, workspace.name);
       const [created] = await tx<{ id: string }[]>`
         insert into customers
-          (workspace_id, display_id, first_name, last_name, username, email, mobile, vip_tier, jurisdiction,
+          (workspace_id, display_id, first_name, last_name, username, email, mobile, vip_tier, jurisdiction, brand,
            maestro_user_id, maestro_member_id, player_lookup_at)
         values
-          (${workspaceId}, ${displayId}, ${str(m.firstName)}, ${str(m.lastName)}, ${str(m.username)},
-           ${email}, ${str(m.mobile)}, ${str(m.vipLevel)}, ${str(m.country)},
+          (${workspaceId}, ${displayId}, ${str(m.firstName)}, ${str(m.lastName)}, ${fields.username},
+           ${email}, ${str(m.mobile)}, ${fields.vip_tier}, ${fields.jurisdiction}, ${fields.brand},
            ${str(m.userId)}, ${str(m.userId) ? str(m.memberId) : null}, now())
         returning id
       `;
@@ -174,6 +176,40 @@ customers.get('/', async (c) => {
   // view keeps showing them.
   const idx = await listWorkspaceContacts(sql, workspaceId);
   return c.json({ customers: rows.map((r) => ({ ...r, ...buildCustomerContacts(r, idx) })) });
+});
+
+// Opening a profile can repair an old stub without a bulk backfill. The brand
+// comes from the customer's workspace, never a client-supplied lookup key.
+customers.post('/:id/refresh-account', async (c) => {
+  const workspaceId = c.get('workspaceId');
+  const customerId = c.req.param('id');
+  if (!UUID_RE.test(customerId)) return c.json({ error: 'Customer not found' }, 404);
+  const sql = getDb();
+  const [target] = await sql<{ maestro_brand_id: string | null }[]>`
+    select w.maestro_brand_id from customers cu join workspaces w on w.id = cu.workspace_id
+    where cu.id = ${customerId} and cu.workspace_id = ${workspaceId}
+      and cu.deleted_at is null and cu.erased_at is null and cu.merged_into_customer_id is null
+      and w.deleted_at is null
+  `;
+  if (!target) return c.json({ error: 'Customer not found' }, 404);
+  if (target.maestro_brand_id && await agentBrandWorkspaceId(c.get('userId'), target.maestro_brand_id) !== workspaceId) {
+    return c.json({ error: 'You do not have access to this brand.' }, 403);
+  }
+  const outcome = await linkCustomerToPlayer({ workspaceId, customerId, reason: 'profile_open', actorUserId: c.get('userId') });
+  if (outcome === 'unconfigured' && target.maestro_brand_id) {
+    return c.json({ error: "Account lookup isn't configured." }, 503);
+  }
+  if (outcome === 'failed') return c.json({ error: "Couldn't refresh account details. Try opening this profile again shortly." }, 502);
+  if (outcome === 'identity_mismatch' || outcome === 'email_mismatch') {
+    return c.json({ error: "The account didn't match this customer. Saved details were kept." }, 409);
+  }
+  const [row] = await sql<Record<string, unknown>[]>`
+    select ${sql.unsafe(CUSTOMER_ROW_COLS)} from customers
+    where id = ${customerId} and workspace_id = ${workspaceId}
+      and deleted_at is null and erased_at is null and merged_into_customer_id is null
+  `;
+  if (!row) return c.json({ error: 'Customer not found' }, 404);
+  return c.json({ customer: { ...row, ...(await contactsFor(sql, workspaceId, customerId)) }, outcome });
 });
 
 // ─── Customer notes ─────────────────────────────────────────────────────────

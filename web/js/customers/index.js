@@ -40,6 +40,7 @@ import { mapCustomerNote } from '../core/bootstrap.js';
 import { showToast } from '../core/toast.js';
 import { startPresence } from '../core/presence.js';
 import { playerLookupActive, renderPlayerLookupView } from './player-lookup.js';
+import { refreshCustomerAccount } from './account-refresh.js';
 
 // ─── Customer table column state ─────────────────────────────────────────────
 
@@ -887,6 +888,20 @@ function showCustomerGDPR(custId) {
 function renderCustomerDetail(custId) {
   const c = CUSTOMERS.find(x => x.id === custId);
   if (!c) { setCustomerSelected(null); return renderCustomers(); }
+  void refreshCustomerAccount(c, () => {
+    if (CUSTOMER_SELECTED !== custId) return;
+    const card = document.getElementById('cust-pin');
+    if (!card) return;
+    const template = document.createElement('template');
+    template.innerHTML = renderDetailsCard(c);
+    const updated = template.content.querySelector('#cust-pin');
+    if (!updated) return;
+    detachPinObserver();
+    card.replaceWith(updated);
+    attachPinObserver();
+  }, (err) => {
+    if (CUSTOMER_SELECTED === custId) showToast(err?.message || "Couldn't refresh account details.", 'error');
+  });
   // Real-time presence — no-ops for demo personas (no _uuid). Chip
   // slot is in the topbar below; the first heartbeat resolves after
   // main.innerHTML is set, so the slot is in the DOM by then.

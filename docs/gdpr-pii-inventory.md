@@ -32,7 +32,8 @@ redact the personal data** and stamp `customers.erased_at`.
   customer, not their content. Player-data **reads** are now logged here too (a
   `player.viewed` audit event on every successful live player lookup — `routes/maestro.ts`
   + `lib/player-audit.ts`, categories not values), as is every automatic or agent-driven
-  contact ↔ player link (`customer.player_linked` — `lib/player-identity.ts`; the brand id
+  contact ↔ player link or repair of missing account details (`customer.player_linked`
+  / `customer.player_refreshed` — `lib/player-identity.ts`; the brand id
   and data categories persisted, never the values or the player ids themselves). Profile
   edits from the details card (`customer.updated` — `PATCH /customers/:id`) follow the same
   rule: before/after values only for the non-identifying columns (`brand`, `vip_tier`, `since`,
