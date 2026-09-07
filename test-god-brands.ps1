@@ -32,8 +32,8 @@ $base = $env:SUPABASE_URL
 $anon = $env:SUPABASE_ANON_KEY
 $serviceRole = $env:SUPABASE_SERVICE_ROLE_KEY
 
-$godEmail = "god-test@maestrodesk.local"
-$mortalEmail = "mortal-test@maestrodesk.local"
+$godEmail = "god-test@respovia.local"
+$mortalEmail = "mortal-test@respovia.local"
 $password = "GodTestPassword!2026"
 $brandSlug = "acmecasino-smoketest"
 $brandDomain = "acme-smoketest.example"

@@ -420,7 +420,7 @@ async function enterBrand(brandId) {
     // Carry the Maestro brand context (X-Brand-Id) when the entered workspace
     // is a Maestro brand, so brand-scoped features (e.g. player lookup) work
     // the same as via the agent "Sign in with Maestro" flow. Non-Maestro
-    // workspaces (e.g. the internal maestro-desk) have no maestro_brand_id, so
+    // workspaces (e.g. the internal Respovia workspace) have no maestro_brand_id, so
     // this clears it.
     const entered = STATE.brands.find((b) => b.id === brandId)
       || (STATE.detail?.brand?.id === brandId ? STATE.detail.brand : null);
