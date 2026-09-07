@@ -15,6 +15,7 @@ import { TICKETS } from '../core/data.js';
 import { AI_THINKING, setAiThinking } from '../core/state.js';
 import { AI_API_KEY, callClaude } from './client.js';
 import { onComposeInput } from '../tickets/detail.js';
+import { focusEnd, getPlainText, setText } from '../tickets/composer.js';
 import { buildKbQuery, fetchKbArticles } from '../kb-integration/index.js';
 
 export async function aiAction(id, action) {
@@ -26,13 +27,15 @@ export async function aiAction(id, action) {
   const el = document.getElementById('compose-' + id);
   if (!t || !el) return;
   if (!AI_API_KEY) {
-    el.value = 'No Claude API key configured. Add one in Settings → AI Assistant.';
+    setText(id, 'No Claude API key configured. Add one in Settings → AI Assistant.');
     onComposeInput(id);
     return;
   }
-  const current = el.value || '';
+  // AI works on (and returns) plain text; in the rich editor that replaces the
+  // content, which is what "draft/improve/shorten" means to an agent.
+  const current = getPlainText(id);
   if (action !== 'draft' && !current.trim()) {
-    el.value = `Type something first — AI ${action} works on the current draft.`;
+    setText(id, `Type something first — AI ${action} works on the current draft.`);
     onComposeInput(id);
     return;
   }
@@ -50,7 +53,7 @@ export async function aiAction(id, action) {
     const query = buildKbQuery(t);
     const kb = await fetchKbArticles(query);
     if (kb.error) {
-      el.value = `KB lookup failed: ${kb.error}\n\n(Check Settings → Knowledge Base.)`;
+      setText(id, `KB lookup failed: ${kb.error}\n\n(Check Settings → Knowledge Base.)`);
       onComposeInput(id);
       setAiThinking(false);
       if (th) th.classList.remove('show');
@@ -84,13 +87,13 @@ export async function aiAction(id, action) {
       maxTokens: 800,
     });
     const txt = text || error;
-    if (txt) el.value = txt;
+    if (txt) setText(id, txt);
   } catch {
-    el.value = el.value || 'AI unavailable. Please type your reply.';
+    if (!getPlainText(id)) setText(id, 'AI unavailable. Please type your reply.');
   }
   setAiThinking(false);
   if (th) th.classList.remove('show');
   onComposeInput(id);
-  el.focus();
+  focusEnd(id);
 }
 

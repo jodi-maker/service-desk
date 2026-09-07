@@ -161,6 +161,19 @@ mark{background:rgba(255,226,40,0.55);color:var(--ink);padding:0 2px;border-radi
 .att-chip{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:5px 10px;border:1px solid var(--rule);border-radius:var(--r-pill);background:var(--w);color:var(--ink);font-size:12px;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .att-chip:hover{border-color:var(--rule3);background:var(--off)}
 .att-chip-dead{opacity:.6;cursor:default}
+/* Rich compose box (Quill mounts into .compose-rich; its own snow theme CSS
+   is loaded on first use by tickets/composer.js). */
+.compose-rich{min-height:120px;max-height:340px;overflow-y:auto;padding:0}
+.compose-rich .ql-editor{min-height:100px;font-family:var(--font-sans);font-size:14px;line-height:1.6;color:var(--ink);padding:10px 12px}
+.compose-rich .ql-editor.ql-blank::before{color:var(--ink4);font-style:normal;left:12px;right:12px}
+.composer-body .ql-toolbar.ql-snow{border:0;border-bottom:1px solid var(--rule);padding:4px 8px}
+.composer-body .ql-container.ql-snow{border:0;font-family:var(--font-sans)}
+/* Files staged for the next reply. */
+.pending-att{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 6px}
+.pending-att:empty{display:none}
+.att-chip-pending{background:var(--off2);border-style:dashed}
+.att-chip-x{border:0;background:none;cursor:pointer;color:var(--ink3);font-size:14px;line-height:1;padding:0 0 0 2px}
+.att-chip-x:hover{color:var(--ink)}
 .att-size{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3)}
 .ai-mark{font-size:8px;padding:0 6px;border:1px solid var(--green);color:var(--green);border-radius:var(--r-pill);background:var(--green-lt)}
 .note-mark{font-size:8px;padding:0 6px;border:1px solid var(--amber);color:var(--amber);border-radius:var(--r-pill)}

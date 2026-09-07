@@ -46,6 +46,11 @@ import { logTicketEvent, getTicketEvents } from '../core/activity-log.js';
 import { showMacroPanel, showApplyMacroModal } from './macros.js';
 import { showAttachPanel } from './attachments.js';
 import { renderAttachmentChips } from './attachment-chips.js';
+import {
+  clear as clearComposer, getHtml, getPlainText, insertAtCursor,
+  isEmpty as isComposerEmpty, mountComposer,
+} from './composer.js';
+import { pendingAttachmentIds, renderPendingAttachments, clearPendingAttachments } from './attachments.js';
 import { enableRemoteImages, renderMessageBody, sizeMessageFrames } from './message-html.js';
 import { fireWebhook, ticketPayload } from '../webhooks/index.js';
 import { loadTicketDetail } from '../core/bootstrap.js';
@@ -524,7 +529,12 @@ export function openTicket(id) {
               </div>
             </div>
             <div class="composer-body">
-              <textarea class="compose-area" id="compose-${id}" data-ticket-id="${window.escAttr(id)}" data-input-action="td.composeInput" placeholder="${COMPOSE_TAB==='reply'?'Write a reply or use AI…':'Add an internal note… type @ to mention an agent'}">${window.escHtml(loadDraft(id))}</textarea>
+              ${COMPOSE_TAB === 'reply'
+                // Rich editor host. Quill mounts into it after render
+                // (mountComposer below); the draft is restored as HTML there.
+                ? `<div class="compose-area compose-rich" id="compose-${id}" data-rich="1" data-ticket-id="${window.escAttr(id)}"></div>`
+                : `<textarea class="compose-area" id="compose-${id}" data-ticket-id="${window.escAttr(id)}" data-input-action="td.composeInput" placeholder="Add an internal note… type @ to mention an agent">${window.escHtml(loadDraft(id))}</textarea>`}
+              ${COMPOSE_TAB === 'reply' ? `<div class="pending-att" id="pending-att-${id}"></div>` : ''}
               <div class="comp-meta">
                 <span id="draft-status-${id}">${loadDraft(id) ? 'Draft restored' : ''}</span>
                 <span id="char-count-${id}">${loadDraft(id).length} chars</span>
@@ -663,6 +673,18 @@ export function openTicket(id) {
   };
   if (thread) sizeMessageFrames(thread, applyScroll);
   applyScroll();
+
+  // Mount the rich editor for the reply tab and repaint the pending-upload
+  // chips. Fire-and-forget: the composer falls back to plain text if the
+  // editor can't load, and neither may break the render.
+  if (COMPOSE_TAB === 'reply') {
+    mountComposer(id, {
+      initialHtml: loadDraft(id),
+      placeholder: 'Write a reply or use AI…',
+      onChange: () => onComposeInput(id),
+    }).catch((err) => console.warn('[composer] mount failed:', err));
+    renderPendingAttachments(id);
+  }
 }
 
 function setComposeTab(tab, id) { setComposeTabValue(tab); openTicket(id); }
@@ -936,18 +958,22 @@ function prevNextTicket(dir) {
 export function onComposeInput(id) {
   const el = document.getElementById('compose-' + id);
   if (!el) return;
-  saveDraft(id, el.value);
+  // The draft holds HTML for the rich reply box and plain text for a note, so
+  // a restored draft keeps its formatting.
+  const draft = getHtml(id) ?? getPlainText(id);
+  const text = getPlainText(id);
+  saveDraft(id, draft);
   const cc = document.getElementById('char-count-' + id);
-  if (cc) cc.textContent = `${el.value.length} chars`;
+  if (cc) cc.textContent = `${text.length} chars`;
   const ds = document.getElementById('draft-status-' + id);
-  if (ds) ds.textContent = el.value.length ? 'Draft saved' : '';
+  if (ds) ds.textContent = text.length ? 'Draft saved' : '';
   if (COMPOSE_TAB === 'note') updateMentionDropdown(id, el);
   else hideMentionDropdown();
   // Broadcast composing presence: empty box = not composing, anything
   // else = composing. Only meaningful for the reply tab — internal
   // notes aren't outbound, so we don't surface "Emma is typing" for
   // notes (avoids false-alarming the send-confirm flow).
-  setComposing(COMPOSE_TAB === 'reply' && el.value.trim().length > 0);
+  setComposing(COMPOSE_TAB === 'reply' && !isComposerEmpty(id));
 }
 
 
@@ -959,14 +985,7 @@ function insertVar(id, token) {
   else if (token === '{ticket}')    val = id;
   else if (token === '{brand}' && cust) val = cust.brand;
   else if (token === '{agent}' && t) val = t.agent || '';
-  const el = document.getElementById('compose-' + id);
-  if (!el) return;
-  el.focus();
-  const start = el.selectionStart || 0;
-  const end   = el.selectionEnd   || 0;
-  el.value = el.value.slice(0, start) + val + el.value.slice(end);
-  const pos = start + val.length;
-  el.setSelectionRange(pos, pos);
+  insertAtCursor(id, val);
   onComposeInput(id);
 }
 
@@ -1004,7 +1023,11 @@ function showSentTextModal(ticketId, msgIdx) {
 
 async function sendCompose(id) {
   const el = document.getElementById(`compose-${id}`);
-  const txt = el.value.trim(); if (!txt) return false;
+  if (!el) return false;
+  const txt = getPlainText(id).trim();
+  // A reply may be an image with no words at all, so "empty" is the editor's
+  // own judgement, not just the text.
+  if (isComposerEmpty(id)) return false;
   const t = TICKETS.find(x => x.id === id);
   if (!t) return false;
 
@@ -1050,10 +1073,17 @@ async function sendCompose(id) {
   // server-side yet, so it lives only on the local entry.
   if (t._uuid) {
     let message, delivery;
+    // Rich HTML only for a reply the agent actually formatted, and never when
+    // auto-translate rewrote the text — the translation is plain text, so
+    // sending the original markup alongside it would contradict it.
+    const html = (!isNote && !shouldAutoTranslate) ? getHtml(id) : null;
+    const attachmentIds = isNote ? [] : pendingAttachmentIds(id);
     try {
       const res = await apiPost(`/api/v1/tickets/${t._uuid}/messages`, {
         role: isNote ? 'note' : 'agent',
         body: outgoing,
+        body_html: html || undefined,
+        attachment_ids: attachmentIds.length ? attachmentIds : undefined,
         mentions: isNote ? (mentions || []).map((m) => m.userId).filter(Boolean) : undefined,
       });
       message = res.message;
@@ -1069,11 +1099,16 @@ async function sendCompose(id) {
       from: message.author_label,
       r: message.role,
       t: message.body,
+      // Same shape GET /tickets/:id returns, so the sent reply renders exactly
+      // as it will after a refetch (formatting, inline images, file chips).
+      html: message.body_html || null,
+      attachments: message.attachments || [],
       tOriginal: original,
       translatedTo,
       mentions,
       ts: new Date(message.created_at).toTimeString().slice(0, 5),
     });
+    clearPendingAttachments(id);
   } else {
     // Demo persona — no API, synthesise locally as before.
     t.msgs.push({
@@ -1086,7 +1121,7 @@ async function sendCompose(id) {
       ts: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
     });
   }
-  el.value = '';
+  clearComposer(id);
   clearDraft(id);
   onComposeInput(id);
   if (CURRENT_TICKET === id) openTicket(id);

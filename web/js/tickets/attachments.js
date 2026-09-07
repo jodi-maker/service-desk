@@ -1,61 +1,98 @@
 // ─── Ticket attachments ──────────────────────────────────────────────────────
-// Demo-only: addMockAttachment cycles through a fixed sample list; in a real
-// build this would hook into a file picker / upload pipeline. The panel
-// re-renders itself after each add/remove so the count stays in sync.
+// Real uploads. "Attach" opens a file picker, each file is uploaded straight
+// away to POST /tickets/:uuid/attachments and held as a PENDING attachment
+// until the reply is sent — at which point its id rides along in the request
+// and the server binds it to the message. Anything an agent uploads and never
+// sends is swept server-side after a day.
 //
-// External reaches (interim, via window): escAttr — still in app.js.
-// showModal is a direct ES import.
+// Pending state is per ticket and lives only in this module: a draft's files
+// are deliberately not restored across a reload (the ids would be swept), so
+// the chips reflect exactly what the next send will carry.
 //
-// Inline on*= handlers were migrated to data-action delegation (see the
-// registerActions block at the bottom). showAttachPanel stays exported —
-// tickets/detail.js imports it directly (action td.showAttach). The add /
-// remove mutators are now module-internal (dispatched via att.* actions).
+// Demo personas (no `_uuid`) have no backend; the picker reports that instead
+// of pretending, which is what the old mock list did.
+//
+// External reaches (interim, via window): escAttr, escHtml — still in app.js.
 
 import { TICKETS } from '../core/data.js';
 import { registerActions } from '../core/event-delegation.js';
-import { showModal } from '../core/modal.js';
+import { apiDelete, apiUpload } from '../core/api-client.js';
+import { showToast } from '../core/toast.js';
+import { fmtBytes } from './attachment-chips.js';
 
-function addMockAttachment(id) {
-  const t = TICKETS.find(x => x.id === id);
-  if (!t) return;
-  if (!t.attachments) t.attachments = [];
-  const samples = [
-    { name: 'screenshot.png', size: '142 KB' },
-    { name: 'error-log.txt',  size: '8 KB'   },
-    { name: 'invoice.pdf',    size: '218 KB' },
-    { name: 'export.csv',     size: '47 KB'  },
-    { name: 'recording.mp4',  size: '2.4 MB' },
-  ];
-  t.attachments.push(samples[t.attachments.length % samples.length]);
-  showAttachPanel(id);
+// ticketId → [{ id, filename, size_bytes, mime_type, is_inline }]
+const PENDING = new Map();
+
+export function pendingAttachments(ticketId) { return PENDING.get(ticketId) || []; }
+export function pendingAttachmentIds(ticketId) { return pendingAttachments(ticketId).map((a) => a.id); }
+export function clearPendingAttachments(ticketId) { PENDING.delete(ticketId); renderPendingAttachments(ticketId); }
+
+/** Repaint the chip row above the composer foot. */
+export function renderPendingAttachments(ticketId) {
+  const host = document.getElementById('pending-att-' + ticketId);
+  if (!host || typeof host.innerHTML !== 'string') return;
+  const list = pendingAttachments(ticketId);
+  if (!list.length) { host.innerHTML = ''; return; }
+  host.innerHTML = list.map((a) => `
+    <span class="att-chip att-chip-pending">
+      ${window.escHtml(a.filename)}<span class="att-size">${fmtBytes(a.size_bytes)}</span>
+      <button class="att-chip-x" title="Remove" data-action="att.remove" data-id="${window.escAttr(ticketId)}" data-att-id="${window.escAttr(a.id)}">×</button>
+    </span>`).join('');
 }
 
-function removeAttachment(id, idx) {
-  const t = TICKETS.find(x => x.id === id);
-  if (t && t.attachments) t.attachments.splice(idx, 1);
-  showAttachPanel(id);
+function ticketUuid(ticketId) {
+  const t = TICKETS.find((x) => x.id === ticketId);
+  return t && t._uuid ? t._uuid : null;
 }
 
-export function showAttachPanel(id) {
-  const t = TICKETS.find(x => x.id === id);
-  if (!t.attachments) t.attachments = [];
-  const list = t.attachments.length
-    ? t.attachments.map((a, i) => `
-        <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--rule);border-radius:var(--r);margin-bottom:6px;background:var(--off2)">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 1.5h5l3 3v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M8 1.5v3h3" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
-          <span style="flex:1;font-size:12px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.name}</span>
-          <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink3)">${a.size}</span>
-          <button class="btn btn-sm btn-danger" data-action="att.remove" data-id="${window.escAttr(id)}" data-idx="${i}" style="padding:2px 8px;font-size:11px">Remove</button>
-        </div>`).join('')
-    : '<div style="font-size:12px;color:var(--ink3);text-align:center;padding:18px 0">No attachments yet</div>';
-  showModal('Attachments', `
-    <div class="attach-zone" data-action="att.add" data-id="${window.escAttr(id)}">Click to add a sample attachment</div>
-    <div style="margin-top:14px;font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;font-weight:500;margin-bottom:8px">${t.attachments.length} file${t.attachments.length===1?'':'s'}</div>
-    ${list}
-  `, null, null);
+async function uploadFiles(ticketId, files) {
+  const uuid = ticketUuid(ticketId);
+  if (!uuid) { showToast('Attachments need a real ticket — demo tickets are local only.', 'warn', 5000); return; }
+  const list = PENDING.get(ticketId) || [];
+  PENDING.set(ticketId, list);
+  for (const file of files) {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    try {
+      const res = await apiUpload(`/api/v1/tickets/${uuid}/attachments`, form);
+      list.push(res.attachment);
+      renderPendingAttachments(ticketId);
+    } catch (err) {
+      showToast(`Couldn't attach ${file.name}: ${err?.message || err}`, 'error', 6000);
+    }
+  }
+}
+
+/** Open the OS file picker and upload whatever is chosen. */
+export function showAttachPanel(ticketId) {
+  if (typeof document.createElement !== 'function') return;
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.multiple = true;
+  input.style.display = 'none';
+  input.addEventListener('change', async () => {
+    const files = [...(input.files || [])];
+    input.remove();
+    if (files.length) await uploadFiles(ticketId, files);
+  });
+  document.body.appendChild(input);
+  input.click();
+}
+
+async function removePending(ticketId, attId) {
+  const list = PENDING.get(ticketId) || [];
+  const idx = list.findIndex((a) => a.id === attId);
+  if (idx < 0) return;
+  const [removed] = list.splice(idx, 1);
+  renderPendingAttachments(ticketId);
+  const uuid = ticketUuid(ticketId);
+  if (!uuid) return;
+  // Best-effort: if the delete fails the file is simply left for the
+  // server-side sweep — it was never bound to a message.
+  try { await apiDelete(`/api/v1/tickets/${uuid}/attachments/${removed.id}`); }
+  catch (err) { console.warn('[attachments] remove failed:', err?.message || err); }
 }
 
 registerActions({
-  'att.add':    (ds) => addMockAttachment(ds.id),
-  'att.remove': (ds) => removeAttachment(ds.id, parseInt(ds.idx, 10)),
+  'att.remove': (ds) => removePending(ds.id, ds.attId),
 });

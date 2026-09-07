@@ -64,14 +64,16 @@ export function setBrandId(id) {
  *   { workspace: false } — skip the X-Workspace-Id header (for /whoami + god routes)
  *   { brand: true }      — add the X-Brand-Id header (for Maestro player lookups)
  */
-export async function apiCall(path, { method = 'GET', body, auth = true, workspace = true, brand = false } = {}) {
+export async function apiCall(path, { method = 'GET', body, auth = true, workspace = true, brand = false, form } = {}) {
   // NOTE: `workspace: true` means "attach the X-Workspace-Id header IF one is
   // active", not "this endpoint requires a workspace" — plenty of default-
   // options callers (god panel, push settings, whoami-class endpoints) are
   // legitimately workspace-less. Don't add a client-side missing-workspace
   // guard here: the server's auth middleware is the authority, and its 400
   // now arrives as a readable JSON {error}.
-  const headers = { 'Content-Type': 'application/json' };
+  // A multipart upload must NOT carry an explicit Content-Type: the browser
+  // sets it, including the boundary it generated.
+  const headers = form ? {} : { 'Content-Type': 'application/json' };
   if (auth) {
     const jwt = getJwt();
     if (jwt) headers.Authorization = `Bearer ${jwt}`;
@@ -89,7 +91,7 @@ export async function apiCall(path, { method = 'GET', body, auth = true, workspa
     res = await fetch(`${API_BASE}${path}`, {
       method,
       headers,
-      body: body == null ? undefined : JSON.stringify(body),
+      body: form ?? (body == null ? undefined : JSON.stringify(body)),
     });
   } catch {
     // fetch() rejects (TypeError "Failed to fetch") when the request never
@@ -126,3 +128,5 @@ export const apiPost   = (path, body, opts)  => apiCall(path, { ...opts, method:
 export const apiPut    = (path, body, opts)  => apiCall(path, { ...opts, method: 'PUT', body });
 export const apiPatch  = (path, body, opts)  => apiCall(path, { ...opts, method: 'PATCH', body });
 export const apiDelete = (path, opts)        => apiCall(path, { ...opts, method: 'DELETE' });
+/** Multipart upload (attachments). `form` is a FormData; same auth/headers. */
+export const apiUpload = (path, form, opts)  => apiCall(path, { ...opts, method: 'POST', form });

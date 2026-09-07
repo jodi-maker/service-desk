@@ -145,12 +145,7 @@ function runMacro(macroId, ticketId) {
   if (CURRENT_TICKET === ticketId) {
     openTicket(ticketId);
     if (replyAppended) {
-      const el = document.getElementById('compose-' + ticketId);
-      if (el) {
-        el.value = el.value ? `${el.value}\n\n${replyAppended}` : replyAppended;
-        el.focus();
-        el.setSelectionRange(el.value.length, el.value.length);
-      }
+      appendText(ticketId, replyAppended);
     }
   }
 }
