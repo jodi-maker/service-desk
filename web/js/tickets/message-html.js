@@ -156,8 +156,17 @@ export function sizeMessageFrames(root, initialScrollTop = null) {
       // Some emails bring their own fixed-height scrolling divs. Expand only
       // explicit scrolling containers; leave intentionally hidden content alone.
       for (const el of doc.body.querySelectorAll('[style]')) {
+        const computed = doc.defaultView.getComputedStyle(el);
+        // Viewport-height units otherwise create feedback: growing the frame
+        // grows its content again. Freeze resolved lengths before observing.
+        // Only layout properties are considered, never URLs or CSS strings.
+        for (const property of [...el.style]) {
+          if (!/^(height|min-height|max-height|width|min-width|max-width|font-size|line-height|padding.*|margin.*|top|bottom|left|right|inset.*|gap|row-gap|column-gap|transform)$/.test(property)) continue;
+          if (!/\d(?:s|l|d)?v(?:h|b|min|max)\b/i.test(el.style.getPropertyValue(property))) continue;
+          el.style.setProperty(property, computed.getPropertyValue(property), 'important');
+        }
         if (!/\b(auto|scroll)\b/.test(el.style.overflowY || el.style.overflow)) continue;
-        const overflow = doc.defaultView.getComputedStyle(el).overflowY;
+        const overflow = computed.overflowY;
         if (overflow !== 'auto' && overflow !== 'scroll') continue;
         el.style.setProperty('height', 'auto', 'important');
         el.style.setProperty('max-height', 'none', 'important');

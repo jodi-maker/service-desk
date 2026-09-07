@@ -13,7 +13,8 @@ export default async function checkMessageHeights() {
   t.msgs = [
     {r:'customer',from:'Test',ts:'10:00',t:'Long email',html:Array.from({length:100},(_,i)=>'<p>Paragraph '+i+': This is a long email with enough text to wrap across several lines in a narrow reading column.</p>').join('')},
     {r:'agent',from:'Test',ts:'10:01',t:'Nested email',html:'<div style="height:80px;overflow:auto">'+Array.from({length:12},(_,i)=>'<p>Nested paragraph '+i+'</p>').join('')+'</div>'},
-    {r:'customer',from:'Test',ts:'10:02',t:'Image email',html:'<p>A late image follows.</p>'}
+    {r:'customer',from:'Test',ts:'10:02',t:'Image email',html:'<p>A late image follows.</p>'},
+    {r:'customer',from:'Test',ts:'10:03',t:'Viewport email',html:'<div style="min-height:100vh"><p>Viewport-height email</p></div>'}
   ];
   try {
     openTicket(t.id);
@@ -22,6 +23,9 @@ export default async function checkMessageHeights() {
     await until(()=>frames[0].clientHeight>1200 && frames[1].clientHeight>300);
     check(frames.every(f=>f.contentDocument.documentElement.scrollHeight<=f.clientHeight+1),'An email still scrolls vertically');
     check(!frames[0].sandbox.contains('allow-scripts'),'Email scripts allowed');
+    const viewportHeight = frames[3].clientHeight;
+    await new Promise(resolve => setTimeout(resolve, 200));
+    check(frames[3].clientHeight === viewportHeight, 'Viewport-relative email keeps growing');
     const nested=frames[1].contentDocument.body.firstElementChild;
     check(nested.scrollHeight<=nested.clientHeight+1,'Nested scroll box did not expand');
     const wide=frames[0].clientHeight;
@@ -51,7 +55,6 @@ export default async function checkMessageHeights() {
     thread=document.querySelector('.thread');
     await until(()=>thread.querySelector('.msg-frame').clientHeight>1200);
     await until(()=>Math.abs(thread.scrollTop-1500)<2);
-    return {passed:true,longEmailHeight:wide,checks:['full height','no nested vertical scrolling','sandbox retained','narrow growth','wide shrink','reader anchor','late image','bottom pin','rerender scroll']};
+    return {passed:true,longEmailHeight:wide,checks:['full height','no nested vertical scrolling','sandbox retained','stable viewport units','narrow growth','wide shrink','reader anchor','late image','bottom pin','rerender scroll']};
   } finally { t.msgs=original;openTicket(t.id); }
 }
-
