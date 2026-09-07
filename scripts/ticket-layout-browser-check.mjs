@@ -25,6 +25,12 @@ export default async function () {
     return originalFetch(url, opts);
   };
   try {
+    const { setComposerMode, syncTicketLayout } = await import('/js/tickets/layout.js');
+    const stub = document.createElement('div');
+    stub.id = 'ticket-page-STUB';
+    document.body.appendChild(stub);
+    try { setComposerMode('STUB', 'edit', true); syncTicketLayout('STUB'); }
+    finally { stub.remove(); }
     document.querySelector('[data-compose-launch][data-tab="reply"]').click();
     c.setText(t.id, 'Public reply fixture'); d.onComposeInput(t.id);
     HTMLInputElement.prototype.click = function () { if (this.type !== 'file') inputClick.call(this); };
@@ -47,7 +53,10 @@ export default async function () {
     check(payloads[1].role === 'agent' && payloads[1].attachment_ids[0] === 'layout-attachment', 'Reply attachment not sent');
     check(a.pendingAttachmentIds(t.id).length === 0, 'Sent attachment not cleared');
     check(!localStorage.getItem('draft:' + t.id + ':reply'), 'Sent draft not cleared');
-    return { passed: true, assertions: 7, payloads };
+    document.querySelector('[data-action="tl.minimise"]').click();
+    c.appendText(t.id, 'Macro fixture');
+    check(document.getElementById('ticket-page-' + t.id).dataset.composeMode === 'edit', 'Macro left the editor minimised');
+    check(c.getPlainText(t.id).includes('Macro fixture'), 'Macro text missing');
+    return { passed: true, assertions: 10, payloads };
   } finally { window.fetch = originalFetch; HTMLInputElement.prototype.click = inputClick; delete t._uuid; }
 }
-

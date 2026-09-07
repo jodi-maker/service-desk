@@ -14,17 +14,19 @@ export function captureTicketLayout(id) {
 
 export function setComposerMode(id, mode, focus = false) {
   const root = page(id);
-  if (!root) return;
+  if (!root?.querySelector) return;
   const thread = root.querySelector('.thread');
-  const top = thread.scrollTop;
+  const top = thread?.scrollTop || 0;
   root.dataset.composeMode = mode;
   root.querySelectorAll('[data-compose-launch]').forEach(button => {
     button.setAttribute('aria-expanded', String(mode !== 'read'));
   });
   const expand = root.querySelector('[data-action="tl.expand"]');
-  expand.textContent = mode === 'expanded' ? 'Restore' : 'Expand';
-  expand.setAttribute('aria-expanded', String(mode === 'expanded'));
-  thread.scrollTop = top;
+  if (expand) {
+    expand.textContent = mode === 'expanded' ? 'Restore' : 'Expand';
+    expand.setAttribute('aria-expanded', String(mode === 'expanded'));
+  }
+  if (thread) thread.scrollTop = top;
   if (focus) {
     const target = mode === 'read'
       ? root.querySelector('[data-compose-launch]')
@@ -36,11 +38,12 @@ export function setComposerMode(id, mode, focus = false) {
 
 function toggleDetails(id, close = false) {
   const root = page(id);
-  if (!root) return;
+  if (!root?.querySelector) return;
   const sidebar = root.querySelector('.ticket-sidebar');
+  const button = root.querySelector('[data-action="tl.details"]');
+  if (!sidebar || !button) return;
   const visible = getComputedStyle(sidebar).display !== 'none';
   root.dataset.details = close || visible ? 'hide' : 'show';
-  const button = root.querySelector('[data-action="tl.details"]');
   button.setAttribute('aria-expanded', String(root.dataset.details === 'show'));
   syncTicketLayout(id);
   if (root.dataset.details === 'show') sidebar.querySelector('button')?.focus();
@@ -56,8 +59,10 @@ export function syncTicketLayout(id) {
     const visible = getComputedStyle(sidebar).display !== 'none';
     button.setAttribute('aria-expanded', String(visible));
     const main = root.querySelector('.ticket-main');
-    main.inert = visible && window.matchMedia('(max-width:1100px)').matches;
-    if (main.inert && main.contains(document.activeElement)) sidebar.querySelector('button')?.focus();
+    if (main) {
+      main.inert = visible && window.matchMedia('(max-width:1100px)').matches;
+      if (main.inert && main.contains(document.activeElement)) sidebar.querySelector('button')?.focus();
+    }
   }
   if (root.dataset.focusComposer === 'true' && root.dataset.composeMode !== 'read') {
     const editor = root.querySelector('.ql-editor, textarea.compose-area');
@@ -85,11 +90,11 @@ document.addEventListener('keydown', event => {
   const menu = event.target.closest?.('.ticket-popover[open]');
   if (menu) {
     menu.open = false;
-    menu.querySelector('summary').focus();
+    menu.querySelector('summary')?.focus();
     event.preventDefault();
   } else if (event.target.closest?.('.ticket-sidebar')) {
     const root = event.target.closest('.ticket-page');
-    toggleDetails(root.dataset.ticketId, true);
+    if (root) toggleDetails(root.dataset.ticketId, true);
     event.preventDefault();
   }
 });
@@ -98,7 +103,11 @@ document.addEventListener('click', event => {
     if (!menu.contains(event.target) || event.target.closest('[data-action]')) menu.open = false;
   });
 });
+let resizeTimer;
 window.addEventListener('resize', () => {
-  const root = document.querySelector('.ticket-page');
-  if (root) syncTicketLayout(root.dataset.ticketId);
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    const root = document.querySelector('.ticket-page');
+    if (root) syncTicketLayout(root.dataset.ticketId);
+  }, 100);
 });

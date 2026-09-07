@@ -234,7 +234,6 @@ mark{background:rgba(255,226,40,0.55);color:var(--ink);padding:0 2px;border-radi
 .ticket-popover-panel{position:absolute;top:calc(100% + 6px);right:0;z-index:40;display:flex;flex-direction:column;gap:8px;width:240px;max-width:calc(100vw - 32px);padding:12px;background:var(--w);border:1px solid var(--rule2);border-radius:var(--r2);box-shadow:0 8px 24px rgba(19,14,48,.12)}
 .ticket-popover-panel>.btn{justify-content:flex-start;white-space:normal;text-align:left}
 .ticket-language .ticket-popover-panel>span:empty{display:none}
-.ticket-language .ticket-popover-panel>span[style*="--rule2"]{display:none}
 .ticket-language .auth-check{align-items:flex-start}
 .ticket-page .composer{background:var(--w);position:relative;min-height:0;display:flex;flex-direction:column}
 .composer-launcher{display:none;align-items:center;gap:8px;padding:10px 16px;min-height:52px}

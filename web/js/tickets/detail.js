@@ -445,10 +445,8 @@ export function openTicket(id) {
         <input type="checkbox" ${threadOn?'checked':''} data-change-action="td.toggleThreadTranslate" data-ticket-id="${window.escAttr(id)}">
         <span>Translate thread to <strong style="color:var(--ink)">${window.escHtml(AGENT_PREFERRED_LANG)}</strong></span>
       </label>
-      <span style="color:var(--rule2)">·</span>
       ${customerLangLabel}
       ${(threadOn || t.autoTranslateReplies) ? `<select class="filter-select" data-change-action="td.setCustomerLang" data-ticket-id="${window.escAttr(id)}" style="font-size:11px;padding:3px 8px"><option value="">— override —</option>${langOptions}</select>` : ''}
-      <span style="color:var(--rule2)">·</span>
       <label class="auth-check" style="margin:0">
         <input type="checkbox" ${t.autoTranslateReplies?'checked':''} data-change-action="td.toggleAutoTranslate" data-ticket-id="${window.escAttr(id)}">
         <span>Send replies in customer language</span>
