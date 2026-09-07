@@ -6,7 +6,7 @@ function page(id) { return document.getElementById('ticket-page-' + id); }
 export function captureTicketLayout(id) {
   const root = page(id);
   return {
-    mode: root?.dataset?.composeMode || 'read',
+    mode: root?.dataset?.composeMode || 'edit',
     details: root?.dataset?.details || 'auto',
     languageOpen: !!root?.querySelector?.('.ticket-language[open]'),
   };
