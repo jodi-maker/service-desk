@@ -53,7 +53,7 @@ function attachmentOrigins(attachments) {
 // measured from this document, so no margins of our own.
 const FRAME_CSS = `
 html,body{margin:0;padding:0;background:transparent}
-html{overflow-y:hidden}
+html{overflow-y:auto}
 body{font:14px/1.65 'Inter',system-ui,sans-serif;color:#130e30;word-break:break-word;overflow-x:auto;display:flow-root}
 img{max-width:100%;height:auto}
 table{max-width:100%}
@@ -217,6 +217,6 @@ export function sizeMessageFrames(root, initialScrollTop = null) {
     }
     if (disposeSizing === cleanup) disposeSizing = () => {};
   };
-  removal.observe(document.body, { childList: true, subtree: true });
+  removal.observe(root.closest('#main-area') || document.body, { childList: true, subtree: true });
   disposeSizing = cleanup;
 }
