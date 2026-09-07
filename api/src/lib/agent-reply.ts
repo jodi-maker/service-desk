@@ -19,6 +19,7 @@ import {
 import { sendBrandedEmail } from './send-branded-email.js';
 import { composeEmail } from './email-branding.js';
 import { getDb } from './db.js';
+import { resolveTicketRecipient } from './ticket-recipient.js';
 import type { OutboundFile } from './message-attachments.js';
 
 export type AgentReplyDelivery =
@@ -50,20 +51,18 @@ export async function sendAgentReplyEmail(args: {
 
   const [ctx] = await sql<{
     subject: string;
-    email: string | null;
-    email_bounce_state: string | null;
     ws_name: string;
   }[]>`
-    select t.subject, c.email, c.email_bounce_state, w.name as ws_name
+    select t.subject, w.name as ws_name
     from tickets t
-    left join customers c on c.id = t.customer_id
     join workspaces w on w.id = t.workspace_id
     where t.id = ${ticketId} and t.workspace_id = ${workspaceId} and t.deleted_at is null
   `;
-  if (!ctx || !ctx.email) return { emailed: false, reason: 'no_customer_email' };
+  const recipient = ctx ? await resolveTicketRecipient(workspaceId, ticketId) : null;
+  if (!ctx || !recipient) return { emailed: false, reason: 'no_customer_email' };
   // Don't email addresses that hard-bounced or were marked as spam — sending
   // again hurts sender reputation. (Soft bounces are transient → allowed.)
-  if (ctx.email_bounce_state === 'hard' || ctx.email_bounce_state === 'spam') {
+  if (recipient.suppressed) {
     return { emailed: false, reason: 'email_suppressed' };
   }
 
@@ -86,7 +85,7 @@ export async function sendAgentReplyEmail(args: {
     const result = await sendBrandedEmail({
       workspaceId,
       fallbackFromName: ctx.ws_name || 'Support',
-      to: ctx.email,
+      to: recipient.email,
       subject: replySubject(ctx.subject),
       textBody: composed.text,
       htmlBody: composed.html,

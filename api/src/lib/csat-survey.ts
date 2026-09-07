@@ -19,6 +19,7 @@ import { sendBrandedEmail } from './send-branded-email.js';
 import { composeEmail } from './email-branding.js';
 import { makeUnsubscribeToken, unsubscribeUrl } from './unsubscribe.js';
 import { getDb } from './db.js';
+import { resolveTicketRecipient } from './ticket-recipient.js';
 
 // Migration to Neon — Step 3 (tickets megabatch). DB via getDb().
 // Postmark send unchanged.
@@ -39,29 +40,30 @@ export async function sendCsatSurvey(args: {
   const [t] = await sql<{
     display_id: string; subject: string; csat_requested_at: string | null; csat_submitted_at: string | null;
     csat_token: string | null; customer_id: string | null; first_name: string | null; last_name: string | null;
-    email: string | null; consent: boolean | null; email_bounce_state: string | null;
+    consent: boolean | null;
     ws_name: string; ws_slug: string;
   }[]>`
     select t.display_id, t.subject, t.csat_requested_at, t.csat_submitted_at, t.csat_token,
-           c.id as customer_id, c.first_name, c.last_name, c.email, c.consent, c.email_bounce_state,
+           c.id as customer_id, c.first_name, c.last_name, c.consent,
            w.name as ws_name, w.slug as ws_slug
     from tickets t
-    left join customers c on c.id = t.customer_id
+    left join customers c on c.id = t.customer_id and c.workspace_id = t.workspace_id
     join workspaces w on w.id = t.workspace_id
     where t.id = ${ticketId} and t.workspace_id = ${workspaceId} and t.deleted_at is null
   `;
   if (!t) return { sent: false, reason: 'no_workspace' };
   if (t.csat_submitted_at)   return { sent: false, reason: 'already_rated' };
   if (t.csat_requested_at)   return { sent: false, reason: 'already_requested' };
-  const customer = { first_name: t.first_name, last_name: t.last_name, email: t.email };
-  const customerEmail = customer.email;
+  const customer = { first_name: t.first_name, last_name: t.last_name };
+  const recipient = await resolveTicketRecipient(workspaceId, ticketId);
+  const customerEmail = recipient?.email;
   if (!customerEmail) return { sent: false, reason: 'no_email' };
   // Honour an explicit opt-out. consent is tri-state: false = unsubscribed
   // (skip), true/null = no recorded objection to a service-quality email.
   if (t.consent === false) return { sent: false, reason: 'no_consent' };
   // Don't email addresses that hard-bounced or were marked as spam — sending
   // again hurts sender reputation. Soft bounces are transient, so allowed.
-  if (t.email_bounce_state === 'hard' || t.email_bounce_state === 'spam') {
+  if (recipient?.suppressed) {
     return { sent: false, reason: 'email_suppressed' };
   }
   const workspaceName = t.ws_name || 'Support';

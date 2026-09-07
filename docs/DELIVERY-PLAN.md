@@ -10,15 +10,18 @@ code review and the repository's Octopus 4+/5 gate before merge.
 - [ ] Make Cloudflare respect the origin's browser cache headers for the app.
   Verify the public JavaScript and CSS responses; already-cached browsers may
   still need a hard refresh. Do not change unrelated zone settings.
-- [ ] Return PostgreSQL DATE values as YYYY-MM-DD strings, preserving timestamp
+- [x] Return PostgreSQL DATE values as YYYY-MM-DD strings, preserving timestamp
   behaviour. Cover out-of-office assignment boundaries, agent API responses,
   customer dates and holiday arrays with database-backed regression tests.
+  PR #472 merged; deployment reported complete by Jodi on 7 September 2026.
 
 ## 2. Finish the email journey and profile contact routing
 
 - [ ] Reply to the customer's address used by the thread, falling back to their
   primary address only when appropriate. Track bounces per contact address.
   Recheck removed addresses, merges/unmerges and workspace isolation.
+  Implemented in PR #473; review and deployment pending. Acceptance evidence:
+  [CONTACT-ROUTING-VALIDATION.md](CONTACT-ROUTING-VALIDATION.md).
 - [ ] Verify an incoming formatted email and attachment through customer/thread
   matching, agent reply and recipient download. Include multiple addresses and
   a bounced address. Use a designated test account/recipient for real emails.

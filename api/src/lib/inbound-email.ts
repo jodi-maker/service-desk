@@ -362,9 +362,9 @@ export async function processInboundEmail(args: {
   const defaults = channel?.matched ? channel : null;
   const ticketDisplayId = await nextDisplayId(sql, workspaceId, 'ticket');
   const [newTicket] = await sql<{ id: string; display_id: string }[]>`
-    insert into tickets (workspace_id, display_id, subject, customer_id, status_key, priority_key, category_key, sla_state)
+    insert into tickets (workspace_id, display_id, subject, customer_id, status_key, priority_key, category_key, sla_state, last_inbound_email)
     values (${workspaceId}, ${ticketDisplayId}, ${subject}, ${customerId}, 'open',
-            ${defaults?.default_priority_key ?? 'normal'}, ${defaults?.default_category_key ?? null}, 'ok')
+            ${defaults?.default_priority_key ?? 'normal'}, ${defaults?.default_category_key ?? null}, 'ok', ${email})
     returning id, display_id
   `;
   if (!newTicket) throw new Error('Ticket create failed');
@@ -491,9 +491,28 @@ async function attachReplyToTicket(args: {
   // resolution time (SLA breach report) and must not look purge-eligible to
   // the data-retention cron. Guarded on 'resolved' so other statuses are
   // untouched.
+  // Unlike channel defaults, the reply address follows each accepted inbound
+  // message from one of this customer's own addresses. Do not persist a third
+  // party's address on their ticket (that party's erasure cannot reach it).
+  // Outbound checks ownership again in case the address has since been removed.
   await sql`
-    update tickets set status_key = 'open', resolved_at = null
-    where id = ${ticketId} and workspace_id = ${workspaceId} and status_key = 'resolved'
+    update tickets set
+      last_inbound_email = case when exists (
+        select 1 from customers c where c.id = tickets.customer_id
+          and c.workspace_id = ${workspaceId} and c.erased_at is null and c.deleted_at is null
+          and (
+            exists (select 1 from customer_contacts cc
+              where cc.customer_id = c.id and cc.workspace_id = ${workspaceId}
+                and cc.kind = 'email' and cc.value = ${email} and cc.deleted_at is null)
+            or (c.email = ${email} and not exists (
+              select 1 from customer_contacts cc where cc.customer_id = c.id
+                and cc.workspace_id = ${workspaceId} and cc.kind = 'email' and cc.deleted_at is null
+            ))
+          )
+      ) then ${email} else null end,
+      resolved_at = case when status_key = 'resolved' then null else resolved_at end,
+      status_key = case when status_key = 'resolved' then 'open' else status_key end
+    where id = ${ticketId} and workspace_id = ${workspaceId} and deleted_at is null
   `;
 
   // Audit the threaded reply in the inbox view too, so the agent can see

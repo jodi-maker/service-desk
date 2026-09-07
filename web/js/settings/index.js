@@ -27,7 +27,7 @@ import {
   AGENT_PREFERRED_LANG, TRANSLATOR_LANGS, setAgentPreferredLang,
 } from '../ai/translate.js';
 import { refreshNotifBadge } from '../notifications/index.js';
-import { apiGet, apiPost, apiPut, apiPatch, apiDelete, API_BASE } from '../core/api-client.js';
+import { apiGet, apiPost, apiPut, apiPatch, apiDelete, API_BASE, getWorkspaceId, getJwt } from '../core/api-client.js';
 import { showModal, closeModal } from '../core/modal.js';
 import { COLLAPSED_SECTIONS, resetAllCollapsedSections } from '../core/collapsible.js';
 import { KB_INTEGRATION, KB_TICKET_CACHE, saveKbIntegration, fetchKbArticles } from '../kb-integration/index.js';
@@ -45,6 +45,8 @@ let OUTGOING_WEBHOOKS_LOADED = false;
 let LAST_REVEALED_SECRET = null;        // shown once after a POST; cleared on next paint
 let SUPPRESSED_CUSTOMERS = [];
 let SUPPRESSED_LOADED = false;
+let SUPPRESSED_SCOPE = null;
+const suppressionScope = () => `${getWorkspaceId() || ''}:${getJwt() || ''}`;
 let WORKSPACE_SETTINGS = null;
 let WORKSPACE_SETTINGS_LOADED = false;
 let ME_PREFS = null;
@@ -881,11 +883,25 @@ async function deleteOutgoingWebhook(id) {
 // enough.
 
 function settingsSuppressionListSection() {
+  const scope = suppressionScope();
+  if (SUPPRESSED_SCOPE !== scope) {
+    SUPPRESSED_SCOPE = scope;
+    SUPPRESSED_CUSTOMERS = [];
+    SUPPRESSED_LOADED = false;
+  }
   if (!SUPPRESSED_LOADED) {
     SUPPRESSED_LOADED = true;
-    apiGet('/api/v1/integrations/postmark/suppressed')
-      .then((res) => { SUPPRESSED_CUSTOMERS = res.suppressed || []; renderPage('settings'); })
-      .catch((err) => { console.warn('[settings] suppression load failed:', err); });
+    apiGet('/api/v1/integrations/postmark/suppressed/contacts')
+      .then((res) => {
+        if (suppressionScope() !== scope) return;
+        SUPPRESSED_CUSTOMERS = res.suppressed || [];
+        renderPage('settings');
+      })
+      .catch((err) => {
+        if (suppressionScope() !== scope) return;
+        SUPPRESSED_LOADED = false;
+        console.warn('[settings] suppression load failed:', err);
+      });
   }
   const list = SUPPRESSED_CUSTOMERS;
   const fmtTs = (ts) => ts ? new Date(ts).toISOString().slice(0, 10) : '—';
@@ -906,7 +922,7 @@ function settingsSuppressionListSection() {
             <span style="color:var(--ink4);margin-left:8px">${c.email_bounce_count} bounce${c.email_bounce_count === 1 ? '' : 's'}</span>
           </div>
         </div>
-        <button class="btn btn-sm" data-action="settings.resetSuppressed" data-id="${window.escAttr(c.id)}">Reset</button>
+        <button class="btn btn-sm" data-action="settings.resetSuppressed" data-id="${window.escAttr(c.id)}" data-contact-id="${window.escAttr(c.contact_id || '')}">Reset</button>
       </div>`;
   }).join('');
 
@@ -914,26 +930,37 @@ function settingsSuppressionListSection() {
     <div class="settings-section">
       <div class="settings-h">Postmark suppression list</div>
       <div class="settings-desc" style="margin-bottom:14px">
-        Customers whose email is currently flagged as undeliverable based on Postmark Bounce / SpamComplaint webhook events. Resetting clears the local state — if the address is still suppressed at Postmark, the next send will bounce and re-populate it.
+        Email addresses flagged by a bounce or spam complaint. Reset clears the flag for that address only. Postmark may still block delivery until its suppression is removed.
       </div>
       <div>${rows}</div>
     </div>`;
 }
 
-async function resetSuppressedCustomer(customerId) {
+async function resetSuppressedCustomer(customerId, contactId) {
   if (!window.isAdmin()) return;
-  if (!confirm('Reset this customer\'s bounce state? Sends will resume immediately.')) return;
+  const scope = suppressionScope();
+  if (!confirm('Reset the bounce status for this email address? Respovia will allow sends to it again.')) return;
   try {
-    await apiPost(`/api/v1/integrations/postmark/suppressed/${encodeURIComponent(customerId)}/reset`);
-    SUPPRESSED_CUSTOMERS = SUPPRESSED_CUSTOMERS.filter((c) => c.id !== customerId);
+    const target = contactId ? `/contacts/${encodeURIComponent(contactId)}` : '';
+    const result = await apiPost(`/api/v1/integrations/postmark/suppressed/${encodeURIComponent(customerId)}${target}/reset`);
+    if (suppressionScope() !== scope) return;
+    SUPPRESSED_CUSTOMERS = SUPPRESSED_CUSTOMERS.filter((c) => contactId ? c.contact_id !== contactId : c.id !== customerId);
     // Also clear the in-memory customer record so the badge disappears
     // on the customer detail without a full bootstrap reload.
     if (typeof CUSTOMERS !== 'undefined') {
       const cust = CUSTOMERS.find((c) => c._uuid === customerId);
       if (cust) {
-        cust.emailBounceState = 'none';
-        cust.emailBounceCount = 0;
-        cust.emailLastBounce  = null;
+        const address = cust.emails?.find((x) => contactId ? x.id === contactId : x.is_primary);
+        if (address) {
+          address.bounce_state = 'none';
+          address.bounce_count = 0;
+          address.bounce_last_at = null;
+        }
+        if (result.contact?.is_primary ?? !contactId) {
+          cust.emailBounceState = 'none';
+          cust.emailBounceCount = 0;
+          cust.emailLastBounce  = null;
+        }
       }
     }
     renderPage('settings');
@@ -1305,7 +1332,7 @@ registerActions({
   'settings.rotateSecret':      () => rotateOutgoingWebhookSecret(),
   'settings.closeModal':        () => closeModal(),
   // suppression list
-  'settings.resetSuppressed':   (ds) => resetSuppressedCustomer(ds.id),
+  'settings.resetSuppressed':   (ds) => resetSuppressedCustomer(ds.id, ds.contactId),
   // categories (admin)
   'settings.addCategory':       () => addCategory(),
   'settings.toggleCategory':    (ds) => toggleCategory(ds.key, ds.next === 'true'),

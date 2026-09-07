@@ -71,7 +71,7 @@ export async function exportCustomer(args: {
 
   const tickets = await sql<Record<string, unknown>[]>`
     select id, display_id, subject, status_key, priority_key, category_key,
-           csat_score, csat_comment, snooze_reason, created_at, updated_at, resolved_at
+           csat_score, csat_comment, snooze_reason, last_inbound_email, created_at, updated_at, resolved_at
     from tickets
     where workspace_id = ${workspaceId} and customer_id = ${customerId}
     order by created_at asc

@@ -4,6 +4,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { requireWorkspaceAdmin } from '../lib/authz.js';
 import { getDb } from '../lib/db.js';
 import { assertSafeWebhookUrl } from '../lib/ssrf.js';
+import { resetContactSuppression } from '../lib/contact-suppression.js';
 
 // Migration to Neon — Step 3. Workspace-scoped via getDb(). Listing (GET) is
 // member-level (reads expose only a token suffix + non-secret config), but all
@@ -237,43 +238,66 @@ integrations.post('/webhooks/:id/deliveries/:deliveryId/retry', async (c) => {
 });
 
 // ─── Postmark suppression list ──────────────────────────────────────────
-integrations.get('/postmark/suppressed', async (c) => {
+async function suppressedEmails(workspaceId: string, primaryOnly: boolean) {
   const sql = getDb();
-  const workspaceId = c.get('workspaceId');
-  const rows = await sql`
-    select id, display_id, first_name, last_name, email, email_bounce_state, email_last_bounce_type, email_last_bounce_at, email_bounce_count
-    from customers
-    where workspace_id = ${workspaceId} and email_bounce_state in ('hard', 'spam') and deleted_at is null
+  return sql`
+    select c.id, cc.id as contact_id, c.display_id, c.first_name, c.last_name,
+           cc.value::text as email, cc.bounce_state as email_bounce_state,
+           cc.bounce_last_type as email_last_bounce_type, cc.bounce_last_at as email_last_bounce_at,
+           cc.bounce_count as email_bounce_count
+    from customer_contacts cc
+    join customers c on c.id = cc.customer_id and c.workspace_id = cc.workspace_id
+    where cc.workspace_id = ${workspaceId} and cc.kind = 'email'
+      and cc.bounce_state in ('hard', 'spam') and cc.deleted_at is null
+      and c.deleted_at is null and c.erased_at is null and c.merged_into_customer_id is null
+      and (${!primaryOnly} or cc.is_primary)
+    union all
+    select c.id, null::uuid as contact_id, c.display_id, c.first_name, c.last_name,
+           c.email::text, c.email_bounce_state, c.email_last_bounce_type,
+           c.email_last_bounce_at, c.email_bounce_count
+    from customers c
+    where c.workspace_id = ${workspaceId} and c.deleted_at is null and c.erased_at is null
+      and c.merged_into_customer_id is null and c.email is not null
+      and c.email_bounce_state in ('hard', 'spam')
+      and not exists (select 1 from customer_contacts cc where cc.customer_id = c.id
+        and cc.workspace_id = ${workspaceId} and cc.kind = 'email' and cc.deleted_at is null)
     order by email_last_bounce_at desc
     limit 200
   `;
-  return c.json({ suppressed: rows });
+}
+
+// Cached/older clients can reset only a customer's primary address. Preserve
+// that list contract; the contact-aware UI explicitly opts into the new list.
+integrations.get('/postmark/suppressed', async (c) => {
+  return c.json({ suppressed: await suppressedEmails(c.get('workspaceId'), true) });
+});
+
+integrations.get('/postmark/suppressed/contacts', async (c) => {
+  return c.json({ suppressed: await suppressedEmails(c.get('workspaceId'), false) });
 });
 
 integrations.post('/postmark/suppressed/:customerId/reset', async (c) => {
   const denied = await requireWorkspaceAdmin(c);
   if (denied) return denied;
 
-  const sql = getDb();
   const workspaceId = c.get('workspaceId');
   const customerId = c.req.param('customerId');
+  if (!z.string().uuid().safeParse(customerId).success) return c.json({ error: 'Invalid customer ID' }, 400);
+  const contact = await resetContactSuppression(workspaceId, customerId);
+  if (!contact) return c.json({ error: 'Customer email not found' }, 404);
+  return c.json({ ok: true, customer: { id: customerId, email_bounce_state: 'none' }, contact });
+});
 
-  const [data] = await sql`
-    update customers
-    set email_bounce_state = 'none', email_last_bounce_type = null, email_last_bounce_at = null, email_bounce_count = 0
-    where id = ${customerId} and workspace_id = ${workspaceId} and deleted_at is null
-    returning id, email_bounce_state
-  `;
-  if (!data) return c.json({ error: 'Customer not found' }, 404);
-  // The customer-level summary describes the PRIMARY address, so reset that
-  // contact row too (Phase 4 contacts model) — and ONLY that one: a bounced
-  // secondary keeps its own per-address state.
-  await sql`
-    update customer_contacts
-    set bounce_state = 'none', bounce_last_type = null, bounce_last_at = null, bounce_count = 0
-    where workspace_id = ${workspaceId} and customer_id = ${customerId} and kind = 'email' and is_primary and deleted_at is null
-  `;
-  return c.json({ ok: true, customer: data });
+integrations.post('/postmark/suppressed/:customerId/contacts/:contactId/reset', async (c) => {
+  const denied = await requireWorkspaceAdmin(c);
+  if (denied) return denied;
+  const { customerId, contactId } = c.req.param();
+  if (!z.string().uuid().safeParse(customerId).success || !z.string().uuid().safeParse(contactId).success) {
+    return c.json({ error: 'Invalid customer or contact ID' }, 400);
+  }
+  const contact = await resetContactSuppression(c.get('workspaceId'), customerId, contactId);
+  if (!contact) return c.json({ error: 'Customer email not found' }, 404);
+  return c.json({ ok: true, contact });
 });
 
 function generateWebhookSecret(): string {

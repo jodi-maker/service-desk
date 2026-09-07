@@ -260,7 +260,93 @@ runDbTests('customer contacts (DB-backed)', () => {
     expect((await addMobile(b, '+4477010003')).status).toBe(409);
   });
 
+  it('lists and resets individual suppressed addresses without clearing siblings; old clients see primaries only', async () => {
+    const cid = await mkCustomer('suppression-list');
+    const alt = emailOf('suppression-alt');
+    expect((await addEmail(cid, alt)).status).toBe(201);
+    await sql`update customer_contacts set bounce_state = 'hard', bounce_count = 2
+      where customer_id = ${cid} and kind = 'email'`;
+    const rows = await rowsFor(cid);
+    const secondary = rows.find((r) => r.value === alt)!;
+    const primary = rows.find((r) => r.is_primary)!;
+    const list = await as(admin.token, '/api/v1/integrations/postmark/suppressed/contacts');
+    expect(list.status).toBe(200);
+    const body = await list.json() as any;
+    expect(body.suppressed.filter((r: any) => r.id === cid).map((r: any) => r.contact_id).sort())
+      .toEqual([primary.id, secondary.id].sort());
+    const legacy = await as(admin.token, '/api/v1/integrations/postmark/suppressed');
+    const oldBody = await legacy.json() as any;
+    expect(oldBody.suppressed.filter((r: any) => r.id === cid).map((r: any) => r.contact_id)).toEqual([primary.id]);
+    const resetUrl = `/api/v1/integrations/postmark/suppressed/${cid}/contacts/${secondary.id}/reset`;
+    expect((await post(agent.token, resetUrl)).status).toBe(403);
+    const wrongCustomer = await mkCustomer('wrong-reset-owner');
+    expect((await post(admin.token, `/api/v1/integrations/postmark/suppressed/${wrongCustomer}/contacts/${secondary.id}/reset`)).status).toBe(404);
+    expect((await post(admin.token, resetUrl)).status).toBe(200);
+    const after = await rowsFor(cid);
+    expect(after.find((r) => r.id === secondary.id)?.bounce_state).toBe('none');
+    expect(after.find((r) => r.id === primary.id)?.bounce_state).toBe('hard');
+    expect((await scalars(cid)).email_bounce_state).toBe('hard');
+    expect((await del(agent.token, `${contactsUrl(cid)}/${secondary.id}`)).status).toBe(200);
+    expect((await post(admin.token, resetUrl)).status).toBe(404);
+  });
+
+  it('concurrent bounces keep all counts and cannot downgrade suppression', async () => {
+    const { processBounceEvent } = await import('./lib/postmark-bounce.js');
+    const cid = await mkCustomer('concurrent-bounces');
+    expect((await addEmail(cid, emailOf('concurrent-alt'))).status).toBe(201);
+    const results = await Promise.all(['HardBounce', 'SoftBounce', 'Transient', 'SpamNotification'].map((Type) =>
+      processBounceEvent({ fromDomain: DOMAIN, payload: {
+        RecordType: 'Bounce', Type, Email: emailOf('concurrent-bounces'), From: `support@${DOMAIN}`,
+      } }),
+    ));
+    expect(results.every((r) => r.ok && r.matched)).toBe(true);
+    const primary = (await rowsFor(cid)).find((r) => r.is_primary);
+    expect(primary?.bounce_count).toBe(4);
+    expect(primary?.bounce_state).toBe('spam');
+    expect((await scalars(cid)).email_bounce_count).toBe(4);
+    expect((await scalars(cid)).email_bounce_state).toBe('spam');
+    const stale = await processBounceEvent({ fromDomain: DOMAIN, payload: {
+      RecordType: 'Bounce', Type: 'HardBounce', Email: emailOf('concurrent-alt'),
+      From: `support@${DOMAIN}`, BouncedAt: '2000-01-01T00:00:00Z',
+    } });
+    expect(stale.ok && stale.matched).toBe(false);
+    expect((await rowsFor(cid)).find((r) => !r.is_primary)?.bounce_state).toBe('none');
+  });
+
+  it('cannot list or reset a different workspace contact even with valid customer/contact IDs', async () => {
+    const [{ id: foreignWs }] = await sql`select provision_brand(${'foreign-' + RUN}, ${'foreign-' + RUN}) as id`;
+    try {
+      const [customer] = await sql`insert into customers (workspace_id, display_id, email)
+        values (${foreignWs}, 'FOREIGN', ${emailOf('foreign')}) returning id`;
+      const [contact] = await sql`insert into customer_contacts (workspace_id, customer_id, kind, value, is_primary, bounce_state)
+        values (${foreignWs}, ${customer.id}, 'email', ${emailOf('foreign')}, true, 'hard') returning id`;
+      const url = `/api/v1/integrations/postmark/suppressed/${customer.id}/contacts/${contact.id}/reset`;
+      expect((await post(admin.token, url)).status).toBe(404);
+      const list = await as(admin.token, '/api/v1/integrations/postmark/suppressed/contacts');
+      expect((await list.json() as any).suppressed.some((r: any) => r.contact_id === contact.id)).toBe(false);
+      const [unchanged] = await sql`select bounce_state from customer_contacts where id = ${contact.id}`;
+      expect(unchanged.bounce_state).toBe('hard');
+    } finally {
+      await sql`delete from workspaces where id = ${foreignWs}`;
+    }
+  });
+
   // ─── Bounce dual-write ────────────────────────────────────────────────────
+
+  it('a bounce heals a legacy customer with no contact rows before updating suppression', async () => {
+    const cid = await mkCustomer('legacy-bounce', { mobile: '+447700901111' });
+    expect(await rowsFor(cid)).toHaveLength(0);
+    const { processBounceEvent } = await import('./lib/postmark-bounce.js');
+    const result = await processBounceEvent({ fromDomain: DOMAIN, payload: {
+      RecordType: 'Bounce', Type: 'HardBounce', Email: emailOf('legacy-bounce'), From: `support@${DOMAIN}`,
+    } });
+    expect(result.ok && result.matched).toBe(true);
+    const rows = await rowsFor(cid);
+    expect(rows.find((r) => r.kind === 'email')?.bounce_state).toBe('hard');
+    expect(rows.find((r) => r.kind === 'mobile')?.value).toBe('+447700901111');
+    expect((await scalars(cid)).email_bounce_state).toBe('hard');
+    expect((await scalars(cid)).mobile).toBe('+447700901111');
+  });
 
   it('bounce: a secondary address updates its contact row only; the primary updates both; reset clears the primary row only', async () => {
     const { processBounceEvent } = await import('./lib/postmark-bounce.js');

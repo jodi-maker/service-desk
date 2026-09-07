@@ -86,6 +86,8 @@ runDbTests('inbound thread matching (DB-backed)', () => {
       where ticket_id = ${ctx.realTicket} and role = 'customer' and body = 'customer reply body'`;
     expect(msg).toBeTruthy();
     expect(msg.workspace_id).toBe(ctx.wsReal);
+    const [ticket] = await sql`select last_inbound_email from tickets where id = ${ctx.realTicket}`;
+    expect(ticket.last_inbound_email).toBe(ctx.realCustomerEmail);
   });
 
   it('dedups a redelivered reply (Postmark retry) instead of attaching twice', async () => {
@@ -122,5 +124,41 @@ runDbTests('inbound thread matching (DB-backed)', () => {
     expect(res.ticket_id).toBeTruthy();
     const [t] = await sql<{ workspace_id: string }[]>`select workspace_id from tickets where id = ${res.ticket_id}`;
     expect(t.workspace_id).toBe(ctx.bucket);   // landed in the bucket, didn't crash
+    const [created] = await sql`select last_inbound_email from tickets where id = ${res.ticket_id}`;
+    expect(created.last_inbound_email).toBe(`stranger-${RUN}@nowhere.test`);
+  });
+
+  it('refreshes the thread address on a new reply but not on a redelivered older message', async () => {
+    const latest = `latest-${RUN}@cust.test`;
+    const [owner] = await sql`select customer_id from tickets where id = ${ctx.realTicket}`;
+    const { ensurePrimaryContacts } = await import('./lib/customer-contacts.js');
+    await ensurePrimaryContacts(sql, { workspaceId: ctx.wsReal, customerId: owner.customer_id, email: ctx.realCustomerEmail });
+    await sql`insert into customer_contacts (workspace_id, customer_id, kind, value, is_primary)
+      values (${ctx.wsReal}, ${owner.customer_id}, 'email', ${latest}, false)`;
+    await processInboundEmail({ workspaceId: ctx.bucket, payload: inbound({
+      from: latest, subject: 'Re: Original subject', text: 'new sender',
+      messageId: `<latest-${RUN}@cust.test>`, inReplyTo: AGENT_MSG_ID,
+    }) });
+    await processInboundEmail({ workspaceId: ctx.bucket, payload: inbound({
+      from: ctx.realCustomerEmail, subject: 'Re: Original subject', text: 'customer reply body',
+      messageId: `<reply-${RUN}@cust.test>`, inReplyTo: AGENT_MSG_ID,
+    }) });
+    const [ticket] = await sql`select last_inbound_email from tickets where id = ${ctx.realTicket}`;
+    expect(ticket.last_inbound_email).toBe(latest);
+    const { resolveTicketRecipient } = await import('./lib/ticket-recipient.js');
+    expect((await resolveTicketRecipient(ctx.wsReal, ctx.realTicket))?.email).toBe(latest);
+    expect(await resolveTicketRecipient(ctx.bucket, ctx.realTicket)).toBeNull();
+  });
+
+  it('does not retain a third-party reply address on someone else\'s ticket', async () => {
+    const thirdParty = `third-party-${RUN}@cust.test`;
+    await processInboundEmail({ workspaceId: ctx.bucket, payload: inbound({
+      from: thirdParty, subject: 'Re: Original subject', text: 'third party reply',
+      messageId: `<third-party-${RUN}@cust.test>`, inReplyTo: AGENT_MSG_ID,
+    }) });
+    const [ticket] = await sql`select last_inbound_email from tickets where id = ${ctx.realTicket}`;
+    expect(ticket.last_inbound_email).toBeNull();
+    const { resolveTicketRecipient } = await import('./lib/ticket-recipient.js');
+    expect((await resolveTicketRecipient(ctx.wsReal, ctx.realTicket))?.email).toBe(ctx.realCustomerEmail);
   });
 });

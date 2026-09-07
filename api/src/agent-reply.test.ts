@@ -80,9 +80,8 @@ runDbTests('agent-reply email delivery (DB-backed)', () => {
   }, 30000);
 
   afterAll(async () => {
-    await sql`delete from ticket_messages where workspace_id = ${ctx.wsId}`;
-    await sql`delete from tickets where workspace_id = ${ctx.wsId}`;
-    await sql`delete from customers where workspace_id = ${ctx.wsId}`;
+    if (ctx.wsId) await sql`delete from workspaces where id = ${ctx.wsId}`;
+    if (admin.userId) await sql`delete from users where id = ${admin.userId}`;
   });
 
   it('emails the customer on a public reply and stamps the threading Message-Id', async () => {
@@ -100,6 +99,106 @@ runDbTests('agent-reply email delivery (DB-backed)', () => {
       select external_message_id from ticket_messages where id = ${message.id}
     `;
     expect(row.external_message_id).toMatch(/^<.+@.+>$/);
+  });
+
+  async function contactTicket(label: string, primaryBounce = 'none') {
+    const primary = `${label}-primary-${RUN}@acme.test`;
+    const secondary = `${label}-secondary-${RUN}@acme.test`;
+    const tid = await seedTicket(`AR-${RUN}-${label}`, { email: primary, bounce: primaryBounce });
+    const [ticket] = await sql`select customer_id from tickets where id = ${tid}`;
+    const res = await as(`/api/v1/customers/${ticket.customer_id}/contacts`, {
+      method: 'POST', body: JSON.stringify({ kind: 'email', value: secondary }),
+    });
+    expect(res.status).toBe(201);
+    await sql`update tickets set last_inbound_email = ${secondary.toUpperCase()} where id = ${tid}`;
+    return { tid, cid: ticket.customer_id as string, primary, secondary };
+  }
+
+  async function reply(tid: string) {
+    const res = await as(`/api/v1/tickets/${tid}/messages`, {
+      method: 'POST', body: JSON.stringify({ role: 'agent', body: 'Address test' }),
+    });
+    expect(res.status).toBe(201);
+    return await res.json() as { delivery: { emailed: boolean; reason: string } };
+  }
+
+  it('sends a rich reply to the live thread address even when the primary is hard-bounced', async () => {
+    const { tid, secondary } = await contactTicket('thread', 'hard');
+    const res = await as(`/api/v1/tickets/${tid}/messages`, {
+      method: 'POST', body: JSON.stringify({ role: 'agent', body_html: '<p>Hello <b>again</b></p>' }),
+    });
+    expect(res.status).toBe(201);
+    expect(lastBody.To).toBe(secondary);
+    expect(lastBody.HtmlBody).toContain('<b>again</b>');
+  });
+
+  it('holds hard/spam thread addresses without redirecting to a healthy primary; soft bounces send', async () => {
+    const { tid, cid, secondary } = await contactTicket('suppressed');
+    for (const state of ['hard', 'spam', 'soft']) {
+      await sql`update customer_contacts set bounce_state = ${state}
+        where workspace_id = ${ctx.wsId} and customer_id = ${cid} and value = ${secondary}`;
+      const { delivery } = await reply(tid);
+      expect(delivery.reason).toBe(state === 'soft' ? 'sent' : 'email_suppressed');
+      expect(delivery.emailed).toBe(state === 'soft');
+    }
+    expect(postmarkCalls).toBe(1);
+    expect(lastBody.To).toBe(secondary);
+  });
+
+  it('falls back after removal even if another customer now owns the old thread address', async () => {
+    const { tid, cid, primary, secondary } = await contactTicket('removed');
+    const [contact] = await sql`select id from customer_contacts where customer_id = ${cid} and value = ${secondary}`;
+    const removed = await as(`/api/v1/customers/${cid}/contacts/${contact.id}`, { method: 'DELETE' });
+    expect(removed.status).toBe(200);
+    await seedTicket(`AR-${RUN}-new-owner`, { email: secondary });
+    const { delivery } = await reply(tid);
+    expect(delivery.emailed).toBe(true);
+    expect(lastBody.To).toBe(primary);
+  });
+
+  it('AI replies and surveys use the same thread address and suppression policy', async () => {
+    const { postAutoReply } = await import('./lib/auto-reply.js');
+    const { sendCsatSurvey } = await import('./lib/csat-survey.js');
+    const { tid, cid, secondary } = await contactTicket('automatic', 'hard');
+    const auto = await postAutoReply({ workspaceId: ctx.wsId, ticketId: tid, draftReply: 'Answer', confidence: 1, model: 'test', workspaceName: 'Test' });
+    expect(auto.posted).toBe(true);
+    expect(lastBody.To).toBe(secondary);
+    const survey = await sendCsatSurvey({ workspaceId: ctx.wsId, ticketId: tid });
+    expect(survey.sent).toBe(true);
+    expect(lastBody.To).toBe(secondary);
+
+    await sql`delete from events where workspace_id = ${ctx.wsId} and entity_id = ${tid} and kind = 'auto_reply'`;
+    await sql`update tickets set csat_requested_at = null where id = ${tid}`;
+    await sql`update customer_contacts set bounce_state = 'hard' where customer_id = ${cid} and value = ${secondary}`;
+    const heldAuto = await postAutoReply({ workspaceId: ctx.wsId, ticketId: tid, draftReply: 'Answer', confidence: 1, model: 'test', workspaceName: 'Test' });
+    expect(heldAuto).toEqual({ posted: false, reason: 'email_suppressed' });
+    expect(await sendCsatSurvey({ workspaceId: ctx.wsId, ticketId: tid })).toEqual({ sent: false, reason: 'email_suppressed' });
+    expect(postmarkCalls).toBe(2);
+  });
+
+  it('retains address routing across merge and unmerge, and exports then erases the stored address', async () => {
+    const { tid, cid, secondary } = await contactTicket('merge-routing');
+    const survivorTid = await seedTicket(`AR-${RUN}-survivor-routing`, { email: `survivor-${RUN}@acme.test` });
+    const [survivor] = await sql`select customer_id from tickets where id = ${survivorTid}`;
+    const merged = await as(`/api/v1/customers/${cid}/merge`, {
+      method: 'POST', body: JSON.stringify({ into_id: survivor.customer_id }),
+    });
+    expect(merged.status).toBe(200);
+    expect((await reply(tid)).delivery.emailed).toBe(true);
+    expect(lastBody.To).toBe(secondary);
+    const unmerged = await as(`/api/v1/customers/${cid}/unmerge`, { method: 'POST' });
+    expect(unmerged.status).toBe(200);
+    expect((await reply(tid)).delivery.emailed).toBe(true);
+    expect(lastBody.To).toBe(secondary);
+    const { exportCustomer } = await import('./lib/gdpr-export.js');
+    const exported = await exportCustomer({ workspaceId: ctx.wsId, customerId: cid });
+    expect(exported?.tickets.find((t) => t.display_id === `AR-${RUN}-merge-routing`)?.last_inbound_email?.toString().toLowerCase()).toBe(secondary);
+    const { eraseCustomer } = await import('./lib/gdpr-erasure.js');
+    const erased = await eraseCustomer({ workspaceId: ctx.wsId, customerId: cid, requestedByUserId: admin.userId });
+    expect(erased?.fieldsErased).toContain('tickets.last_inbound_email');
+    const [row] = await sql`select last_inbound_email from tickets where id = ${tid}`;
+    expect(row.last_inbound_email).toBeNull();
+    expect((await reply(tid)).delivery.emailed).toBe(false);
   });
 
   it('sends a plain-text-only reply with no HTML part when the workspace has nothing to brand', async () => {
