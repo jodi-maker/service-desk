@@ -28,7 +28,7 @@
 // deployment reports its own environment code to Tagline.
 (function () {
   // Back-compat: honor the pre-rename global if a self-hosted page still
-  // sets it (documented hook from the Maestro Desk era).
+  // sets it (documented legacy integration hook).
   if (!window.RESPOVIA_API_BASE && window.MAESTRO_API_BASE) {
     window.RESPOVIA_API_BASE = window.MAESTRO_API_BASE;
   }

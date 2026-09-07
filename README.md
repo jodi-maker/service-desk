@@ -29,7 +29,7 @@ The product is white-label and multi-tenant: a **God** operator manages brands, 
 ## Repo layout
 
 ```
-maestro-desk/
+respovia/
 ├── web/                  # Frontend SPA (Vercel Root Directory = "web")
 │   ├── index.html        #   single module entry → js/app.js
 │   ├── portal.html       #   customer-facing portal

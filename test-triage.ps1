@@ -26,7 +26,7 @@ $anon = $env:SUPABASE_ANON_KEY
 $serviceRole = $env:SUPABASE_SERVICE_ROLE_KEY
 $workspaceId = "00000000-0000-0000-0000-000000000001"
 $ticketId    = "00000000-0000-0000-0000-000000000301"  # TK-001
-$email = "triage-test@maestrodesk.local"
+$email = "triage-test@respovia.local"
 $password = "TriageTestPassword!2026"
 
 $authAdminHeaders = @{
@@ -148,5 +148,5 @@ try {
     Write-Host "`nTriage call failed:" -ForegroundColor Red
     Write-Host $_.Exception.Message
     if ($_.ErrorDetails.Message) { Write-Host $_.ErrorDetails.Message }
-    Write-Host "`nIs the API running? In another PowerShell window: cd ~\maestro-desk\api; bun dev"
+    Write-Host "`nIs the API running? In another PowerShell window: open the Respovia checkout, then cd api; bun run dev"
 }

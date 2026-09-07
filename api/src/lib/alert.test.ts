@@ -22,7 +22,7 @@ const envObj = {
   ALERT_EMAIL_TO: '',
   SLACK_ALERT_WEBHOOK_URL: '',
   POSTMARK_SERVER_TOKEN: 'postmark-token',
-  POSTMARK_OUTBOUND_FROM: 'alerts@maestro-desk.test',
+  POSTMARK_OUTBOUND_FROM: 'alerts@respovia.test',
 };
 // Spread the full module so no export is dropped; keep isLocalDev:false override.
 mock.module('./env.js', () => ({ ...realEnvMod, env: envObj, isLocalDev: false }));
@@ -87,11 +87,11 @@ describe('alertingConfigured', () => {
     expect(alertingConfigured()).toBe(true);
   });
   it('is true when Postmark + recipient are set', () => {
-    envObj.ALERT_EMAIL_TO = 'ops@maestro-desk.test';
+    envObj.ALERT_EMAIL_TO = 'ops@respovia.test';
     expect(alertingConfigured()).toBe(true);
   });
   it('email gate needs Postmark configured too', () => {
-    envObj.ALERT_EMAIL_TO = 'ops@maestro-desk.test';
+    envObj.ALERT_EMAIL_TO = 'ops@respovia.test';
     envObj.POSTMARK_SERVER_TOKEN = ''; // Postmark no longer configured
     expect(alertingConfigured()).toBe(false);
   });
@@ -105,18 +105,18 @@ describe('sendOpsAlert', () => {
   });
 
   it('delivers to both channels when configured and the claim says send', async () => {
-    envObj.ALERT_EMAIL_TO = 'ops@maestro-desk.test';
+    envObj.ALERT_EMAIL_TO = 'ops@respovia.test';
     envObj.SLACK_ALERT_WEBHOOK_URL = SLACK_URL;
     await sendOpsAlert(alert);
     expect(postmarkCalls).toHaveLength(1);
-    expect(postmarkCalls[0]).toContain('ops@maestro-desk.test');
+    expect(postmarkCalls[0]).toContain('ops@respovia.test');
     expect(postmarkCalls[0]).toContain('Something broke');
     expect(slackCalls).toHaveLength(1);
     expect(slackCalls[0].url).toBe(SLACK_URL);
   });
 
   it('suppresses delivery when the claim says not to send', async () => {
-    envObj.ALERT_EMAIL_TO = 'ops@maestro-desk.test';
+    envObj.ALERT_EMAIL_TO = 'ops@respovia.test';
     envObj.SLACK_ALERT_WEBHOOK_URL = SLACK_URL;
     claimResult = [{ should_send: false, suppressed_since: 0 }];
     await sendOpsAlert(alert);
@@ -125,21 +125,21 @@ describe('sendOpsAlert', () => {
   });
 
   it('fails open: delivers anyway when the dedup claim throws', async () => {
-    envObj.ALERT_EMAIL_TO = 'ops@maestro-desk.test';
+    envObj.ALERT_EMAIL_TO = 'ops@respovia.test';
     claimThrows = true;
     await sendOpsAlert(alert);
     expect(postmarkCalls).toHaveLength(1);
   });
 
   it('notes suppressed occurrences in the body when firing after a burst', async () => {
-    envObj.ALERT_EMAIL_TO = 'ops@maestro-desk.test';
+    envObj.ALERT_EMAIL_TO = 'ops@respovia.test';
     claimResult = [{ should_send: true, suppressed_since: 7 }];
     await sendOpsAlert(alert);
     expect(postmarkCalls[0]).toContain('7 more occurrence');
   });
 
   it('a single channel failing does not throw (best-effort)', async () => {
-    envObj.ALERT_EMAIL_TO = 'ops@maestro-desk.test';
+    envObj.ALERT_EMAIL_TO = 'ops@respovia.test';
     envObj.SLACK_ALERT_WEBHOOK_URL = SLACK_URL;
     slackOk = false; // Slack returns 500
     await sendOpsAlert(alert); // must resolve, not reject

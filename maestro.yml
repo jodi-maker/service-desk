@@ -1,11 +1,11 @@
-# Maestro Connect app manifest for Service Desk (Maestro Desk).
+# Maestro Connect app manifest for Respovia.
 # App id: 6c3f3c30-8beb-4763-adfd-e1ccea2aa976 · clientId: app_edb811f36cd8f0fe1755541e342128bb
 # Lifecycle: maestro apps submit <appId> --file maestro.yml (first review),
 # then maestro apps diff / maestro apps revise for every change after approval.
 maestroVersion: '1'
 
 partner:
-  name: Service Desk
+  name: Respovia
   slug: service-desk
   description: >-
     AI-native helpdesk for iGaming brands. Support agents sign in with their
