@@ -47,7 +47,7 @@ import { showMacroPanel, showApplyMacroModal } from './macros.js';
 import { showAttachPanel } from './attachments.js';
 import { renderAttachmentChips } from './attachment-chips.js';
 import {
-  clear as clearComposer, getHtml, getPlainText, insertAtCursor,
+  appendText, clear as clearComposer, getHtml, getPlainText, insertAtCursor,
   isEmpty as isComposerEmpty, mountComposer,
 } from './composer.js';
 import { pendingAttachmentIds, renderPendingAttachments, clearPendingAttachments } from './attachments.js';
@@ -825,9 +825,8 @@ export function insertMacro(ticketId, idx) {
   const text = r.text.replace('{name}', cust ? cust.first : 'there');
   const el = document.getElementById('compose-' + ticketId);
   if (el) {
-    el.value = el.value ? `${el.value}\n\n${text}` : text;
-    el.focus();
-    el.setSelectionRange(el.value.length, el.value.length);
+    appendText(ticketId, text);
+    onComposeInput(ticketId);
   }
   closeModal();
 }
