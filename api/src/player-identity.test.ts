@@ -29,6 +29,8 @@ runDbTests('player identity linking (DB-backed)', () => {
   type Lib = typeof import('./lib/player-identity.js');
   let sql: ReturnType<typeof import('./lib/db.js').getDb>;
   let lib: Lib;
+  let app: { request: (path: string, init?: RequestInit) => Promise<Response> };
+  let agentToken = '';
 
   const RUN = Date.now();
   const brand = randomUUID();
@@ -53,7 +55,7 @@ runDbTests('player identity linking (DB-backed)', () => {
   const PLAYER = {
     userId: 'a1b2c3d4-user-0001', memberId: 4711, username: 'ferit_bey',
     firstName: 'S. Ferit', lastName: 'Arslan', email: `player-${RUN}@example.test`,
-    vipLevel: 'Gold', country: 'TR', balance: '12.50', balanceCy: 'EUR',
+    vipLevel: 'Gold', country: 'TR', mobile: '+90 555 123 4567', balance: '12.50', balanceCy: 'EUR',
   };
 
   async function mkCustomer(wsId: string, email: string | null, extra: Record<string, unknown> = {}): Promise<string> {
@@ -71,10 +73,10 @@ runDbTests('player identity linking (DB-backed)', () => {
   }
   async function row(id: string) {
     const [r] = await sql<{
-      username: string | null; vip_tier: string | null; jurisdiction: string | null;
+      username: string | null; vip_tier: string | null; jurisdiction: string | null; brand: string | null; mobile: string | null;
       maestro_user_id: string | null; maestro_member_id: string | null; player_lookup_at: Date | null;
     }[]>`
-      select username, vip_tier, jurisdiction, maestro_user_id, maestro_member_id, player_lookup_at
+      select username, vip_tier, jurisdiction, brand, mobile, maestro_user_id, maestro_member_id, player_lookup_at
       from customers where id = ${id}
     `;
     return r;
@@ -83,10 +85,17 @@ runDbTests('player identity linking (DB-backed)', () => {
   beforeAll(async () => {
     sql = (await import('./lib/db.js')).getDb();
     lib = await import('./lib/player-identity.js');
+    app = (await import('./index.js')).default as typeof app;
     const [{ a }] = await sql<{ a: string }[]>`select provision_brand(${'pi-' + RUN}, ${'pi-' + RUN}) as a`;
     const [{ b }] = await sql<{ b: string }[]>`select provision_brand(${'pinb-' + RUN}, ${'pinb-' + RUN}) as b`;
     ws = a; wsNoBrand = b;
     await sql`update workspaces set maestro_brand_id = ${brand} where id = ${ws}`;
+    const { auth } = await import('./lib/auth.js');
+    const signed: any = await auth.api.signUpEmail({ body: { email: `pi-refresh-${RUN}@t.test`, password: 'password-12345', name: 'Agent' }, returnHeaders: true });
+    agentToken = signed.response.token;
+    createdUserIds.push(signed.response.user.id);
+    const [role] = await sql<{ id: string }[]>`select id from roles where workspace_id = ${ws} and is_admin = false limit 1`;
+    await sql`insert into workspace_members (workspace_id, user_id, role_id, active) values (${ws}, ${signed.response.user.id}, ${role.id}, true)`;
   }, 30000);
 
   afterEach(() => { globalThis.fetch = realFetch; });
@@ -95,6 +104,7 @@ runDbTests('player identity linking (DB-backed)', () => {
     globalThis.fetch = realFetch;
     if (!sql) return;
     for (const id of [ws, wsNoBrand].filter(Boolean)) {
+      await sql`delete from gdpr_erasures where workspace_id = ${id}`;
       await sql`delete from customers where workspace_id = ${id}`;
       await sql`delete from workspaces where id = ${id}`;
     }
@@ -117,6 +127,8 @@ runDbTests('player identity linking (DB-backed)', () => {
     expect(r.username).toBe('ferit_bey');
     expect(r.vip_tier).toBe('Gold');
     expect(r.jurisdiction).toBe('TR');
+    expect(r.brand).toBe('pi-' + RUN);
+    expect(r.mobile).toBe(PLAYER.mobile);
     expect(r.player_lookup_at).not.toBeNull();
 
     const audits = await sql<{ actor_user_id: string | null; metadata: Record<string, unknown> }[]>`
@@ -190,12 +202,14 @@ runDbTests('player identity linking (DB-backed)', () => {
     expect(await lib.linkCustomerToPlayer({ workspaceId: ws, customerId: id, reason: 'backfill' })).toBe('linked');
   });
 
-  it('skips erased, merged-away, already-linked and email-less contacts without calling the gateway', async () => {
+  it('skips erased, merged-away, complete linked and unlinked email-less contacts without calling the gateway', async () => {
     stubGateway(PLAYER);
     const survivor = await mkCustomer(ws, `surv-${RUN}@example.test`);
     const erased = await mkCustomer(ws, null, { erased_at: new Date() });
     const merged = await mkCustomer(ws, `merged-${RUN}@example.test`, { merged_into_customer_id: survivor });
-    const linked = await mkCustomer(ws, `linked-${RUN}@example.test`, { maestro_user_id: 'already' });
+    const linked = await mkCustomer(ws, `linked-${RUN}@example.test`, {
+      maestro_user_id: 'already', username: 'saved', vip_tier: 'Gold', jurisdiction: 'TR', brand: 'Saved brand', mobile: '+90 1',
+    });
     const noEmail = await mkCustomer(ws, null);
 
     for (const id of [erased, merged, linked, noEmail]) {
@@ -284,6 +298,191 @@ runDbTests('player identity linking (DB-backed)', () => {
     expect(r.maestro_user_id).toBe('player-A');
     expect(r.maestro_member_id).toBe('1');
     expect(r.vip_tier).toBeNull();   // not even blanks are filled from the wrong player
+  });
+
+  function refresh(id: string, workspaceId = ws, token = agentToken) {
+    return app.request(`/api/v1/customers/${id}/refresh-account`, {
+      method: 'POST', headers: { Authorization: `Bearer ${token}`, 'X-Workspace-Id': workspaceId },
+    });
+  }
+
+  it('refreshes an existing linked profile by stable ID, fills empty strings, and keeps one primary mobile', async () => {
+    const id = await mkCustomer(ws, `old-email-${RUN}@example.test`, {
+      maestro_user_id: PLAYER.userId, username: '  ', vip_tier: '', jurisdiction: '', brand: '',
+    });
+    stubGateway(PLAYER); // account email changed; identity still matches
+    const response = await refresh(id);
+    expect(response.status).toBe(200);
+    const body = await response.json() as any;
+    expect(body.customer.vip_tier).toBe('Gold');
+    expect(body.customer.jurisdiction).toBe('TR');
+    expect(body.customer.brand).toBe('pi-' + RUN);
+    expect(body.customer.mobile).toBe(PLAYER.mobile);
+    expect(body.customer.mobiles).toHaveLength(1);
+    expect(body.customer.mobiles[0].is_primary).toBe(true);
+    expect(calls).toHaveLength(1);
+    const url = new URL(calls[0].url);
+    expect(url.searchParams.get('maestroUserId')).toBe(PLAYER.userId);
+    expect(url.searchParams.has('email')).toBe(false);
+    expect(calls[0].brandId).toBe(brand);
+    expect((await row(id)).mobile).toBe(PLAYER.mobile);
+    const [audit] = await sql<{ action: string; actor_user_id: string }[]>`
+      select action, actor_user_id from audit_events where target_id = ${id}
+    `;
+    expect(audit.action).toBe('customer.player_refreshed');
+    expect(audit.actor_user_id).toBe(createdUserIds[0]);
+    expect((await refresh(id)).status).toBe(200);
+    expect(calls).toHaveLength(1);
+  });
+
+  it('preserves agent values and existing primary and secondary mobile contacts during repair', async () => {
+    const id = await mkCustomer(ws, `preserve-${RUN}@example.test`, {
+      maestro_user_id: PLAYER.userId, username: 'agent', vip_tier: 'Silver', jurisdiction: 'MT',
+      brand: 'Manual brand', mobile: '+44 111',
+    });
+    const { addContact } = await import('./lib/customer-contacts.js');
+    await addContact(sql, { workspaceId: ws, customerId: id, kind: 'mobile', value: '+44 222' });
+    expect(await lib.applyPlayerToCustomer(sql, { workspaceId: ws, customerId: id, member: PLAYER })).toBe(true);
+    const saved = await row(id);
+    expect(saved.username).toBe('agent');
+    expect(saved.vip_tier).toBe('Silver');
+    expect(saved.jurisdiction).toBe('MT');
+    expect(saved.brand).toBe('Manual brand');
+    expect(saved.mobile).toBe('+44 111');
+    const contacts = await sql<{ value: string; is_primary: boolean }[]>`
+      select value, is_primary from customer_contacts where customer_id = ${id} and kind = 'mobile' order by is_primary desc
+    `;
+    expect(contacts.map(c => c.value)).toEqual(['+44 111', '+44 222']);
+    expect(contacts[0].is_primary).toBe(true);
+  });
+
+  it('throttles incomplete results and refreshes a linked profile without an email', async () => {
+    const id = await mkCustomer(ws, null, { maestro_user_id: PLAYER.userId });
+    stubGateway({ userId: PLAYER.userId });
+    expect((await refresh(id)).status).toBe(200);
+    expect(calls).toHaveLength(1);
+    expect((await row(id)).vip_tier).toBeNull();
+    stubGateway(PLAYER);
+    expect((await refresh(id)).status).toBe(200);
+    expect(calls).toHaveLength(0);
+    await sql`update customers set player_lookup_at = now() - interval '2 days' where id = ${id}`;
+    expect((await refresh(id)).status).toBe(200);
+    expect((await row(id)).vip_tier).toBe('Gold');
+  });
+
+  it('refuses a different player returned for a linked ID without copying any details', async () => {
+    const id = await mkCustomer(ws, `mismatch-id-${RUN}@example.test`, { maestro_user_id: 'other-player' });
+    stubGateway(PLAYER);
+    expect((await refresh(id)).status).toBe(409);
+    const saved = await row(id);
+    expect(saved.maestro_user_id).toBe('other-player');
+    expect(saved.vip_tier).toBeNull();
+    expect(saved.mobile).toBeNull();
+    expect(saved.brand).toBeNull();
+  });
+
+  it('keeps refresh failures visible and retryable without changing saved details', async () => {
+    const id = await mkCustomer(ws, `failure-${RUN}@example.test`, { maestro_user_id: PLAYER.userId });
+    stubGateway({ error: 'gateway unavailable' }, 503);
+    expect((await refresh(id)).status).toBe(502);
+    expect((await row(id)).player_lookup_at).toBeNull();
+    stubGateway(PLAYER);
+    expect((await refresh(id)).status).toBe(200);
+    expect((await row(id)).vip_tier).toBe('Gold');
+  });
+
+  it('does not call Maestro for inaccessible, merged, erased or deleted profiles', async () => {
+    const outside = await mkCustomer(wsNoBrand, `outside-${RUN}@example.test`);
+    const survivor = await mkCustomer(ws, `refresh-survivor-${RUN}@example.test`);
+    const merged = await mkCustomer(ws, `refresh-merged-${RUN}@example.test`, { merged_into_customer_id: survivor });
+    const erased = await mkCustomer(ws, null, { erased_at: new Date() });
+    const deleted = await mkCustomer(ws, `refresh-deleted-${RUN}@example.test`, { deleted_at: new Date() });
+    stubGateway(PLAYER);
+    for (const id of [outside, merged, erased, deleted, randomUUID(), 'invalid']) {
+      expect((await refresh(id)).status).toBe(404);
+    }
+    expect((await refresh(survivor, ws, 'invalid-token')).status).toBe(401);
+    expect((await refresh(outside, wsNoBrand)).status).toBe(403);
+    expect(calls).toHaveLength(0);
+  });
+
+  it('deduplicates concurrent refreshes and mobile creation', async () => {
+    const id = await mkCustomer(ws, `parallel-${RUN}@example.test`, { maestro_user_id: PLAYER.userId });
+    stubGateway(PLAYER);
+    const results = await Promise.all(Array.from({ length: 3 }, () => lib.linkCustomerToPlayer({ workspaceId: ws, customerId: id, reason: 'profile_open' })));
+    expect(results).toEqual(['linked', 'linked', 'linked']);
+    expect(calls).toHaveLength(1);
+    const [{ n }] = await sql<{ n: number }[]>`select count(*)::int as n from customer_contacts where customer_id = ${id} and kind = 'mobile'`;
+    expect(n).toBe(1);
+  });
+
+  it('preserves edits committed while the account lookup was in flight', async () => {
+    const id = await mkCustomer(ws, `race-edit-${RUN}@example.test`, { maestro_user_id: PLAYER.userId });
+    let release!: () => void;
+    let arrived!: () => void;
+    const gate = new Promise<void>(r => { release = r; });
+    const started = new Promise<void>(r => { arrived = r; });
+    globalThis.fetch = (async () => {
+      arrived();
+      await gate;
+      return new Response(JSON.stringify(PLAYER), { status: 200 });
+    }) as unknown as typeof fetch;
+    const pending = lib.linkCustomerToPlayer({ workspaceId: ws, customerId: id, reason: 'profile_open' });
+    await started;
+    try {
+      await sql`update customers set vip_tier = 'Manual VIP', jurisdiction = 'MT', brand = 'Manual brand' where id = ${id}`;
+      const { addContact } = await import('./lib/customer-contacts.js');
+      await addContact(sql, { workspaceId: ws, customerId: id, kind: 'mobile', value: '+44 333' });
+    } finally { release(); }
+    await pending;
+    const saved = await row(id);
+    expect(saved.vip_tier).toBe('Manual VIP');
+    expect(saved.jurisdiction).toBe('MT');
+    expect(saved.brand).toBe('Manual brand');
+    expect(saved.mobile).toBe('+44 333');
+    expect(saved.username).toBe(PLAYER.username);
+  });
+
+  it('does not restore data or the lookup timestamp after an in-flight erasure', async () => {
+    const id = await mkCustomer(ws, `race-erase-${RUN}@example.test`, { maestro_user_id: PLAYER.userId });
+    let release!: () => void;
+    let arrived!: () => void;
+    const gate = new Promise<void>(r => { release = r; });
+    const started = new Promise<void>(r => { arrived = r; });
+    globalThis.fetch = (async () => {
+      arrived();
+      await gate;
+      return new Response(JSON.stringify(PLAYER), { status: 200 });
+    }) as unknown as typeof fetch;
+    const pending = lib.linkCustomerToPlayer({ workspaceId: ws, customerId: id, reason: 'profile_open' });
+    await started;
+    try {
+      const { eraseCustomer } = await import('./lib/gdpr-erasure.js');
+      await eraseCustomer({ workspaceId: ws, customerId: id, requestedByUserId: createdUserIds[0] });
+    } finally { release(); }
+    expect(await pending).toBe('skipped');
+    const saved = await row(id);
+    expect(saved.maestro_user_id).toBeNull();
+    expect(saved.player_lookup_at).toBeNull();
+    expect(saved.mobile).toBeNull();
+    expect(saved.jurisdiction).toBeNull();
+    const [{ n }] = await sql<{ n: number }[]>`select count(*)::int as n from customer_contacts where customer_id = ${id}`;
+    expect(n).toBe(0);
+  });
+
+  it('uses the same field mapping and workspace brand when creating a customer from a player', async () => {
+    stubGateway({ ...PLAYER, email: `create-${RUN}@example.test`, vipLevel: null, vipTier: 'Platinum' });
+    const response = await app.request('/api/v1/customers/from-player', {
+      method: 'POST', headers: { Authorization: `Bearer ${agentToken}`, 'X-Workspace-Id': ws, 'X-Brand-Id': brand, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: `create-${RUN}@example.test` }),
+    });
+    expect(response.status).toBe(201);
+    const body = await response.json() as any;
+    const saved = await row(body.customer.id);
+    expect(saved.vip_tier).toBe('Platinum');
+    expect(saved.brand).toBe('pi-' + RUN);
+    expect(saved.mobile).toBe(PLAYER.mobile);
+    expect(saved.jurisdiction).toBe('TR');
   });
 
   it('backfill aborts (throws) after consecutive gateway failures instead of looping on a dead token', async () => {
