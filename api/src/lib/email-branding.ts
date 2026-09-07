@@ -15,7 +15,11 @@
 // so stored content is escaped and cannot inject markup into recipients' mail.
 
 import { getDb } from './db.js';
-import { htmlToText } from './html-text.js';
+import { escapeHtml, htmlToText } from './html-text.js';
+
+// Re-exported: escapeHtml lives in html-text.ts (one escaping table for the
+// whole codebase); callers of this module keep importing it from here.
+export { escapeHtml };
 
 export interface BrandTemplate {
   id: string;
@@ -194,15 +198,6 @@ export async function composeEmail(args: ComposeArgs): Promise<ComposedEmail> {
 }
 
 // ─── Text/HTML helpers ───────────────────────────────────────────────────────
-
-export function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
 
 // Attribute-context escape (logo URL, alt text) — quotes must die.
 function escapeAttr(s: string): string {

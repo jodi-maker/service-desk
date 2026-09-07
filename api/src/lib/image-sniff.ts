@@ -7,7 +7,7 @@
 // Hand-rolled (no `file-type` dependency) — three fixed signatures is trivial
 // and avoids pulling in an ESM-only package.
 
-export type SniffedImageMime = 'image/png' | 'image/jpeg' | 'image/webp';
+export type SniffedImageMime = 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif';
 
 function startsWith(bytes: Uint8Array, sig: number[], offset = 0): boolean {
   if (bytes.length < offset + sig.length) return false;
@@ -26,6 +26,11 @@ export function sniffImageMime(bytes: Uint8Array): SniffedImageMime | null {
   // container (e.g. WAV/AVI) isn't accepted as an image.
   if (startsWith(bytes, [0x52, 0x49, 0x46, 0x46]) && startsWith(bytes, [0x57, 0x45, 0x42, 0x50], 8)) {
     return 'image/webp';
+  }
+  // GIF: "GIF87a" / "GIF89a" (email attachments; not accepted for logos, see
+  // routes/workspace.ts which keeps its own PNG/JPEG/WebP allow-list).
+  if (startsWith(bytes, [0x47, 0x49, 0x46, 0x38]) && (bytes[4] === 0x37 || bytes[4] === 0x39) && bytes[5] === 0x61) {
+    return 'image/gif';
   }
   return null;
 }

@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
 import { HTTPException } from 'hono/http-exception';
 import { getDb } from '../lib/db.js';
 import { PostmarkInbound, assertPostmarkAuth, parseTo } from '../lib/postmark.js';
@@ -19,7 +20,13 @@ export const webhooks = new Hono();
 //      "unrouted" bucket so customer mail never silently drops.
 //   4. Hand off to processInboundEmail (customer match + ticket + auto-triage).
 //   5. Return 200 immediately so Postmark doesn't retry.
-webhooks.post('/postmark/inbound', async (c) => {
+//
+// Body limit: Postmark's inbound cap is 35 MB per message, which is ~47 MB as
+// base64-in-JSON. 64 MB is a DoS guard only — a real message never hits it
+// (a 413 would make Postmark retry for hours and then drop the mail; oversize
+// FILES are skipped per-attachment in lib/message-attachments.ts instead).
+const POSTMARK_INBOUND_MAX_BYTES = 64 * 1024 * 1024;
+webhooks.post('/postmark/inbound', bodyLimit({ maxSize: POSTMARK_INBOUND_MAX_BYTES }), async (c) => {
   assertPostmarkAuth(c);
 
   const body = await c.req.json().catch(() => null);

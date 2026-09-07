@@ -76,7 +76,7 @@ workspace.post('/branding/logo', async (c) => {
   // Trust the bytes, not file.type. Reject anything that isn't a real PNG/JPEG/WebP.
   const bytes = new Uint8Array(await file.arrayBuffer());
   const mime = sniffImageMime(bytes);
-  if (!mime) return c.json({ error: 'Unsupported or mismatched image type (PNG, JPEG, or WebP only)' }, 400);
+  if (!mime || !extByMime[mime]) return c.json({ error: 'Unsupported or mismatched image type (PNG, JPEG, or WebP only)' }, 400);
 
   // Random segment in the key so logo URLs aren't guessable/enumerable and two
   // uploads in the same millisecond can't collide (#19).

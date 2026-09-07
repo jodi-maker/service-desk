@@ -18,6 +18,12 @@ describe('sniffImageMime', () => {
   it('detects PNG by signature', () => expect(sniffImageMime(PNG)).toBe('image/png'));
   it('detects JPEG by signature', () => expect(sniffImageMime(JPEG)).toBe('image/jpeg'));
   it('detects WebP (RIFF + WEBP)', () => expect(sniffImageMime(WEBP)).toBe('image/webp'));
+  it('detects GIF87a / GIF89a and rejects a GIF-like prefix', () => {
+    expect(sniffImageMime(ascii('GIF89a\x01\x00'))).toBe('image/gif');
+    expect(sniffImageMime(ascii('GIF87a\x01\x00'))).toBe('image/gif');
+    expect(sniffImageMime(ascii('GIF88a\x01\x00'))).toBeNull();
+    expect(sniffImageMime(ascii('GIF89'))).toBeNull();
+  });
 
   it('rejects an SVG document', () => expect(sniffImageMime(ascii('<?xml version="1.0"?><svg xmlns="..."><script>alert(1)</script></svg>'))).toBeNull());
   it('rejects a bare <svg> body', () => expect(sniffImageMime(ascii('<svg onload="alert(1)"></svg>'))).toBeNull());

@@ -22,6 +22,7 @@
     "hono": "^4.12.27",
     "pg": "^8.21.0",
     "postgres": "^3.4.5",
+    "sanitize-html": "^2.17.7",
     "tsx": "^4.23.12",
     "undici": "^8.7.0",
     "web-push": "^3.6.7",
@@ -30,6 +31,7 @@
   "devDependencies": {
     "@types/bun": "^1.1.10",
     "@types/pg": "^8.20.0",
+    "@types/sanitize-html": "^2.16.1",
     "@types/web-push": "^3.6.4",
     "typescript": "^5.6.0"
   }

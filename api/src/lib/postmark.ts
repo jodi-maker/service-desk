@@ -35,6 +35,17 @@ export const PostmarkInbound = z
     Headers: z
       .array(z.object({ Name: z.string(), Value: z.string() }))
       .optional(),                                // full RFC headers; we read Message-ID for threading
+    Attachments: z
+      .array(
+        z.object({
+          Name: z.string().default('file'),
+          Content: z.string().default(''),        // base64
+          ContentType: z.string().default('application/octet-stream'),
+          ContentLength: z.number().optional(),
+          ContentID: z.string().optional(),       // '' unless referenced as cid: from the HTML
+        }).passthrough(),
+      )
+      .optional(),                                // stored via lib/message-attachments.ts
   })
   .passthrough();
 

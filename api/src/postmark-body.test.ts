@@ -21,6 +21,22 @@ function payload(fields: Record<string, unknown>) {
   });
 }
 
+describe('PostmarkInbound.Attachments', () => {
+  it('parses the attachments array with Postmark defaults and tolerates its absence', () => {
+    const p = payload({
+      Attachments: [
+        { Name: 'a.pdf', Content: 'QUJD', ContentType: 'application/pdf', ContentLength: 3, ContentID: '' },
+        { Name: 'img.png', Content: 'QUJD', ContentType: 'image/png', ContentLength: 3, ContentID: 'img@mail' },
+      ],
+    });
+    expect(p.Attachments).toHaveLength(2);
+    expect(p.Attachments?.[1].ContentID).toBe('img@mail');
+    expect(payload({}).Attachments).toBeUndefined();
+    // Missing optional fields get the documented defaults.
+    expect(payload({ Attachments: [{}] }).Attachments?.[0]).toMatchObject({ Name: 'file', Content: '', ContentType: 'application/octet-stream' });
+  });
+});
+
 describe('pickBody', () => {
   it('prefers StrippedTextReply over TextBody over HtmlBody', () => {
     expect(pickBody(payload({ StrippedTextReply: 'stripped', TextBody: 'text', HtmlBody: '<p>html</p>' }))).toBe('stripped');

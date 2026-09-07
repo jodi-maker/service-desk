@@ -14,6 +14,7 @@ import { publishTicketChanged } from '../lib/pubby.js';
 import { hasDeletePermission } from '../lib/authz.js';
 import { writeAudit } from '../middleware/platform-admin.js';
 import { getDb } from '../lib/db.js';
+import { decorateMessages, loadAttachmentsForTicket } from '../lib/message-attachments.js';
 
 // Migration to Neon — Step 3 (tickets megabatch). All direct queries use
 // getDb() raw SQL, scoped by workspace_id (the auth middleware verifies
@@ -184,8 +185,9 @@ tickets.get('/:id', async (c) => {
   `;
   if (!ticket) return c.json({ error: 'Ticket not found' }, 404);
 
-  const [msgs, tags, aiTags, time, mergedFrom, mergedInto] = await Promise.all([
-    sql`select id, role, author_user_id, author_label, body, mentions, merged_from_id, sentiment, created_at
+  const [msgs, tags, aiTags, time, mergedFrom, mergedInto, attachmentsByMsg] = await Promise.all([
+    sql<{ id: string; body_html: string | null }[]>`
+        select id, role, author_user_id, author_label, body, body_html, mentions, merged_from_id, sentiment, created_at
         from ticket_messages where ticket_id = ${ticketId} and deleted_at is null order by created_at asc`,
     sql`select tag from ticket_tags where ticket_id = ${ticketId}`,
     sql`select tag, confidence, accepted from ticket_ai_tags where ticket_id = ${ticketId} order by confidence desc`,
@@ -196,12 +198,15 @@ tickets.get('/:id', async (c) => {
     ticket.merged_into_id
       ? sql`select display_id from tickets where id = ${ticket.merged_into_id}`
       : Promise.resolve([] as any[]),
+    // Attachments per message with presigned URLs; body_html's cid: tokens are
+    // swapped for the inline images' URLs in decorateMessages.
+    loadAttachmentsForTicket(workspaceId, ticketId),
   ]);
 
   return c.json({
     ticket: {
       ...ticket,
-      messages:     msgs,
+      messages:     decorateMessages(msgs, attachmentsByMsg),
       tags:         tags.map((r: any) => r.tag),
       ai_tags:      aiTags,
       time_entries: time.map((te: any) => ({

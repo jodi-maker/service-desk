@@ -17,7 +17,7 @@
 
 // Postmark accepts inbound messages up to 35 MB; no legitimate ticket body
 // is anywhere near this. Anything longer is truncated before conversion.
-const MAX_HTML_CHARS = 1_000_000;
+export const MAX_HTML_CHARS = 1_000_000;
 
 // HTML 4 Latin-1 names, in code-point order from U+00A0 to U+00FF.
 const LATIN1_NAMES =
@@ -139,4 +139,17 @@ export function htmlToText(html: string): string {
     .trim();
 
   return s;
+}
+
+// Escape text for interpolation into HTML (also safe in a double- or
+// single-quoted attribute). Lives here rather than in email-branding.ts so the
+// pure text/HTML helpers have one home and one escaping table — email-branding
+// re-exports it for its existing callers.
+export function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
