@@ -211,6 +211,91 @@ mark{background:rgba(255,226,40,0.55);color:var(--ink);padding:0 2px;border-radi
 .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
 @keyframes blink{0%,80%,100%{opacity:.15}40%{opacity:1}}
 /* ── Ticket sidebar ── */
+/* Ticket reading layout: controls stay mounted while the conversation gets
+   the available height. Scope these overrides to the ticket page. */
+.ticket-page{min-height:0}
+.ticket-page .ticket-layout{position:relative;min-height:0}
+.ticket-page .ticket-main{min-width:0;min-height:0}
+.ticket-page .thread{min-height:0;padding:16px 20px;gap:12px;overflow-anchor:none}
+.ticket-page .msg{width:100%;max-width:100%;flex-shrink:0;border-radius:var(--r2);overflow-wrap:anywhere}
+.ticket-page .msg-agent,.ticket-page .msg-ai{align-self:stretch}
+.ticket-heading{padding:10px 20px;border-bottom:1px solid var(--rule);flex-shrink:0;overflow-wrap:anywhere}
+.ticket-header-actions{margin-left:auto;display:flex;gap:6px;align-items:center}
+.ticket-back{font:inherit;color:var(--ink2);border:0;background:none;padding:0;cursor:pointer}
+.ticket-topbar .tb-breadcrumb{min-width:0;flex:1}
+.ticket-page .ticket-topbar{overflow:visible;isolation:auto;z-index:50}
+.ticket-page .ticket-topbar::before{display:none}
+.ticket-thread-tools{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--rule);flex-shrink:0;font-size:12px}
+.ticket-thread-tools>strong{font-weight:600}
+.ticket-translation-state{margin-left:auto;color:var(--ink3);font-size:11px}
+.ticket-popover{position:relative;flex-shrink:0}
+.ticket-popover>summary{list-style:none;cursor:pointer}
+.ticket-popover>summary::-webkit-details-marker{display:none}
+.ticket-popover-panel{position:absolute;top:calc(100% + 6px);right:0;z-index:40;display:flex;flex-direction:column;gap:8px;width:240px;max-width:calc(100vw - 32px);padding:12px;background:var(--w);border:1px solid var(--rule2);border-radius:var(--r2);box-shadow:0 8px 24px rgba(19,14,48,.12)}
+.ticket-popover-panel>.btn{justify-content:flex-start;white-space:normal;text-align:left}
+.ticket-language .ticket-popover-panel>span:empty{display:none}
+.ticket-language .auth-check{align-items:flex-start}
+.ticket-page .composer{background:var(--w);position:relative;min-height:0;display:flex;flex-direction:column}
+.composer-launcher{display:none;align-items:center;gap:8px;padding:10px 16px;min-height:52px}
+.composer-launch-hint{font-size:12px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ticket-page[data-compose-mode="read"] .composer-launcher{display:flex}
+.ticket-page[data-compose-mode="read"] .composer-tabs,.ticket-page[data-compose-mode="read"] .composer-body{display:none}
+.ticket-page .composer-tabs{align-items:center;flex-shrink:0;padding:0 16px;gap:4px}
+.ticket-page .ctab{border:0;border-bottom:2px solid transparent;background:none;white-space:nowrap}
+.ticket-page .ctab.active{border-bottom-color:var(--purple)}
+.composer-view-actions{margin-left:auto;display:flex;align-items:center;gap:6px}
+.ticket-page .composer-body{padding:8px 16px 10px;min-height:0;display:flex;flex-direction:column}
+.ticket-page .compose-rich{min-height:76px;max-height:200px;height:100px;flex:1}
+.ticket-page .compose-rich .ql-editor{min-height:76px}
+.ticket-page .composer-body .ql-toolbar{flex-shrink:0}
+.ticket-page .pending-att{max-height:64px;overflow-y:auto;flex-shrink:0}
+.ticket-page .composer-foot{flex-shrink:0;flex-wrap:wrap}
+.ticket-page .composer-actions{flex-wrap:wrap}
+.composer-insert .ticket-popover-panel{top:auto;bottom:calc(100% + 6px);right:auto;left:0}
+.ticket-page .comp-meta{flex-shrink:0}
+.ticket-page[data-compose-mode="expanded"] .composer{height:65%}
+.ticket-page[data-compose-mode="expanded"] .composer-body{flex:1}
+.ticket-page[data-compose-mode="expanded"] .compose-area{height:auto;max-height:none;flex:1}
+.ticket-page .composer[data-compose-tab="note"]{border-top:2px solid var(--amber)}
+.ticket-page .composer[data-compose-tab="note"] .ctab.active{color:var(--amber);border-bottom-color:var(--amber)}
+.ticket-page .ticket-sidebar{width:260px;min-width:260px;background:var(--w)}
+.ticket-details-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:16px;font-size:12px}
+.ticket-page[data-details="hide"] .ticket-sidebar{display:none}
+.ticket-secondary>summary{cursor:pointer;color:var(--ink2);font-size:12px;font-weight:500;padding:4px 0}
+.ticket-secondary[open]>summary{margin-bottom:12px}
+.ticket-page :is(button,summary,select):focus-visible{outline:2px solid var(--purple);outline-offset:2px}
+@media(min-width:1600px){.ticket-page .msg{max-width:1000px;align-self:center}}
+@media(max-width:1100px){
+  .ticket-page[data-details="auto"] .ticket-sidebar{display:none}
+  .ticket-page[data-details="show"] .ticket-sidebar{position:absolute;right:0;top:0;bottom:0;z-index:45;width:min(320px,100%);min-width:0;border-left:1px solid var(--rule2);box-shadow:-8px 0 24px rgba(19,14,48,.12)}
+}
+@media(max-width:800px){
+  .app:has(.ticket-page)>.sidebar{display:none}
+  .ticket-page .ticket-topbar{padding:0 12px}
+  .ticket-page .ticket-heading{padding:10px 12px}
+  .ticket-page .thread{padding:12px}
+  .ticket-page .msg{padding:12px}
+  .ticket-page .ticket-thread-tools{padding:6px 12px;flex-wrap:wrap}
+  .ticket-translation-state:not(:empty){order:4;width:100%}
+  .ticket-language{margin-left:auto}
+  .ticket-page .composer-tabs{padding:0 8px;gap:0}
+  .ticket-page .ctab{padding:10px 8px;letter-spacing:0;text-transform:none}
+  .composer-view-actions{gap:4px}
+  .ticket-page .composer-body{padding:6px 10px 8px}
+  .ticket-page .composer-foot{gap:6px}
+  .ticket-page .composer-foot>div:last-child{margin-left:auto}
+  .ticket-page .btn-sm,.ticket-page .ticket-popover>summary{min-height:32px}
+  .ticket-page .composer-launcher{padding:8px 12px}
+  .ticket-page .composer-launch-hint{display:none}
+  .ticket-header-actions{gap:4px}
+  .ticket-header-actions .presence-chips{display:none}
+}
+@media(max-width:500px){
+  .ticket-header-actions [data-action="td.prev"],.ticket-header-actions [data-action="td.next"]{font-size:0;width:32px;padding:0;justify-content:center}
+  .ticket-header-actions [data-action="td.prev"]::before{content:'←';font-size:14px}
+  .ticket-header-actions [data-action="td.next"]::before{content:'→';font-size:14px}
+  .ticket-topbar .tb-breadcrumb>span{white-space:nowrap}
+}
 .ts-section{margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--rule)}
 .ts-section:last-child{border-bottom:none}
 .ts-heading{font-family:var(--font-sans);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:8px}

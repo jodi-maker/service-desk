@@ -82,7 +82,8 @@ export async function mountComposer(id, opts = {}) {
   if (!Quill) { EDITORS.delete(id); return null; }
   // The host may have been re-rendered while Quill was loading.
   const current = el(id);
-  if (!isRichHost(current)) return null;
+  if (!isRichHost(current) || current !== host) return null;
+  if (EDITORS.has(id) && current.querySelector('.ql-editor')) return EDITORS.get(id);
 
   const quill = new Quill(current, {
     theme: 'snow',
@@ -165,6 +166,7 @@ export function appendText(id, text) {
 
 /** Insert at the caret (the {name}/{ticket} insert-variable buttons). */
 export function insertAtCursor(id, text) {
+  revealComposer(id);
   const q = quillFor(id);
   if (q) {
     const range = q.getSelection(true);
@@ -192,6 +194,7 @@ export function clear(id) {
 }
 
 export function focusEnd(id) {
+  revealComposer(id);
   const q = quillFor(id);
   if (q) { q.setSelection(Math.max(q.getLength() - 1, 0), 0); return; }
   const node = el(id);
@@ -200,5 +203,11 @@ export function focusEnd(id) {
   if (typeof node.setSelectionRange === 'function') {
     const pos = (node.value || '').length;
     node.setSelectionRange(pos, pos);
+  }
+}
+
+function revealComposer(id) {
+  if (typeof CustomEvent === 'function') {
+    document.dispatchEvent(new CustomEvent('ticket:reveal-composer', { detail: { id } }));
   }
 }

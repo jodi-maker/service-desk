@@ -47,10 +47,11 @@ import { showMacroPanel, showApplyMacroModal } from './macros.js';
 import { showAttachPanel } from './attachments.js';
 import { renderAttachmentChips } from './attachment-chips.js';
 import {
-  clear as clearComposer, getHtml, getPlainText, insertAtCursor,
+  appendText, clear as clearComposer, getHtml, getPlainText, insertAtCursor,
   isEmpty as isComposerEmpty, mountComposer,
 } from './composer.js';
 import { pendingAttachmentIds, renderPendingAttachments, clearPendingAttachments } from './attachments.js';
+import { captureTicketLayout, setComposerMode, syncTicketLayout } from './layout.js';
 import { enableRemoteImages, renderMessageBody, sizeMessageFrames } from './message-html.js';
 import { fireWebhook, ticketPayload } from '../webhooks/index.js';
 import { loadTicketDetail } from '../core/bootstrap.js';
@@ -110,6 +111,7 @@ function renderSentimentBadge(sentiment) {
 }
 
 export function openTicket(id) {
+  const layout = captureTicketLayout(id);
   setCurrentTicket(id);
   const t = TICKETS.find(x => x.id === id);
   // Bad ticket IDs can reach here from stale notifications, deep-links
@@ -433,20 +435,26 @@ export function openTicket(id) {
     : `<span style="color:var(--ink3);font-style:italic">Customer language: not yet detected</span>`;
   const langOptions = TRANSLATOR_LANGS.map(l => `<option value="${l}" ${t.detectedCustomerLang===l?'selected':''}>${l}</option>`).join('');
   const threadBarHtml = `
-    <div style="padding:8px 14px;border-bottom:1px solid var(--rule);background:var(--off2);display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:12px">
+    <div class="ticket-thread-tools">
+      <strong>Conversation</strong>
+      <span class="ticket-translation-state">${t.autoTranslateReplies ? `Replies translated to ${window.escHtml(t.detectedCustomerLang || 'customer language')}` : ''}</span>
+      <details class="ticket-popover ticket-language" ${layout.languageOpen ? 'open' : ''}>
+        <summary class="btn btn-sm">${threadOn ? 'Translated' : 'Language'} ▾</summary>
+        <div class="ticket-popover-panel">
       <label class="auth-check" style="margin:0">
         <input type="checkbox" ${threadOn?'checked':''} data-change-action="td.toggleThreadTranslate" data-ticket-id="${window.escAttr(id)}">
         <span>Translate thread to <strong style="color:var(--ink)">${window.escHtml(AGENT_PREFERRED_LANG)}</strong></span>
       </label>
-      <span style="color:var(--rule2)">·</span>
       ${customerLangLabel}
       ${(threadOn || t.autoTranslateReplies) ? `<select class="filter-select" data-change-action="td.setCustomerLang" data-ticket-id="${window.escAttr(id)}" style="font-size:11px;padding:3px 8px"><option value="">— override —</option>${langOptions}</select>` : ''}
-      <span style="color:var(--rule2)">·</span>
       <label class="auth-check" style="margin:0">
         <input type="checkbox" ${t.autoTranslateReplies?'checked':''} data-change-action="td.toggleAutoTranslate" data-ticket-id="${window.escAttr(id)}">
         <span>Send replies in customer language</span>
       </label>
       ${!AI_API_KEY ? '<span style="margin-left:auto;color:var(--amber);font-family:\'DM Mono\',monospace;font-size:10px">Add API key in Settings → AI</span>' : ''}
+        </div>
+      </details>
+      <button class="btn btn-sm" data-action="tl.details" data-ticket-id="${window.escAttr(id)}" aria-controls="ticket-details-${id}" aria-expanded="false">Details</button>
     </div>`;
 
   // Sentiment backfill nudge — only when this is a real (api-backed)
@@ -473,17 +481,19 @@ export function openTicket(id) {
     (prevThread.scrollHeight - prevThread.scrollTop - prevThread.clientHeight > 40)
       ? prevThread.scrollTop : null;
   main.innerHTML = `
-    <div class="page">
-      <div class="topbar">
+    <div class="page ticket-page" id="ticket-page-${id}" data-ticket-id="${window.escAttr(id)}" data-compose-mode="${layout.mode}" data-details="${layout.details}">
+      <div class="topbar ticket-topbar">
         <div class="tb-breadcrumb">
-          <span data-action="td.openTicketsList">Tickets</span>
+          <button class="ticket-back" data-action="td.openTicketsList">Tickets</button>
           <span class="tb-sep">/</span>
           <span style="color:var(--ink);font-weight:500">${t.id}</span>
-          <span style="margin-left:auto;display:flex;gap:6px;align-items:center">
+          <span class="ticket-header-actions">
             <div id="presence-chips" class="presence-chips" aria-label="Agents viewing this ticket"></div>
-            <button class="btn btn-sm" data-action="td.prev">← Prev</button>
-            <button class="btn btn-sm" data-action="td.next">Next →</button>
-            <span style="width:1px;background:var(--rule);align-self:stretch;margin:0 4px"></span>
+            <button class="btn btn-sm" data-action="td.prev" aria-label="Previous ticket">← Prev</button>
+            <button class="btn btn-sm" data-action="td.next" aria-label="Next ticket">Next →</button>
+            <details class="ticket-popover ticket-more">
+              <summary class="btn btn-sm">More ▾</summary>
+              <div class="ticket-popover-panel">
             ${t.mergedInto ? '' : `<button class="btn btn-sm" data-action="td.summarize" data-ticket-id="${window.escAttr(id)}" title="Generate an AI summary of this ticket"${summarizing ? ' disabled' : ''}>${summarizing ? '⏳' : '📝'} Summarize</button>`}
             ${t.mergedInto ? '' : `<button class="btn btn-sm" data-action="td.macroModal" data-ticket-id="${window.escAttr(id)}" title="Apply a macro">⚡ Macro</button>`}
             ${t.mergedInto ? '' : `<button class="btn btn-sm" data-action="td.runRules" data-ticket-id="${window.escAttr(id)}" title="Auto-assign by rules">⇄ Run rules</button>`}
@@ -491,13 +501,16 @@ export function openTicket(id) {
             ${t.status !== 'resolved' ? (t.snoozedUntil
               ? `<button class="btn btn-sm" data-action="td.unsnooze" data-ticket-id="${window.escAttr(id)}" title="Wake the ticket up now">💤 Wake up</button>`
               : `<button class="btn btn-sm" data-action="td.snooze" data-ticket-id="${window.escAttr(id)}" title="Pause SLA until a chosen time">💤 Snooze</button>`) : ''}
+                <button class="btn btn-sm" data-action="td.gdprModal" data-ticket-id="${window.escAttr(id)}">Privacy / GDPR</button>
+              </div>
+            </details>
             ${t.status !== 'resolved'
               ? `<button class="btn btn-sm btn-solid" data-action="td.quickStatus" data-ticket-id="${window.escAttr(id)}" data-status="resolved">Resolve</button>`
               : `<button class="btn btn-sm" data-action="td.quickStatus" data-ticket-id="${window.escAttr(id)}" data-status="open">Reopen</button>`}
           </span>
         </div>
       </div>
-      <div style="padding:14px 20px 10px;border-bottom:1px solid var(--rule);flex-shrink:0">
+      <div class="ticket-heading">
         ${mergedBanner}
         ${snoozeBanner}
         <div style="font-family:\'Syne\',sans-serif;font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-.02em;margin-bottom:7px">${window.escHtml(t.subject)}</div>
@@ -513,22 +526,23 @@ export function openTicket(id) {
       <div class="ticket-layout">
         <div class="ticket-main">
           ${threadBarHtml}
-          ${sentimentBackfillBar}
           <div class="thread" id="thread-${id}">${msgsHtml}</div>
-          <div class="composer">
+          <div class="composer" data-compose-tab="${COMPOSE_TAB}">
             <div id="presence-banner"></div>
-            <div class="composer-tabs">
-              <div class="ctab ${COMPOSE_TAB==='reply'?'active':''}" data-action="td.setComposeTab" data-ticket-id="${window.escAttr(id)}" data-tab="reply">Reply</div>
-              <div class="ctab ${COMPOSE_TAB==='note'?'active':''}" data-action="td.setComposeTab" data-ticket-id="${window.escAttr(id)}" data-tab="note">Internal note</div>
-              <div style="margin-left:auto;display:flex;gap:4px;align-items:center;padding:0 12px">
-                <span style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;font-weight:500;margin-right:4px">Insert</span>
-                <button class="comp-var-btn" data-action="td.insertVar" data-ticket-id="${window.escAttr(id)}" data-token="{name}" title="Customer first name">{name}</button>
-                <button class="comp-var-btn" data-action="td.insertVar" data-ticket-id="${window.escAttr(id)}" data-token="{ticket}" title="Ticket ID">{ticket}</button>
-                <button class="comp-var-btn" data-action="td.insertVar" data-ticket-id="${window.escAttr(id)}" data-token="{brand}" title="Customer brand">{brand}</button>
-                <button class="comp-var-btn" data-action="td.insertVar" data-ticket-id="${window.escAttr(id)}" data-token="{agent}" title="Assigned agent">{agent}</button>
-              </div>
+            <div class="composer-launcher">
+              <button class="btn btn-sm btn-solid" data-action="td.setComposeTab" data-ticket-id="${window.escAttr(id)}" data-tab="reply" data-compose-launch aria-controls="composer-body-${id}" aria-expanded="${layout.mode !== 'read'}">Reply${loadDraft(id, 'reply') ? ' · draft' : ''}</button>
+              <button class="btn btn-sm" data-action="td.setComposeTab" data-ticket-id="${window.escAttr(id)}" data-tab="note" data-compose-launch aria-controls="composer-body-${id}" aria-expanded="${layout.mode !== 'read'}">Internal note${loadDraft(id, 'note') ? ' · draft' : ''}</button>
+              <span class="composer-launch-hint">${pendingAttachmentIds(id).length ? `${pendingAttachmentIds(id).length} ${pendingAttachmentIds(id).length === 1 ? 'attachment' : 'attachments'} ready` : 'Write a reply…'}</span>
             </div>
-            <div class="composer-body">
+            <div class="composer-tabs">
+              <button class="ctab ${COMPOSE_TAB==='reply'?'active':''}" aria-pressed="${COMPOSE_TAB==='reply'}" data-action="td.setComposeTab" data-ticket-id="${window.escAttr(id)}" data-tab="reply">Reply</button>
+              <button class="ctab ${COMPOSE_TAB==='note'?'active':''}" aria-pressed="${COMPOSE_TAB==='note'}" data-action="td.setComposeTab" data-ticket-id="${window.escAttr(id)}" data-tab="note">Internal note</button>
+              <span class="composer-view-actions">
+                <button class="btn btn-sm" data-action="tl.minimise" data-ticket-id="${window.escAttr(id)}">Minimise</button>
+                <button class="btn btn-sm" data-action="tl.expand" data-ticket-id="${window.escAttr(id)}" aria-expanded="${layout.mode === 'expanded'}">${layout.mode === 'expanded' ? 'Restore' : 'Expand'}</button>
+              </span>
+            </div>
+            <div class="composer-body" id="composer-body-${id}">
               ${COMPOSE_TAB === 'reply'
                 // Rich editor host. Quill mounts into it after render
                 // (mountComposer below); the draft is restored as HTML there.
@@ -541,15 +555,17 @@ export function openTicket(id) {
               </div>
               <div class="composer-foot">
                 <div class="composer-actions">
-                  <select class="filter-select" id="status-sel-${id}" data-change-action="td.setStatus" data-ticket-id="${window.escAttr(id)}">
-                    <option value="open" ${t.status==='open'?'selected':''}>Open</option>
-                    <option value="pending" ${t.status==='pending'?'selected':''}>Pending</option>
-                    <option value="escalated" ${t.status==='escalated'?'selected':''}>Escalated</option>
-                    <option value="resolved" ${t.status==='resolved'?'selected':''}>Resolved</option>
-                  </select>
                   <button class="btn btn-sm" data-action="td.macroPanel" data-ticket-id="${window.escAttr(id)}">Macros</button>
                   <button class="btn btn-sm" data-action="td.showAttach" data-ticket-id="${window.escAttr(id)}">Attach${t.attachments&&t.attachments.length?' · '+t.attachments.length:''}</button>
-                  <button class="btn btn-sm btn-danger" data-action="td.gdprModal" data-ticket-id="${window.escAttr(id)}">GDPR</button>
+                  <details class="ticket-popover composer-insert">
+                    <summary class="btn btn-sm">Insert ▾</summary>
+                    <div class="ticket-popover-panel">
+                      <button class="btn btn-sm" data-action="td.insertVar" data-ticket-id="${window.escAttr(id)}" data-token="{name}">Customer name</button>
+                      <button class="btn btn-sm" data-action="td.insertVar" data-ticket-id="${window.escAttr(id)}" data-token="{ticket}">Ticket ID</button>
+                      <button class="btn btn-sm" data-action="td.insertVar" data-ticket-id="${window.escAttr(id)}" data-token="{brand}">Brand</button>
+                      <button class="btn btn-sm" data-action="td.insertVar" data-ticket-id="${window.escAttr(id)}" data-token="{agent}">Agent name</button>
+                    </div>
+                  </details>
                   <div class="thinking" id="thinking-${id}"><span class="dot">·</span><span class="dot">·</span><span class="dot">·</span>&nbsp;working</div>
                 </div>
                 <div style="display:flex;gap:6px;align-items:center">
@@ -581,7 +597,8 @@ export function openTicket(id) {
             </div>
           </div>
         </div>
-        <div class="ticket-sidebar">
+        <aside class="ticket-sidebar" id="ticket-details-${id}" aria-label="Ticket details">
+          <div class="ticket-details-header"><strong>Ticket details</strong><button class="btn btn-sm" data-action="tl.closeDetails" data-ticket-id="${window.escAttr(id)}" aria-label="Close ticket details">Close</button></div>
           ${cust?`
           <div class="ts-section" style="cursor:pointer" data-action="td.openCustomer" data-cust-id="${window.escAttr(cust.id)}">
             <div class="ts-heading">Customer</div>
@@ -594,6 +611,27 @@ export function openTicket(id) {
             <div class="ts-row"><span class="ts-key">Jurisdiction</span><span class="ts-val">${window.escHtml(cust.jurisdiction)}</span></div>
           </div>`:``}
           <div class="ts-section">
+            <div class="ts-heading">Properties</div>
+            <select class="ts-select" aria-label="Ticket status" data-change-action="td.setStatus" data-ticket-id="${window.escAttr(id)}">
+              <option value="open" ${t.status==='open'?'selected':''}>Open</option>
+              <option value="pending" ${t.status==='pending'?'selected':''}>Pending</option>
+              <option value="escalated" ${t.status==='escalated'?'selected':''}>Escalated</option>
+              <option value="gdpr" ${t.status==='gdpr'?'selected':''}>GDPR</option>
+              <option value="resolved" ${t.status==='resolved'?'selected':''}>Resolved</option>
+            </select>
+            <select class="ts-select" aria-label="Ticket priority" data-change-action="td.setPriority" data-ticket-id="${window.escAttr(id)}">
+              <option value="urgent" ${t.priority==='urgent'?'selected':''}>Urgent</option>
+              <option value="high" ${t.priority==='high'?'selected':''}>High</option>
+              <option value="normal" ${t.priority==='normal'?'selected':''}>Normal</option>
+              <option value="low" ${t.priority==='low'?'selected':''}>Low</option>
+            </select>
+            <select class="ts-select" aria-label="Assigned agent" data-change-action="td.setAgent" data-ticket-id="${window.escAttr(id)}">
+              ${AGENTS.map(a=>`<option value="${window.escAttr(a.name)}" ${t.agent===a.name?'selected':''}>${window.escHtml(a.name)}${isAgentOOO(a.name) ? ' (OOO)' : ''}</option>`).join('')}
+            </select>
+          </div>
+          ${unscoredCount > 0 ? `<details class="ts-section ticket-secondary"><summary>Sentiment · ${unscoredCount} unscored</summary>${sentimentBackfillBar}</details>` : ''}
+          <details class="ts-section ticket-secondary"><summary>Customer satisfaction</summary>
+          <div class="ts-section">
             <div class="ts-heading">CSAT</div>
             <div class="csat-ring-wrap">
               <div class="csat-ring">
@@ -603,8 +641,9 @@ export function openTicket(id) {
               <div style="font-size:11px;color:var(--ink2)">Avg score<br/><span style="color:var(--ink3);font-family:'Inter',sans-serif;font-size:11px">${TICKETS.filter(x=>x.customerId===t.customerId&&x.csat).length} rated tickets</span></div>
             </div>
           </div>
-          ${aiSummaryBlock}
           ${ticketCSATBlock(t)}
+          </details>
+          ${aiSummaryBlock}
           ${timeBlock}
           ${slaBlock}
           ${aiTagsHtml}
@@ -612,25 +651,6 @@ export function openTicket(id) {
           ${kbBlock}
           ${extKbBlock}
           ${timeLogBlock}
-          <div class="ts-section">
-            <div class="ts-heading">Properties</div>
-            <select class="ts-select" data-change-action="td.setStatus" data-ticket-id="${window.escAttr(id)}">
-              <option value="open" ${t.status==='open'?'selected':''}>Open</option>
-              <option value="pending" ${t.status==='pending'?'selected':''}>Pending</option>
-              <option value="escalated" ${t.status==='escalated'?'selected':''}>Escalated</option>
-              <option value="gdpr" ${t.status==='gdpr'?'selected':''}>GDPR</option>
-              <option value="resolved" ${t.status==='resolved'?'selected':''}>Resolved</option>
-            </select>
-            <select class="ts-select" data-change-action="td.setPriority" data-ticket-id="${window.escAttr(id)}">
-              <option value="urgent" ${t.priority==='urgent'?'selected':''}>Urgent</option>
-              <option value="high" ${t.priority==='high'?'selected':''}>High</option>
-              <option value="normal" ${t.priority==='normal'?'selected':''}>Normal</option>
-              <option value="low" ${t.priority==='low'?'selected':''}>Low</option>
-            </select>
-            <select class="ts-select" data-change-action="td.setAgent" data-ticket-id="${window.escAttr(id)}">
-              ${AGENTS.map(a=>`<option value="${window.escAttr(a.name)}" ${t.agent===a.name?'selected':''}>${window.escHtml(a.name)}${isAgentOOO(a.name) ? ' (OOO)' : ''}</option>`).join('')}
-            </select>
-          </div>
           ${t.status==='gdpr'||t.category==='GDPR'?`
           <div class="ts-section">
             <div class="ts-heading">GDPR Actions</div>
@@ -656,9 +676,10 @@ export function openTicket(id) {
             <button class="btn btn-sm btn-danger" style="width:100%;justify-content:center" data-action="td.deleteTicket" data-ticket-id="${window.escAttr(id)}">Delete ticket</button>
             ${!window.canDeleteRecords() ? `<div style="font-size:10.5px;color:var(--ink3);margin-top:6px;line-height:1.4">Deletable because this ticket has no messages or notes yet.</div>` : ''}
           </div>` : ''}
-        </div>
+        </aside>
       </div>
     </div>`;
+  syncTicketLayout(id);
 
   // Show the most recent reply on open: scroll to the bottom, unless we're
   // restoring a scrolled-up reader's position from an in-place re-render.
@@ -682,12 +703,18 @@ export function openTicket(id) {
       initialHtml: loadDraft(id),
       placeholder: 'Write a reply or use AI…',
       onChange: () => onComposeInput(id),
-    }).catch((err) => console.warn('[composer] mount failed:', err));
+    }).then(() => syncTicketLayout(id)).catch((err) => console.warn('[composer] mount failed:', err));
     renderPendingAttachments(id);
   }
 }
 
-function setComposeTab(tab, id) { setComposeTabValue(tab); openTicket(id); }
+function setComposeTab(tab, id) {
+  const mode = captureTicketLayout(id).mode === 'expanded' ? 'expanded' : 'edit';
+  if (COMPOSE_TAB === tab) { setComposerMode(id, mode, true); return; }
+  setComposeTabValue(tab);
+  openTicket(id);
+  setComposerMode(id, mode, true);
+}
 
 // A ticket is BLANK when it holds no real messages — nothing from the
 // customer, no sent agent/ai reply, no internal note; 'system' rows are
@@ -796,9 +823,8 @@ export function insertMacro(ticketId, idx) {
   const text = r.text.replace('{name}', cust ? cust.first : 'there');
   const el = document.getElementById('compose-' + ticketId);
   if (el) {
-    el.value = el.value ? `${el.value}\n\n${text}` : text;
-    el.focus();
-    el.setSelectionRange(el.value.length, el.value.length);
+    appendText(ticketId, text);
+    onComposeInput(ticketId);
   }
   closeModal();
 }
@@ -963,6 +989,8 @@ export function onComposeInput(id) {
   const draft = getHtml(id) ?? getPlainText(id);
   const text = getPlainText(id);
   saveDraft(id, draft);
+  const launcher = document.querySelector?.(`#ticket-page-${id} [data-compose-launch][data-tab="${COMPOSE_TAB}"]`);
+  if (launcher) launcher.textContent = (COMPOSE_TAB === 'reply' ? 'Reply' : 'Internal note') + (draft ? ' · draft' : '');
   const cc = document.getElementById('char-count-' + id);
   if (cc) cc.textContent = `${text.length} chars`;
   const ds = document.getElementById('draft-status-' + id);
@@ -1108,7 +1136,7 @@ async function sendCompose(id) {
       mentions,
       ts: new Date(message.created_at).toTimeString().slice(0, 5),
     });
-    clearPendingAttachments(id);
+    if (!isNote) clearPendingAttachments(id);
   } else {
     // Demo persona — no API, synthesise locally as before.
     t.msgs.push({
