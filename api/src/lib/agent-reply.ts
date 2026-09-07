@@ -19,6 +19,7 @@ import {
 import { sendBrandedEmail } from './send-branded-email.js';
 import { composeEmail } from './email-branding.js';
 import { getDb } from './db.js';
+import type { OutboundFile } from './message-attachments.js';
 
 export type AgentReplyDelivery =
   | { emailed: true; reason: 'sent'; postmark_message_id: string }
@@ -36,6 +37,12 @@ export async function sendAgentReplyEmail(args: {
   messageId:    string;   // the just-inserted agent ticket_messages row
   authorUserId: string;
   body:         string;
+  // Sanitised HTML body of a rich-text reply (lib/email-html.ts), with inline
+  // images referenced as cid:<attachment id>.
+  bodyHtml?:    string | null;
+  // Attachments already bound to this message (lib/message-attachments.ts).
+  // Inline ones carry a ContentID matching the cid: tokens in bodyHtml.
+  attachments?: OutboundFile[];
 }): Promise<AgentReplyDelivery> {
   const { workspaceId, ticketId, messageId, authorUserId, body } = args;
   if (!isPostmarkConfigured()) return { emailed: false, reason: 'postmark_not_configured' };
@@ -71,7 +78,7 @@ export async function sendAgentReplyEmail(args: {
   `;
 
   // Header/footer + the sending agent's signature (authorUserId).
-  const composed = await composeEmail({ workspaceId, authorUserId, bodyText: body });
+  const composed = await composeEmail({ workspaceId, authorUserId, bodyText: body, bodyHtml: args.bodyHtml ?? null });
 
   try {
     // Branded From (verified domain) with platform fallback + rejection
@@ -87,6 +94,12 @@ export async function sendAgentReplyEmail(args: {
       // Route the customer's reply back through the inbound webhook so it
       // attaches to this ticket rather than landing in the From mailbox.
       replyTo: env.POSTMARK_INBOUND_REPLY_ADDRESS || null,
+      attachments: (args.attachments ?? []).map((f) => ({
+        Name: f.filename,
+        Content: f.base64,
+        ContentType: f.mime,
+        ContentID: f.contentId,
+      })),
     });
     // Stamp the RFC Message-Id (with brackets + domain) onto this reply so a
     // customer reply's In-Reply-To resolves to exactly this row.

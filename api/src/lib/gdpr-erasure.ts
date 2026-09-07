@@ -117,6 +117,9 @@ export async function eraseCustomer(args: {
       const msgs = await sql`
         update ticket_messages set
           body = ${ERASED},
+          -- The formatted body holds the same personal data as the text body
+          -- (plus the customer's own markup): it must go with it.
+          body_html = null,
           author_label = case when role = 'customer' then ${ERASED} else author_label end
         where workspace_id = ${workspaceId} and ticket_id in ${sql(ticketIds)}
       `;

@@ -46,6 +46,11 @@ export interface ComposeArgs {
   // The core message, plain text — exactly what the caller would have passed
   // as textBody before branding existed.
   bodyText: string;
+  // Pre-sanitised HTML for the body (an agent's rich-text reply). When set it
+  // is placed in the branded shell VERBATIM instead of escaping bodyText —
+  // the caller is responsible for having run it through
+  // sanitizeEmailHtml (lib/email-html.ts).
+  bodyHtml?: string | null;
   // Optional call-to-action. The URL must also appear in bodyText — it stays
   // there verbatim for the plain-text part; in the HTML part its
   // auto-linkified anchor is swapped for a branded pill button labeled
@@ -90,6 +95,7 @@ export async function getDefaultSignature(workspaceId: string, userId: string): 
 
 export async function composeEmail(args: ComposeArgs): Promise<ComposedEmail> {
   const { workspaceId, authorUserId, bodyText, cta } = args;
+  const richHtml = args.bodyHtml?.trim() || null;
   const sql = getDb();
 
   const [[ws], template, signature] = await Promise.all([
@@ -102,7 +108,7 @@ export async function composeEmail(args: ComposeArgs): Promise<ComposedEmail> {
 
   // No workspace row (deleted mid-send, bad id) → nothing to brand; fall back
   // to the plain-text path exactly as an unconfigured workspace would.
-  if (!ws) return { text: bodyText, html: null };
+  if (!ws) return { text: bodyText, html: richHtml };
 
   const logoUrl = template?.show_logo ? (ws.logo_url ?? null) : null;
   const headerText = template?.header_text?.trim() || null;
@@ -112,7 +118,9 @@ export async function composeEmail(args: ComposeArgs): Promise<ComposedEmail> {
   // Nothing to add → keep the plain-text path identical to pre-branding sends.
   // A CTA is the one exception: the button only exists in HTML, so a
   // template-less workspace still gets the branded shell when one is set.
-  if (!cta && !logoUrl && !headerText && !footerText && !sigText
+  // A rich-text reply is the second exception: its HTML must go out even when
+  // there is nothing to brand around it.
+  if (!cta && !richHtml && !logoUrl && !headerText && !footerText && !sigText
       && !template?.header_html && !template?.footer_html && !signature?.body_html) {
     return { text: bodyText, html: null };
   }
@@ -142,7 +150,9 @@ export async function composeEmail(args: ComposeArgs): Promise<ComposedEmail> {
   const headerHtml = template?.header_html?.trim() || (headerText ? textToHtml(headerText) : '');
   const footerHtml = template?.footer_html?.trim() || (footerText ? textToHtml(footerText, '#5f5c6e') : '');
   const sigHtml    = signature?.body_html?.trim()  || (sigText ? textToHtml(sigText) : '');
-  let bodyHtml     = textToHtml(bodyText);
+  // An agent's rich reply is already HTML (and already sanitised) — escaping it
+  // again would show the customer their own markup as text.
+  let bodyHtml     = richHtml ?? textToHtml(bodyText);
 
   if (cta) {
     const ctaButton =

@@ -102,6 +102,97 @@ runDbTests('agent-reply email delivery (DB-backed)', () => {
     expect(row.external_message_id).toMatch(/^<.+@.+>$/);
   });
 
+  it('sends a plain-text-only reply with no HTML part when the workspace has nothing to brand', async () => {
+    const tid = await seedTicket(`AR-${RUN}-html0`, { email: `cust-h0-${RUN}@acme.test` });
+    const res = await as(`/api/v1/tickets/${tid}/messages`, { method: 'POST', body: JSON.stringify({ role: 'agent', body: 'plain words' }) });
+    expect(res.status).toBe(201);
+    expect(lastBody.TextBody).toContain('plain words');
+    expect(lastBody.HtmlBody).toBeUndefined();      // unchanged pre-rich behaviour
+    expect(lastBody.Attachments).toBeUndefined();
+  });
+
+  it('sends a rich-text reply as HTML, derives the text part, and sanitises the agent’s markup', async () => {
+    const tid = await seedTicket(`AR-${RUN}-html1`, { email: `cust-h1-${RUN}@acme.test` });
+    const res = await as(`/api/v1/tickets/${tid}/messages`, {
+      method: 'POST',
+      // No `body` at all: the text part must be derived from the HTML. The
+      // <script> and the onclick are the agent-side XSS guard.
+      body: JSON.stringify({ role: 'agent', body_html: '<p>Hello <b>Nina</b></p><p>See <a href="https://ok.test">this link</a></p><script>alert(1)</script><div onclick="x()">click</div>' }),
+    });
+    expect(res.status).toBe(201);
+    const { message, delivery } = await res.json() as any;
+    expect(delivery.emailed).toBe(true);
+    // HTML part goes out with the formatting, without the script/handler.
+    expect(lastBody.HtmlBody).toContain('<b>Nina</b>');
+    expect(lastBody.HtmlBody).not.toContain('<script');
+    expect(lastBody.HtmlBody).not.toMatch(/onclick/i);
+    // Every link is forced to open in a new tab with no opener.
+    expect(lastBody.HtmlBody).toContain('rel="noopener noreferrer"');
+    // Text part derived for plain-text clients: readable, links preserved.
+    expect(lastBody.TextBody).toContain('Hello Nina');
+    expect(lastBody.TextBody).toContain('https://ok.test');
+    expect(lastBody.TextBody).not.toContain('<p>');
+    // Stored the same way.
+    const [row] = await sql<{ body: string; body_html: string | null }[]>`
+      select body, body_html from ticket_messages where id = ${message.id}`;
+    expect(row.body_html).toContain('<b>Nina</b>');
+    expect(row.body_html).not.toContain('<script');
+    expect(row.body).toContain('Hello Nina');
+  });
+
+  it('emails attachments, tagging a pasted image as an inline cid part', async () => {
+    const tid = await seedTicket(`AR-${RUN}-att`, { email: `cust-att-${RUN}@acme.test` });
+    // A file uploaded earlier (unclaimed) plus an image pasted into the editor.
+    const [att] = await sql<{ id: string }[]>`
+      insert into ticket_attachments (workspace_id, ticket_id, filename, size_bytes, storage_key, mime_type, disposition)
+      values (${ctx.wsId}, ${tid}, 'report.pdf', 14, ${`att/${ctx.wsId}/${tid}/seed/report.pdf`}, 'application/pdf', 'attachment')
+      returning id`;
+    const pngB64 = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0x0d]).toString('base64');
+    const res = await as(`/api/v1/tickets/${tid}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({
+        role: 'agent',
+        body: 'see attached',
+        body_html: `<p>see attached</p><img src="data:image/png;base64,${pngB64}">`,
+        attachment_ids: [att.id],
+      }),
+    });
+    // The pasted image needs object storage, which is unconfigured in tests —
+    // the request is refused cleanly rather than emailing a broken message.
+    expect(res.status).toBe(503);
+    const { error } = await res.json() as any;
+    expect(error).toMatch(/storage is not configured/i);
+    expect(postmarkCalls).toBe(0);
+    // Nothing was claimed, so the file is still available for the next attempt.
+    const [row] = await sql<{ message_id: string | null }[]>`select message_id from ticket_attachments where id = ${att.id}`;
+    expect(row.message_id).toBeNull();
+  });
+
+  it('refuses attachment ids from another ticket without saving the reply', async () => {
+    const tid = await seedTicket(`AR-${RUN}-x1`, { email: `cust-x1-${RUN}@acme.test` });
+    const other = await seedTicket(`AR-${RUN}-x2`, { email: `cust-x2-${RUN}@acme.test` });
+    const [att] = await sql<{ id: string }[]>`
+      insert into ticket_attachments (workspace_id, ticket_id, filename, size_bytes, storage_key, mime_type, disposition)
+      values (${ctx.wsId}, ${other}, 'theirs.pdf', 10, ${`att/${ctx.wsId}/${other}/seed/theirs.pdf`}, 'application/pdf', 'attachment')
+      returning id`;
+    const res = await as(`/api/v1/tickets/${tid}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ role: 'agent', body: 'here', attachment_ids: [att.id] }),
+    });
+    expect(res.status).toBe(400);
+    expect(postmarkCalls).toBe(0);
+    const [{ n }] = await sql<{ n: number }[]>`select count(*)::int as n from ticket_messages where ticket_id = ${tid} and role = 'agent'`;
+    expect(n).toBe(0);                                // no orphaned reply row
+    const [row] = await sql<{ message_id: string | null }[]>`select message_id from ticket_attachments where id = ${att.id}`;
+    expect(row.message_id).toBeNull();                // and the other ticket's file is untouched
+  });
+
+  it('rejects a body-less, html-less message', async () => {
+    const tid = await seedTicket(`AR-${RUN}-empty`, { email: `cust-e-${RUN}@acme.test` });
+    const res = await as(`/api/v1/tickets/${tid}/messages`, { method: 'POST', body: JSON.stringify({ role: 'agent' }) });
+    expect(res.status).toBe(400);
+  });
+
   it('does not email an internal note', async () => {
     const tid = await seedTicket(`AR-${RUN}-2`, { email: `cust2-${RUN}@acme.test` });
     const res = await as(`/api/v1/tickets/${tid}/messages`, { method: 'POST', body: JSON.stringify({ role: 'note', body: 'internal only' }) });

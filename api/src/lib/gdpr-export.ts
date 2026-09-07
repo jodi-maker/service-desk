@@ -24,7 +24,7 @@ export interface CustomerExport {
   notes: Array<{ text: string; created_at: string }>;
   // Every address the subject holds (Phase 4 contacts model), primary flagged.
   contacts: Array<{ kind: string; value: string; is_primary: boolean; created_at: string }>;
-  tickets: Array<Record<string, unknown> & { messages: Array<Record<string, unknown>> }>;
+  tickets: Array<Record<string, unknown> & { messages: Array<Record<string, unknown>>; attachments: Array<Record<string, unknown>> }>;
   inbox_messages: Array<Record<string, unknown>>;
 }
 
@@ -81,7 +81,7 @@ export async function exportCustomer(args: {
   // All messages for the customer's tickets in one query, grouped in JS.
   const messages = ticketIds.length
     ? await sql<Record<string, unknown>[]>`
-        select ticket_id, role, author_label, body, created_at
+        select ticket_id, role, author_label, body, body_html, created_at
         from ticket_messages
         where workspace_id = ${workspaceId} and ticket_id in ${sql(ticketIds)}
           and deleted_at is null
@@ -96,9 +96,32 @@ export async function exportCustomer(args: {
     const { ticket_id: _drop, ...rest } = m;
     byTicket.get(key)!.push(rest);
   }
+  // Attachment METADATA (Art. 15 "categories of data"), not the files: the
+  // export is a JSON document, and the bytes stay behind the private bucket's
+  // presigned URLs. Erasure deletes both, so the two stay in step.
+  const attachments = ticketIds.length
+    ? await sql<Record<string, unknown>[]>`
+        select ticket_id, filename, size_bytes, mime_type, is_inline, created_at
+        from ticket_attachments
+        where workspace_id = ${workspaceId} and ticket_id in ${sql(ticketIds)}
+        order by created_at asc
+      `
+    : [];
+  const attByTicket = new Map<string, Array<Record<string, unknown>>>();
+  for (const a of attachments) {
+    const key = a.ticket_id as string;
+    if (!attByTicket.has(key)) attByTicket.set(key, []);
+    const { ticket_id: _dropAtt, ...rest } = a;
+    attByTicket.get(key)!.push(rest);
+  }
+
   const ticketsWithMessages = tickets.map((t) => {
     const { id: _id, ...rest } = t;
-    return { ...rest, messages: byTicket.get(t.id as string) ?? [] };
+    return {
+      ...rest,
+      messages: byTicket.get(t.id as string) ?? [],
+      attachments: attByTicket.get(t.id as string) ?? [],
+    };
   });
 
   // Inbound mail tied to this customer: converted into one of their tickets, or

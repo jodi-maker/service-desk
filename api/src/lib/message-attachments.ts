@@ -275,3 +275,155 @@ export function decorateMessages<M extends { id: string; body_html?: string | nu
     return { ...m, body_html: m.body_html ? rewriteCidsToUrls(m.body_html, urlById) : null, attachments };
   });
 }
+
+// ─── Agent uploads (outbound) ────────────────────────────────────────────────
+
+export interface UploadedAttachment {
+  id: string;
+  filename: string;
+  size_bytes: number;
+  mime_type: string;
+  is_inline: boolean;
+  disposition: 'inline' | 'attachment';
+}
+
+/**
+ * Store one agent-uploaded file as an UNCLAIMED attachment (message_id null).
+ * It is bound to a message when the reply is posted; anything left unclaimed
+ * is swept after a day (sweepUnclaimedAttachments).
+ */
+export async function storeUpload(
+  sql: Sql | TransactionSql,
+  args: {
+    workspaceId: string; ticketId: string; uploadedByUserId: string | null;
+    filename: string; declaredMime: string | null; bytes: Uint8Array; maxBytes: number;
+    isInline?: boolean;
+  },
+  deps: StoreDeps = {},
+): Promise<{ ok: true; row: UploadedAttachment } | { ok: false; reason: string }> {
+  const filename = sanitizeFilename(args.filename);
+  const verdict = classifyAttachment(filename, args.declaredMime, args.bytes, args.maxBytes);
+  if (!verdict.ok) return { ok: false, reason: verdict.reason };
+  // An inline image must really be an image — an agent's editor must not be
+  // able to embed a document as if it rendered.
+  if (args.isInline && verdict.disposition !== 'inline') return { ok: false, reason: 'not an image' };
+
+  const configured = deps.configured ?? isAttachmentsStorageConfigured;
+  if (!deps.store && !configured()) return { ok: false, reason: 'attachment storage not configured' };
+  const store = deps.store ?? attachmentsStore();
+
+  const id = crypto.randomUUID();
+  const storageKey = storageKeyFor(args.workspaceId, args.ticketId, id, filename);
+  await store.putObject(storageKey, args.bytes, {
+    contentType: verdict.mime,
+    contentDisposition: contentDispositionFor(verdict.disposition, filename),
+  });
+  try {
+    await sql`
+      insert into ticket_attachments
+        (id, workspace_id, ticket_id, message_id, filename, size_bytes, storage_key, mime_type, content_id, is_inline, uploaded_by_user_id, disposition)
+      values
+        (${id}, ${args.workspaceId}, ${args.ticketId}, null, ${filename}, ${verdict.size}, ${storageKey},
+         ${verdict.mime}, ${args.isInline ? id : null}, ${!!args.isInline}, ${args.uploadedByUserId}, ${verdict.disposition})
+    `;
+  } catch (err) {
+    const deleter = deps.store ? (k: string[]) => deps.store!.deleteKeys(k) : undefined;
+    try {
+      await enqueueObjectDeletions(getDb(), [storageKey], 'orphan');
+      await drainObjectDeletions([storageKey], deleter);
+    } catch { /* stays in the outbox for the cron sweep */ }
+    throw err;
+  }
+  return {
+    ok: true,
+    row: { id, filename, size_bytes: verdict.size, mime_type: verdict.mime, is_inline: !!args.isInline, disposition: verdict.disposition },
+  };
+}
+
+/**
+ * Bind previously-uploaded attachments to a message. Only rows that are in the
+ * same workspace AND ticket AND still unclaimed can be bound, so an id from
+ * another ticket (or one already sent) is refused — the caller rolls back.
+ */
+export async function claimAttachments(
+  sql: Sql | TransactionSql,
+  args: { workspaceId: string; ticketId: string; messageId: string; ids: string[] },
+): Promise<AttachmentRow[]> {
+  if (args.ids.length === 0) return [];
+  const rows = await sql<AttachmentRow[]>`
+    update ticket_attachments set message_id = ${args.messageId}
+    where id in ${sql(args.ids)}
+      and workspace_id = ${args.workspaceId}
+      and ticket_id = ${args.ticketId}
+      and message_id is null
+    returning id, message_id, filename, size_bytes, mime_type, is_inline, content_id, disposition, storage_key
+  `;
+  if (rows.length !== args.ids.length) {
+    throw new AttachmentClaimError(`${args.ids.length - rows.length} attachment(s) are unknown, already sent, or belong to another ticket`);
+  }
+  return rows;
+}
+
+export class AttachmentClaimError extends Error {
+  constructor(message: string) { super(message); this.name = 'AttachmentClaimError'; }
+}
+
+/** Metadata for the attachments already bound to a message. */
+export async function listAttachmentsForMessage(workspaceId: string, messageId: string): Promise<AttachmentRow[]> {
+  const sql = getDb();
+  return sql<AttachmentRow[]>`
+    select id, message_id, filename, size_bytes, mime_type, is_inline, content_id, disposition, storage_key
+    from ticket_attachments
+    where workspace_id = ${workspaceId} and message_id = ${messageId}
+    order by created_at asc
+  `;
+}
+
+export interface OutboundFile {
+  filename: string;
+  mime: string;
+  base64: string;
+  // Set for inline images: Postmark expects "cid:<token>" here and the HTML
+  // references the same token.
+  contentId: string | null;
+}
+
+/** Fetch the bytes of stored attachments for an outgoing email. */
+export async function loadOutboundFiles(rows: AttachmentRow[], deps: StoreDeps = {}): Promise<OutboundFile[]> {
+  if (rows.length === 0) return [];
+  const store = deps.store ?? attachmentsStore();
+  const files = await Promise.all(
+    rows.map(async (r) => {
+      const { bytes } = await store.getObject(r.storage_key);
+      return {
+        filename: r.filename,
+        mime: r.mime_type || 'application/octet-stream',
+        base64: Buffer.from(bytes).toString('base64'),
+        contentId: r.is_inline ? `cid:${r.id}` : null,
+      };
+    }),
+  );
+  return files;
+}
+
+/**
+ * Delete uploads nobody attached to a message. Runs from the retention cron.
+ * Objects go through the outbox so a storage failure is retried rather than
+ * leaving a file with no row.
+ */
+export async function sweepUnclaimedAttachments(olderThanHours = 24, deps: StoreDeps = {}): Promise<{ removed: number }> {
+  const sql = getDb();
+  const rows = await sql<{ id: string; storage_key: string }[]>`
+    select id, storage_key from ticket_attachments
+    where message_id is null and created_at < now() - make_interval(hours => ${Math.max(1, olderThanHours)})
+    limit 500
+  `;
+  if (rows.length === 0) return { removed: 0 };
+  const keys = rows.map((r) => r.storage_key);
+  await sql.begin(async (tx) => {
+    await enqueueObjectDeletions(tx, keys, 'orphan');
+    await tx`delete from ticket_attachments where id in ${tx(rows.map((r) => r.id))}`;
+  });
+  await drainObjectDeletions(keys, deps.store ? (k) => deps.store!.deleteKeys(k) : undefined);
+  return { removed: rows.length };
+}

@@ -14,7 +14,18 @@ import { publishTicketChanged } from '../lib/pubby.js';
 import { hasDeletePermission } from '../lib/authz.js';
 import { writeAudit } from '../middleware/platform-admin.js';
 import { getDb } from '../lib/db.js';
-import { decorateMessages, loadAttachmentsForTicket } from '../lib/message-attachments.js';
+import {
+  AttachmentClaimError, claimAttachments, decorateMessages, listAttachmentsForMessage,
+  loadAttachmentsForTicket, loadOutboundFiles, storeUpload,
+} from '../lib/message-attachments.js';
+import {
+  MAX_INLINE_IMAGES, MAX_REPLY_ATTACHMENT_BYTES, MAX_UPLOAD_FILE_BYTES,
+} from '../lib/attachment-policy.js';
+import { extractDataImages, sanitizeEmailHtml } from '../lib/email-html.js';
+import { htmlToText } from '../lib/html-text.js';
+import { isAttachmentsStorageConfigured } from '../lib/r2.js';
+import { drainObjectDeletions, enqueueObjectDeletions } from '../lib/object-outbox.js';
+import { enforceRateLimit } from '../lib/rate-limit.js';
 
 // Migration to Neon — Step 3 (tickets megabatch). All direct queries use
 // getDb() raw SQL, scoped by workspace_id (the auth middleware verifies
@@ -331,11 +342,98 @@ tickets.patch('/:id', async (c) => {
   return c.json({ ticket: updated });
 });
 
+// ─── POST /:id/attachments — upload a file for the next reply ────────────
+//
+// Uploads are UNCLAIMED (message_id null) until the reply is posted; the
+// retention cron sweeps anything still unclaimed after a day. Stored in the
+// private bucket and only ever served through a short-lived presigned URL.
+tickets.post('/:id/attachments', async (c) => {
+  const sql = getDb();
+  const workspaceId = c.get('workspaceId');
+  const userId = c.get('userId');
+  const ticketId = c.req.param('id');
+
+  if (!isAttachmentsStorageConfigured()) {
+    return c.json({ error: 'Attachment storage is not configured on this server' }, 503);
+  }
+  // A busy agent uploads a handful of files; anything beyond this is abuse.
+  const limited = await enforceRateLimit(c, { name: 'attachment-upload', by: userId, max: 60, windowSeconds: 60 });
+  if (limited) return limited;
+
+  const [ticket] = await sql`
+    select id from tickets where id = ${ticketId} and workspace_id = ${workspaceId} and deleted_at is null
+  `;
+  if (!ticket) return c.json({ error: 'Ticket not found' }, 404);
+
+  // Coarse pre-filter on the multipart envelope before parseBody buffers it
+  // (same guard as the logo upload); file.size below is authoritative.
+  const declaredLen = Number(c.req.header('content-length') || 0);
+  if (declaredLen > MAX_UPLOAD_FILE_BYTES + 8192) {
+    return c.json({ error: `File too large; max ${MAX_UPLOAD_FILE_BYTES} bytes` }, 400);
+  }
+  const form = await c.req.parseBody({ all: false }).catch(() => null);
+  const file = form?.file as File | undefined;
+  if (!file || typeof file === 'string') return c.json({ error: 'Missing file part' }, 400);
+  if (file.size > MAX_UPLOAD_FILE_BYTES) {
+    return c.json({ error: `File too large; max ${MAX_UPLOAD_FILE_BYTES} bytes` }, 400);
+  }
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let stored;
+  try {
+    stored = await storeUpload(sql, {
+      workspaceId, ticketId, uploadedByUserId: userId,
+      filename: file.name, declaredMime: file.type || null, bytes, maxBytes: MAX_UPLOAD_FILE_BYTES,
+    });
+  } catch (err) {
+    console.error('[attachments] upload failed:', err instanceof Error ? err.message : err);
+    return c.json({ error: 'Upload failed' }, 500);
+  }
+  if (!stored.ok) return c.json({ error: `Cannot attach this file: ${stored.reason}` }, 400);
+  return c.json({ attachment: stored.row }, 201);
+});
+
+// ─── DELETE /:id/attachments/:attId — drop an unsent upload ──────────────
+tickets.delete('/:id/attachments/:attId', async (c) => {
+  const sql = getDb();
+  const workspaceId = c.get('workspaceId');
+  const userId = c.get('userId');
+  const ticketId = c.req.param('id');
+  const attId = c.req.param('attId');
+
+  // Only an UNSENT upload, only on this ticket, only the agent who uploaded it
+  // — a file already attached to a message is part of the conversation record.
+  const [row] = await sql<{ storage_key: string }[]>`
+    delete from ticket_attachments
+    where id = ${attId} and workspace_id = ${workspaceId} and ticket_id = ${ticketId}
+      and message_id is null and uploaded_by_user_id = ${userId}
+    returning storage_key
+  `;
+  if (!row) return c.json({ error: 'Attachment not found' }, 404);
+  try {
+    await enqueueObjectDeletions(sql, [row.storage_key], 'orphan');
+    await drainObjectDeletions([row.storage_key]);
+  } catch (err) {
+    // The row is gone and the key is parked; the cron finishes the job.
+    console.warn('[attachments] delete cleanup deferred:', err instanceof Error ? err.message : err);
+  }
+  return c.json({ ok: true });
+});
+
 // ─── POST /:id/messages — agent reply or internal note ───────────────────
 const PostMessage = z.object({
   role:     z.enum(['agent', 'note']),
-  body:     z.string().min(1),
+  // Plain-text body. Optional only when body_html is supplied (the text part
+  // is then derived from it for plain-text mail clients and search).
+  body:     z.string().min(1).max(100_000).optional(),
+  // Rich-text body from the composer. Sanitised server-side before storage —
+  // never trusted as-is.
+  body_html: z.string().max(2_000_000).optional(),
+  // Ids from POST /:id/attachments, still unclaimed.
+  attachment_ids: z.array(z.string().uuid()).max(20).optional(),
   mentions: z.array(z.string().uuid()).optional(),
+}).refine((v) => (v.body && v.body.trim()) || (v.body_html && v.body_html.trim()), {
+  message: 'Either body or body_html is required',
 });
 
 tickets.post('/:id/messages', async (c) => {
@@ -362,11 +460,83 @@ tickets.post('/:id/messages', async (c) => {
   const [user] = await sql`select name, email from users where id = ${userId}`;
   const authorLabel = user?.name || user?.email || 'Agent';
 
-  const [message] = await sql`
-    insert into ticket_messages (workspace_id, ticket_id, role, author_user_id, author_label, body, mentions)
-    values (${workspaceId}, ${ticketId}, ${input.role}, ${userId}, ${authorLabel}, ${input.body}, ${input.mentions || []})
-    returning id, role, author_user_id, author_label, body, mentions, created_at
-  `;
+  // ── Rich body: sanitise, pull pasted images out into real attachments ──
+  // An agent's HTML is untrusted too (they can be phished, and their markup is
+  // shown to colleagues), so it goes through the same sanitiser as inbound mail.
+  // Pasted data: images become cid:<uuid> references backed by stored files —
+  // a screenshot must never be inlined into a database column or an email body.
+  let bodyHtml: string | null = null;
+  let inlineIds: string[] = [];
+  if (input.body_html) {
+    const sanitised = sanitizeEmailHtml(input.body_html, { allowDataImages: true });
+    const extracted = extractDataImages(sanitised.html);
+    bodyHtml = extracted.html || null;
+    if (extracted.images.length) {
+      if (!isAttachmentsStorageConfigured()) {
+        return c.json({ error: 'Attachment storage is not configured on this server' }, 503);
+      }
+      // Bounded: a paste-happy editor (or a crafted request) must not turn one
+      // reply into an unbounded upload loop held open by the agent's request.
+      if (extracted.images.length > MAX_INLINE_IMAGES) {
+        return c.json({ error: `Too many embedded images (max ${MAX_INLINE_IMAGES}); attach the rest as files instead` }, 400);
+      }
+      let html = bodyHtml ?? '';
+      for (const img of extracted.images) {
+        try {
+          const stored = await storeUpload(sql, {
+            workspaceId, ticketId, uploadedByUserId: userId,
+            filename: `image-${img.id.slice(0, 8)}.${img.mime.split('/')[1]}`,
+            declaredMime: img.mime, bytes: img.bytes, maxBytes: MAX_UPLOAD_FILE_BYTES, isInline: true,
+          }, {});
+          if (!stored.ok) return c.json({ error: `Cannot embed a pasted image: ${stored.reason}` }, 400);
+          // storeUpload mints its own id; point the HTML at that one.
+          html = html.replace(`cid:${img.id}`, `cid:${stored.row.id}`);
+          inlineIds.push(stored.row.id);
+        } catch (err) {
+          console.error('[attachments] inline image upload failed:', err instanceof Error ? err.message : err);
+          return c.json({ error: 'Could not store a pasted image' }, 500);
+        }
+      }
+      bodyHtml = html || null;
+    }
+  }
+  // The text part: what the agent typed, or a readable rendering of their HTML
+  // for plain-text mail clients, search and the AI context.
+  const bodyText = (input.body?.trim() || (bodyHtml ? htmlToText(bodyHtml) : '')) || '(empty message)';
+
+  // Deduped: a client that sends the same id twice means one file, and the
+  // claim asserts rows-updated === ids-requested — without this it would fail
+  // with a misleading "1 attachment is unknown or already sent".
+  const claimIds = [...new Set([...(input.attachment_ids ?? []), ...inlineIds])];
+  // Postmark rejects a message over 10 MB including base64 overhead; refuse
+  // before the row exists so the agent can drop a file and retry.
+  if (claimIds.length) {
+    const [{ total }] = await sql<{ total: number }[]>`
+      select coalesce(sum(size_bytes), 0)::bigint as total from ticket_attachments
+      where workspace_id = ${workspaceId} and ticket_id = ${ticketId} and id in ${sql(claimIds)} and message_id is null
+    `;
+    if (Number(total) > MAX_REPLY_ATTACHMENT_BYTES) {
+      return c.json({ error: `Attachments are too large to email (max ${Math.floor(MAX_REPLY_ATTACHMENT_BYTES / (1024 * 1024))} MB in total)` }, 400);
+    }
+  }
+
+  // The message and the binding of its files are one unit: a bad attachment id
+  // must not leave a reply quoting files it does not have.
+  let message;
+  try {
+    message = await sql.begin(async (tx) => {
+      const [row] = await tx`
+        insert into ticket_messages (workspace_id, ticket_id, role, author_user_id, author_label, body, body_html, mentions)
+        values (${workspaceId}, ${ticketId}, ${input.role}, ${userId}, ${authorLabel}, ${bodyText}, ${bodyHtml}, ${input.mentions || []})
+        returning id, role, author_user_id, author_label, body, body_html, mentions, created_at
+      `;
+      await claimAttachments(tx, { workspaceId, ticketId, messageId: row.id, ids: claimIds });
+      return row;
+    });
+  } catch (err) {
+    if (err instanceof AttachmentClaimError) return c.json({ error: err.message }, 400);
+    throw err;
+  }
 
   // Fire-and-forget email notifications when a note @mentions other
   // agents. Service-role for the user lookup (cross-workspace
@@ -379,7 +549,7 @@ tickets.post('/:id/messages', async (c) => {
       authorUserId: userId,
       authorLabel,
       mentions:     input.mentions,
-      body:         input.body,
+      body:         bodyText,
     }).catch((err) => console.warn('[mention-notify] failed:', err instanceof Error ? err.message : err));
   }
 
@@ -396,8 +566,14 @@ tickets.post('/:id/messages', async (c) => {
     try { await sql`update tickets set last_reply_notified_at = null where id = ${ticketId} and workspace_id = ${workspaceId}`; }
     catch (err) { console.warn('[push] clear notify throttle failed:', err instanceof Error ? err.message : err); }
     try {
+      // Load the bytes of everything bound to this message so Postmark can
+      // carry them (inline images keep the cid: token the HTML references).
+      const files = claimIds.length
+        ? await loadOutboundFiles(await listAttachmentsForMessage(workspaceId, message.id))
+        : [];
       delivery = await sendAgentReplyEmail({
-        workspaceId, ticketId, messageId: message.id, authorUserId: userId, body: input.body,
+        workspaceId, ticketId, messageId: message.id, authorUserId: userId,
+        body: bodyText, bodyHtml, attachments: files,
       });
     } catch (err) {
       console.error('[agent-reply] send threw:', err instanceof Error ? err.message : err);
@@ -405,7 +581,13 @@ tickets.post('/:id/messages', async (c) => {
     }
   }
 
-  return c.json({ message, delivery }, 201);
+  // Return the message in the same shape GET /:id uses (cid: tokens swapped for
+  // presigned URLs, attachments listed) so the composer can push it straight
+  // into the thread.
+  const decorated = claimIds.length
+    ? decorateMessages([message as { id: string; body_html?: string | null }], await loadAttachmentsForTicket(workspaceId, ticketId))[0]
+    : { ...message, attachments: [] };
+  return c.json({ message: decorated, delivery }, 201);
 });
 
 // ─── POST /:id/sentiment/backfill — score unscored customer messages ─────

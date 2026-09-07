@@ -35,6 +35,11 @@ export interface SendEmailArgs {
   // Extra RFC headers to append (e.g. List-Unsubscribe / List-Unsubscribe-Post).
   // Reserved headers (Reply-To) must use the dedicated field, not this.
   extraHeaders?: Array<{ Name: string; Value: string }>;
+  // Files to attach. A `ContentID` of 'cid:<token>' makes Postmark send the
+  // part as an INLINE image that HtmlBody references with the same token; omit
+  // it for a regular attachment. Postmark caps a message at 10 MB INCLUDING
+  // base64 overhead — the caller enforces that before we get here.
+  attachments?: Array<{ Name: string; Content: string; ContentType: string; ContentID?: string | null }>;
 }
 
 export interface SendEmailResult {
@@ -107,6 +112,7 @@ export async function sendEmail(args: SendEmailArgs): Promise<SendEmailResult> {
     MessageStream: string;
     Headers: Array<{ Name: string; Value: string }>;
     ReplyTo?: string;
+    Attachments?: Array<{ Name: string; Content: string; ContentType: string; ContentID?: string }>;
   } = {
     From: formatFrom(args.fromName, args.fromEmail),
     To: args.to,
@@ -120,6 +126,14 @@ export async function sendEmail(args: SendEmailArgs): Promise<SendEmailResult> {
   }
   if (args.replyTo) {
     body.ReplyTo = args.replyTo;
+  }
+  if (args.attachments?.length) {
+    body.Attachments = args.attachments.map((a) => ({
+      Name: a.Name,
+      Content: a.Content,
+      ContentType: a.ContentType,
+      ...(a.ContentID ? { ContentID: a.ContentID } : {}),
+    }));
   }
 
   const res = await fetch(ENDPOINT, {

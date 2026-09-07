@@ -157,3 +157,38 @@ export function rewriteCidsToUrls(html: string, urlByAttachmentId: Map<string, s
     },
   );
 }
+
+/**
+ * Pull `data:image/*;base64` sources out of agent-authored HTML (what a
+ * rich-text editor produces when an image is pasted) and replace each with a
+ * `cid:<uuid>` token. The caller uploads the bytes under exactly that uuid, so
+ * the stored HTML, the DB rows and the outgoing email all agree — and a 5 MB
+ * screenshot never ends up inlined in a database column.
+ *
+ * Only the raster types the sanitiser allows are extracted; anything else has
+ * already lost its src by the time this runs.
+ *
+ * The double-quoted `src="…"` shape is not an assumption about the client: this
+ * only ever runs on sanitizeEmailHtml's OUTPUT, and sanitize-html re-serialises
+ * every attribute with double quotes whatever the input used.
+ */
+export function extractDataImages(html: string): { html: string; images: Array<{ id: string; mime: string; bytes: Uint8Array }> } {
+  const images: Array<{ id: string; mime: string; bytes: Uint8Array }> = [];
+  if (!html || !/data:image\//i.test(html)) return { html, images };
+  const out = html.replace(
+    /src="data:image\/(png|jpeg|jpg|gif|webp);base64,([a-z0-9+/=\s]+)"/gi,
+    (match, subtype: string, b64: string) => {
+      let bytes: Uint8Array;
+      try {
+        bytes = Buffer.from(b64.replace(/\s+/g, ''), 'base64');
+      } catch {
+        return match;
+      }
+      if (bytes.length === 0) return match;
+      const id = crypto.randomUUID();
+      images.push({ id, mime: `image/${subtype.toLowerCase() === 'jpg' ? 'jpeg' : subtype.toLowerCase()}`, bytes });
+      return `src="cid:${id}"`;
+    },
+  );
+  return { html: out, images };
+}
