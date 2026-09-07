@@ -37,6 +37,18 @@ export function getDb() {
       // mode) connection string does not support them. Safe for the direct
       // connection too.
       prepare: false,
+      types: {
+        // DATE is a calendar value, not a timestamp. Preserve YYYY-MM-DD for
+        // OOO comparisons, date inputs and holiday arrays. Leave timestamp
+        // OIDs 1114/1184 on the driver's default Date parser.
+        calendarDate: {
+          to: 1082,
+          from: [1082],
+          serialize: (value: string) => value,
+          // postgres.js passes unquoted NULL array elements to custom parsers.
+          parse: (value: string) => value === 'NULL' ? null : value,
+        },
+      },
     });
   }
   return _sql;
