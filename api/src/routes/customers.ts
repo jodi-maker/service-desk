@@ -23,11 +23,10 @@ const eraseBody = z.object({ reason: z.string().trim().max(500).optional() });
 
 // The customer row as the SPA sees it — one column list shared by GET / and
 // PATCH /:id so the two can never drift apart (the SPA applies a PATCH
-// response with the same mapper it bootstraps from). `since` is a Postgres
-// `date`; without the ::text cast postgres.js hands back a JS Date that
-// serialises as a midnight-UTC timestamp, which the profile then printed raw.
+// response with the same mapper it bootstraps from). getDb() returns `since`
+// as a YYYY-MM-DD calendar value rather than a midnight-UTC timestamp.
 const CUSTOMER_ROW_COLS = `id, display_id, first_name, last_name, username, email, mobile, brand, vip_tier,
-           jurisdiction, consent, since::text as since, backoffice_url, erased_at, created_at,
+           jurisdiction, consent, since, backoffice_url, erased_at, created_at,
            maestro_user_id, maestro_member_id,
            merged_into_customer_id, merged_at,
            email_bounce_state, email_last_bounce_type, email_last_bounce_at, email_bounce_count`;
@@ -441,17 +440,15 @@ customers.post('/:id/merge', async (c) => {
       maestro_user_id: string | null; maestro_member_id: string | null;
       merged_into_customer_id: string | null; erased_at: string | null }[]>`
       select id, display_id, first_name, last_name, email, mobile, username, brand, vip_tier,
-             jurisdiction, kyc_status, since::text as since, backoffice_url,
+             jurisdiction, kyc_status, since, backoffice_url,
              maestro_user_id, maestro_member_id, merged_into_customer_id, erased_at
       from customers
       where id = any(${[a, b]}) and workspace_id = ${workspaceId} and deleted_at is null
       order by id
       for update
     `;
-    // ^ since::text — it's a DATE column; without the cast postgres.js hands
-    // back a JS Date that json-serialises as a full (TZ-shifted) timestamp,
-    // which would leak into the SPA, the journal, and the unmerge equality
-    // check. As text it's a plain 'YYYY-MM-DD' end to end.
+    // getDb() preserves DATE values as YYYY-MM-DD, including the journal and
+    // the unmerge equality check.
     const source = rows.find((r) => r.id === sourceId);
     const primary = rows.find((r) => r.id === primaryId);
     if (!source)  { outcome = { status: 404, body: { error: 'Customer not found' } }; return; }

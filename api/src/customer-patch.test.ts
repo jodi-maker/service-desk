@@ -3,7 +3,7 @@
 // impossible-date / non-http-link validation, the deleted / erased / merged
 // guards, the no-op path (no UPDATE, no audit row), the audit row's PII split
 // (values for brand/vip/since/consent, names only for the rest), the uniform
-// since::text wire shape on GET and PATCH, and the merge ↔ edit interaction on
+// date-only wire shape on GET and PATCH, and the merge ↔ edit interaction on
 // unmerge (fields_kept_due_to_edit).
 
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test';

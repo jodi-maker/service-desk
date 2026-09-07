@@ -37,7 +37,7 @@ export async function exportCustomer(args: {
 
   const [customer] = await sql<Record<string, unknown>[]>`
     select id, display_id, first_name, last_name, username, email, mobile, brand,
-           vip_tier, jurisdiction, consent, kyc_status, since::text as since, backoffice_url,
+           vip_tier, jurisdiction, consent, kyc_status, since, backoffice_url,
            maestro_user_id, maestro_member_id,
            created_at, updated_at, erased_at
     from customers

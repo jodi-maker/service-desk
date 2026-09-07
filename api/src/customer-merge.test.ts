@@ -129,7 +129,7 @@ runDbTests('customer merge/unmerge (DB-backed)', () => {
     // stamped rows now living on the survivor) even though its DB mirror is null.
     expect(body.source.email).toBe(`cm-src-${RUN}@cust.test`);
     expect(body.source.emails[0].on_survivor).toBe(true);
-    // DATE column rides as plain YYYY-MM-DD (since::text), never a TZ-shifted
+    // DATE column rides as plain YYYY-MM-DD, never a TZ-shifted
     // ISO timestamp — the journal's unmerge equality depends on it.
     expect(body.backfilled_fields.since).toBe('2020-03-15');
 
