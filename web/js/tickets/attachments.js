@@ -32,6 +32,8 @@ export function renderPendingAttachments(ticketId) {
   const host = document.getElementById('pending-att-' + ticketId);
   if (!host || typeof host.innerHTML !== 'string') return;
   const list = pendingAttachments(ticketId);
+  const hint = document.querySelector?.(`#ticket-page-${ticketId} .composer-launch-hint`);
+  if (hint) hint.textContent = list.length ? `${list.length} ${list.length === 1 ? 'attachment' : 'attachments'} ready` : 'Write a reply…';
   if (!list.length) { host.innerHTML = ''; return; }
   host.innerHTML = list.map((a) => `
     <span class="att-chip att-chip-pending">
